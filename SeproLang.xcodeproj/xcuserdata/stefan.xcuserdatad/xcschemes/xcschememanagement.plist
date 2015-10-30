@@ -9,6 +9,11 @@
 			<key>orderHint</key>
 			<integer>0</integer>
 		</dict>
+		<key>sepro.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>1</integer>
+		</dict>
 	</dict>
 	<key>SuppressBuildableAutocreation</key>
 	<dict>
@@ -18,6 +23,11 @@
 			<true/>
 		</dict>
 		<key>F8F5618A1BE3117D00C53170</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>F8F5619E1BE3118D00C53170</key>
 		<dict>
 			<key>primary</key>
 			<true/>

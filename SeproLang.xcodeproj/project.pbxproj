@@ -7,9 +7,17 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		F824639B1BE31F6A00641782 /* Predicate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F824639A1BE31F6A00641782 /* Predicate.swift */; };
+		F824639D1BE31F7500641782 /* Action.swift in Sources */ = {isa = PBXBuildFile; fileRef = F824639C1BE31F7500641782 /* Action.swift */; };
 		F8F561851BE3117D00C53170 /* SeproLang.h in Headers */ = {isa = PBXBuildFile; fileRef = F8F561841BE3117D00C53170 /* SeproLang.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		F8F5618C1BE3117D00C53170 /* SeproLang.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F8F561811BE3117D00C53170 /* SeproLang.framework */; };
 		F8F561911BE3117D00C53170 /* SeproLangTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8F561901BE3117D00C53170 /* SeproLangTests.swift */; };
+		F8F561A21BE3118D00C53170 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8F561A11BE3118D00C53170 /* main.swift */; };
+		F8F561B21BE311BE00C53170 /* SeproLang.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F8F561811BE3117D00C53170 /* SeproLang.framework */; };
+		F8F561B81BE3121300C53170 /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8F561B71BE3121300C53170 /* Extensions.swift */; };
+		F8F561BC1BE312E900C53170 /* Engine.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8F561B91BE312E900C53170 /* Engine.swift */; };
+		F8F561BD1BE312E900C53170 /* Model.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8F561BA1BE312E900C53170 /* Model.swift */; };
+		F8F561BE1BE312E900C53170 /* Parser.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8F561BB1BE312E900C53170 /* Parser.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -20,15 +28,42 @@
 			remoteGlobalIDString = F8F561801BE3117D00C53170;
 			remoteInfo = SeproLang;
 		};
+		F8F561B01BE311B800C53170 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F8F561781BE3117D00C53170 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F8F561801BE3117D00C53170;
+			remoteInfo = SeproLang;
+		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		F8F5619D1BE3118D00C53170 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		F824639A1BE31F6A00641782 /* Predicate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Predicate.swift; sourceTree = "<group>"; };
+		F824639C1BE31F7500641782 /* Action.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Action.swift; sourceTree = "<group>"; };
 		F8F561811BE3117D00C53170 /* SeproLang.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = SeproLang.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		F8F561841BE3117D00C53170 /* SeproLang.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SeproLang.h; sourceTree = "<group>"; };
 		F8F561861BE3117D00C53170 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		F8F5618B1BE3117D00C53170 /* SeproLangTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SeproLangTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F8F561901BE3117D00C53170 /* SeproLangTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeproLangTests.swift; sourceTree = "<group>"; };
 		F8F561921BE3117D00C53170 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		F8F5619F1BE3118D00C53170 /* sepro */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = sepro; sourceTree = BUILT_PRODUCTS_DIR; };
+		F8F561A11BE3118D00C53170 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		F8F561B71BE3121300C53170 /* Extensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
+		F8F561B91BE312E900C53170 /* Engine.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Engine.swift; sourceTree = "<group>"; };
+		F8F561BA1BE312E900C53170 /* Model.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Model.swift; sourceTree = "<group>"; };
+		F8F561BB1BE312E900C53170 /* Parser.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Parser.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -47,14 +82,33 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		F8F5619C1BE3118D00C53170 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F8F561B21BE311BE00C53170 /* SeproLang.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		F82463991BE31F5500641782 /* Model */ = {
+			isa = PBXGroup;
+			children = (
+				F8F561BA1BE312E900C53170 /* Model.swift */,
+				F824639A1BE31F6A00641782 /* Predicate.swift */,
+				F824639C1BE31F7500641782 /* Action.swift */,
+			);
+			name = Model;
+			sourceTree = "<group>";
+		};
 		F8F561771BE3117D00C53170 = {
 			isa = PBXGroup;
 			children = (
 				F8F561831BE3117D00C53170 /* SeproLang */,
 				F8F5618F1BE3117D00C53170 /* SeproLangTests */,
+				F8F561A01BE3118D00C53170 /* sepro */,
 				F8F561821BE3117D00C53170 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -64,6 +118,7 @@
 			children = (
 				F8F561811BE3117D00C53170 /* SeproLang.framework */,
 				F8F5618B1BE3117D00C53170 /* SeproLangTests.xctest */,
+				F8F5619F1BE3118D00C53170 /* sepro */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -71,6 +126,10 @@
 		F8F561831BE3117D00C53170 /* SeproLang */ = {
 			isa = PBXGroup;
 			children = (
+				F82463991BE31F5500641782 /* Model */,
+				F8F561B71BE3121300C53170 /* Extensions.swift */,
+				F8F561B91BE312E900C53170 /* Engine.swift */,
+				F8F561BB1BE312E900C53170 /* Parser.swift */,
 				F8F561841BE3117D00C53170 /* SeproLang.h */,
 				F8F561861BE3117D00C53170 /* Info.plist */,
 			);
@@ -84,6 +143,14 @@
 				F8F561921BE3117D00C53170 /* Info.plist */,
 			);
 			path = SeproLangTests;
+			sourceTree = "<group>";
+		};
+		F8F561A01BE3118D00C53170 /* sepro */ = {
+			isa = PBXGroup;
+			children = (
+				F8F561A11BE3118D00C53170 /* main.swift */,
+			);
+			path = sepro;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -136,6 +203,24 @@
 			productReference = F8F5618B1BE3117D00C53170 /* SeproLangTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		F8F5619E1BE3118D00C53170 /* sepro */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F8F561A31BE3118D00C53170 /* Build configuration list for PBXNativeTarget "sepro" */;
+			buildPhases = (
+				F8F5619B1BE3118D00C53170 /* Sources */,
+				F8F5619C1BE3118D00C53170 /* Frameworks */,
+				F8F5619D1BE3118D00C53170 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				F8F561B11BE311B800C53170 /* PBXTargetDependency */,
+			);
+			name = sepro;
+			productName = sepro;
+			productReference = F8F5619F1BE3118D00C53170 /* sepro */;
+			productType = "com.apple.product-type.tool";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -150,6 +235,9 @@
 						CreatedOnToolsVersion = 7.2;
 					};
 					F8F5618A1BE3117D00C53170 = {
+						CreatedOnToolsVersion = 7.2;
+					};
+					F8F5619E1BE3118D00C53170 = {
 						CreatedOnToolsVersion = 7.2;
 					};
 				};
@@ -168,6 +256,7 @@
 			targets = (
 				F8F561801BE3117D00C53170 /* SeproLang */,
 				F8F5618A1BE3117D00C53170 /* SeproLangTests */,
+				F8F5619E1BE3118D00C53170 /* sepro */,
 			);
 		};
 /* End PBXProject section */
@@ -194,6 +283,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F824639B1BE31F6A00641782 /* Predicate.swift in Sources */,
+				F8F561BC1BE312E900C53170 /* Engine.swift in Sources */,
+				F8F561BE1BE312E900C53170 /* Parser.swift in Sources */,
+				F824639D1BE31F7500641782 /* Action.swift in Sources */,
+				F8F561B81BE3121300C53170 /* Extensions.swift in Sources */,
+				F8F561BD1BE312E900C53170 /* Model.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -205,6 +300,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		F8F5619B1BE3118D00C53170 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F8F561A21BE3118D00C53170 /* main.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -212,6 +315,11 @@
 			isa = PBXTargetDependency;
 			target = F8F561801BE3117D00C53170 /* SeproLang */;
 			targetProxy = F8F5618D1BE3117D00C53170 /* PBXContainerItemProxy */;
+		};
+		F8F561B11BE311B800C53170 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F8F561801BE3117D00C53170 /* SeproLang */;
+			targetProxy = F8F561B01BE311B800C53170 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -305,11 +413,13 @@
 		F8F561961BE3117D00C53170 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEFINES_MODULE = YES;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				EMBEDDED_CONTENT_CONTAINS_SWIFT = YES;
 				FRAMEWORK_VERSION = A;
 				INFOPLIST_FILE = SeproLang/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
@@ -317,17 +427,20 @@
 				PRODUCT_BUNDLE_IDENTIFIER = databrewery.SeproLang;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
 			name = Debug;
 		};
 		F8F561971BE3117D00C53170 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEFINES_MODULE = YES;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				EMBEDDED_CONTENT_CONTAINS_SWIFT = YES;
 				FRAMEWORK_VERSION = A;
 				INFOPLIST_FILE = SeproLang/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
@@ -360,6 +473,22 @@
 			};
 			name = Release;
 		};
+		F8F561A41BE3118D00C53170 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				EMBEDDED_CONTENT_CONTAINS_SWIFT = NO;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		F8F561A51BE3118D00C53170 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				EMBEDDED_CONTENT_CONTAINS_SWIFT = NO;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -379,6 +508,7 @@
 				F8F561971BE3117D00C53170 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		F8F561981BE3117D00C53170 /* Build configuration list for PBXNativeTarget "SeproLangTests" */ = {
 			isa = XCConfigurationList;
@@ -387,6 +517,16 @@
 				F8F5619A1BE3117D00C53170 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F8F561A31BE3118D00C53170 /* Build configuration list for PBXNativeTarget "sepro" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F8F561A41BE3118D00C53170 /* Debug */,
+				F8F561A51BE3118D00C53170 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
