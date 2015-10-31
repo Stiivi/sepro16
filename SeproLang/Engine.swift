@@ -13,64 +13,58 @@
 // process of conceptual optimizaiion.
 
 
-/**
-    References an object in the store.
-*/
-public typealias ObjectRef = Int
-public typealias ObjectList = [Int]
-public typealias ObjectMap = [Symbol:Int]
+public typealias ObjectSelection = AnySequence<ObjectRef>
 
-// TODO: Rename to stage
 public protocol Store {
     /** Initialize the store with `world`. If `world` is not specified then
     `main` is used.
     */
-    func initialize(world: Symbol?)
-    func instantiateConcept(concept: Symbol) -> ObjectRef
-    func instantiateStruct(structure: Symbol) -> ObjectMap
+    func initialize(world: Symbol) throws
 
+    /** Instantiate concept `name`.
+     - Returns: reference to the newly created object
+     */
+    func instantiate(name: Symbol) throws -> ObjectRef
+
+    /**
+     Iterator through all objects.
+     
+     - Note: Order is implementation specific and is not guaranteed
+       neigher between implementations or even between distinct calls
+       of the method even without state change of the store.
+     - Returns: sequence of all object references
+    */
+    var objects: AnySequence<ObjectRef> { get }
+
+    /**
+        - Returns: sequence of all object references
+    */
+    func getObject(ref: ObjectRef) -> Object?
+
+    /**
+     Iterates through all objects mathing `predicates`. Similar to
+     `objects` the order in which the objects are iterated over is
+     engine specific.
+     */
     func select(predicates:[Predicate]) -> ObjectSelection
-    func evaluate(predicate:Predicate, object:Object) -> Bool
-}
 
-public protocol Engine {
-    func step()
+    func evaluate(predicate:Predicate,_ ref:ObjectRef) -> Bool
 }
-
-// FIXME: Make this [String:Int]
-public typealias LinkDict = [String:Object?]
 
 /**
-    Simulation object – concrete instance of a concept.
-
-    When concept is instantiated in the simulation environment, the physical
-    connection between the
-
+    Simulation engine interface
 */
-public class Object: CustomStringConvertible {
-    /// Measure values
-    public var measures = MeasureDict()
-    /// Tags that are set
-    public var tags = TagList()
-    /// References to other objects
-    public var links = LinkDict()
+public protocol Engine {
 
-    public var description: String {
-        get {
-            let links = self.links.map(){ (key, value) in key }
-            return "tags: \(self.tags) links: \(links)"
-        }
-    }
-
-    public var debugString: String {
-        return self.description
-    }
-}
-
-public struct Comparator {
-    public let isNegated: Bool
-    public let slot: Symbol?
-    public let properties: [Symbol]
+    /**
+     Perform one simulation step. Increase step counter. If a trap
+     was encountered during execution, causes the trap handler to be
+     invoked with a collection of captured traps.
+     
+     If `HALT` action was encountered, the simulation is terminated and
+     can not be resumed unless re-initialized.
+     */
+    func step()
 }
 
 // MARK: Selection Generator
@@ -79,107 +73,9 @@ public struct Comparator {
 // implementation of object
 
 /**
-    Represents product of objects matching `thisPredicate` ⨯
-    `otherPredicate`
-
-*/
-public class ObjectProductSelection: SequenceType {
-    let store: SimpleStore
-    let thisPredicates: [Predicate]
-    let otherPredicates: [Predicate]
-
-    init(store: SimpleStore, thisPredicates: [Predicate], otherPredicates:[Predicate]) {
-        self.thisPredicates = thisPredicates
-        self.otherPredicates = otherPredicates
-        self.store = store
-    }
-
-    public func generate() -> ObjectProductSelectionGenerator {
-        return ObjectProductSelectionGenerator(selection: self)
-
-    }
-}
-
-/**
-    Iterator of interacting objects. Iterates through all objects
-    matching predicates, but is state change aware.
-*/
-public struct ObjectProductSelectionGenerator: GeneratorType {
-    public typealias Element = Object
-    let selection: ObjectProductSelection
-    var generator: DictionaryGenerator<Int, Object>
-
-    init(selection: ObjectProductSelection) {
-        self.selection = selection
-        self.generator = selection.store.objects.generate()
-    }
-
-    public mutating func next() -> Element? {
-        var object: Object
-
-        objectLoop: while let item = self.generator.next() {
-            (_, object) = item
-
-            for predicate in self.selection.thisPredicates {
-                if !self.selection.store.evaluate(predicate, object) {
-                    continue objectLoop
-                }
-            }
-            return object
-        }
-        return nil
-
-    }
-}
-
-public class ObjectSelection: SequenceType {
-    let store: SimpleStore
-    let predicates: [Predicate]
-
-    init(store: SimpleStore, predicates: [Predicate]) {
-        self.predicates = predicates
-        self.store = store
-    }
-
-    public func generate() -> ObjectSelectionGenerator {
-        return ObjectSelectionGenerator(selection: self)
-
-    }
-}
-
-public struct ObjectSelectionGenerator: GeneratorType {
-    public typealias Element = Object
-    let selection: ObjectSelection
-    var generator: DictionaryGenerator<Int, Object>
-
-    init(selection: ObjectSelection) {
-        self.selection = selection
-        self.generator = selection.store.objects.generate()
-    }
-
-    public mutating func next() -> Element? {
-        var object: Object
-
-        objectLoop: while let item = self.generator.next() {
-            (_, object) = item
-
-            for predicate in self.selection.predicates {
-                if !self.selection.store.evaluate(predicate, object) {
-                    continue objectLoop
-                }
-            }
-            return object
-        }
-        return nil
-
-    }
-}
-
-
-/**
 Container representing the state of the world.
 */
-public class SimpleStore {
+public class SimpleStore: Store {
     // TODO: Merge this with engine, make distinction between public methods
     // with IDs and private methods with direct object references
 
@@ -187,7 +83,7 @@ public class SimpleStore {
     public var stepCount: Int
 
     /// The object memory
-    public var objects: [Int:Object]
+    public var objectMap: [ObjectRef:Object]
     public var objectCounter: Int = 1
 
     /// Reference to the root object in the object memory
@@ -196,11 +92,19 @@ public class SimpleStore {
 
     public init(model:Model) {
         self.model = model
-        self.objects = [Int:Object]()
+        self.objectMap = [ObjectRef:Object]()
         self.root = nil
         self.stepCount = 0
 
         self.actuators = [Actuator](model.actuators)
+    }
+
+    public var objects: AnySequence<ObjectRef> {
+        get { return AnySequence(self.objectMap.keys) }
+    }
+
+    public func getObject(ref:ObjectRef) -> Object? {
+        return self.objectMap[ref]
     }
 
     /**
@@ -211,7 +115,7 @@ public class SimpleStore {
         let world = self.model.getWorld(worldName)!
 
         // Clean-up the objects container
-        self.objects.removeAll()
+        self.objectMap.removeAll()
         self.objectCounter = 1
 
         if let rootConcept = world.root {
@@ -255,8 +159,8 @@ public class SimpleStore {
      - Returns: reference to the newly created object
     */
     public func create(concept: Concept!=nil) -> ObjectRef {
-        let ref: ObjectRef
-        let obj = Object()
+        let ref = self.objectCounter
+        let obj = Object(ref)
 
         if concept != nil {
             obj.tags = concept.tags
@@ -269,15 +173,14 @@ public class SimpleStore {
             obj.tags.insert(concept.name)
         }
 
-        ref = self.objectCounter
-        self.objects[ref] = obj
+        self.objectMap[ref] = obj
         self.objectCounter += 1
 
         return ref
     }
 
     public subscript(ref: ObjectRef) -> Object? {
-        return self.objects[ref]
+        return self.objectMap[ref]
     }
 
     /**
@@ -327,16 +230,52 @@ public class SimpleStore {
     */
 
 
-    func select(predicates:[Predicate]) -> ObjectSelection {
+    public func select(predicates:[Predicate]) -> ObjectSelection {
+        let selection = self.filterObjects(predicates).lazy.map {
+            ref, _ in ref
+        }
 
-        return ObjectSelection(store: self, predicates: predicates)
+        return ObjectSelection(selection)
     }
 
+    func selectObjects(predicates:[Predicate]) -> AnySequence<Object> {
+        let selection = self.filterObjects(predicates).lazy.map {
+            _, object in object
+        }
+
+        return AnySequence(selection)
+    }
+
+    public func filterObjects(predicates:[Predicate]) -> AnySequence<(ObjectRef, Object)> {
+        let filtered = self.objectMap.lazy.filter {ref, object in
+
+            // Find at least one predicate that the inspected object
+            // does not satisfy (!evaluate). If such predicate is found
+            // (index != nil), then filter out the inspected object.
+
+            predicates.indexOf {
+                predicate in
+                !self.evaluateObject(predicate, object)
+            } == nil
+        }
+
+        return AnySequence(filtered)
+    }
     /**
         Evaluates the predicate against object.
         - Returns: `true` if the object matches the predicate
     */
-    func evaluate(predicate:Predicate, _ obj: Object) -> Bool{
+    public func evaluate(predicate:Predicate, _ ref: ObjectRef) -> Bool {
+        if let obj = self.objectMap[ref] {
+            return self.evaluateObject(predicate, obj)
+        }
+        else {
+            // TODO: Exception?
+            return false
+        }
+    }
+
+    func evaluateObject(predicate:Predicate, _ obj: Object) -> Bool {
         if predicate is AllPredicate {
             return true
         }
@@ -345,15 +284,6 @@ public class SimpleStore {
         }
 
         return false
-    }
-
-    func evaluate(predicates:[Predicate], _ obj: Object) -> Bool{
-        for predicate in predicates {
-            if !evaluate(predicate, obj) {
-                return false
-            }
-        }
-        return true
     }
 
     /**
@@ -369,7 +299,7 @@ public class SimpleStore {
         //
         if predicate.slot != nil {
             if let maybeTarget = obj.links[predicate.slot!] {
-                target = maybeTarget!
+                target = self.objectMap[maybeTarget]!
             }
             else {
                 // TODO: is this OK if the slot is not filled and the condition is
@@ -518,7 +448,7 @@ public class SimpleEngine: Engine {
         4. Perform reactive action on the objects.
     */
     func performSingle(actuator:Actuator) {
-        let thisObjects = self.store.select(actuator.predicates)
+        let thisObjects = self.store.selectObjects(actuator.predicates)
 
         var counter = 0
         for this in thisObjects {
@@ -531,14 +461,16 @@ public class SimpleEngine: Engine {
     }
 
     func performCartesian(actuator:Actuator) {
-        let thisObjects = self.store.select(actuator.predicates)
-        let otherObjects = self.store.select(actuator.otherPredicates!)
+        let thisObjects = self.store.selectObjects(actuator.predicates)
+        let otherObjects = self.store.selectObjects(actuator.otherPredicates!)
         var counter = 0
 
         // Cartesian product: everything 'this' interacts with everything
         // 'other'
         for this in thisObjects {
+            print("this: \(this.id)")
             for other in otherObjects{
+                print("    -> \(other.id)")
                 counter += 1
                 for action in actuator.actions {
                     self.apply(action, this: this, other: other)
@@ -546,7 +478,15 @@ public class SimpleEngine: Engine {
 
                 // Break if `this` has been modified in the previous
                 // action
-                if !self.store.evaluate(actuator.predicates, this) {
+                // Reversed logic: detect first predicate that matches
+                let match = actuator.predicates.indexOf {
+                    predicate in
+                    self.store.evaluateObject(predicate, this)
+                }
+
+                // if there is a failed predicate found, then advance
+                // to the next `this` object
+                if match != nil {
                     break
                 }
             }
@@ -575,7 +515,7 @@ public class SimpleEngine: Engine {
             }
 
             if slot != nil {
-                return receiver.links[slot!]!
+                return self.store.objectMap[receiver.links[slot!]!]
             }
             else {
                 return receiver
@@ -622,7 +562,7 @@ public class SimpleEngine: Engine {
                 return
             }
 
-            receiver.links[action.slot] = target
+            receiver.links[action.slot] = target.id
         }
         else if let action = genericAction as? ObjectAction {
             let receiver = getContext(action.inContext, slot: action.inSlot,
@@ -658,8 +598,9 @@ public class SimpleEngine: Engine {
         //
 
         if objectAction.inSlot != nil {
-            if let maybeTarget = obj.links[objectAction.inSlot!] {
-                target = maybeTarget!
+            if let targetRef = obj.links[objectAction.inSlot!],
+                let maybeTarget = self.store.objectMap[targetRef] {
+                target = maybeTarget
             }
             else {
                 // TODO: is this OK if the slot is not filled?
@@ -688,6 +629,7 @@ public class SimpleEngine: Engine {
             target.measures[action.measure] = 0
         }
         else {
+            print("ERROR!!! UNKNOWN ACTION \(objectAction)")
             // pass
         }
 
@@ -696,9 +638,9 @@ public class SimpleEngine: Engine {
     public func debugDump() {
         print("ENGINE DUMP START\n")
         print("STEP \(self.stepCount)")
-        let keys = self.store.objects.keys.sort()
+        let keys = self.store.objectMap.keys.sort()
         for key in keys {
-            let obj = self.store.objects[key]
+            let obj = self.store.objectMap[key]
             print("\(key): \(obj!.debugString)")
         }
         print("END OF DUMP\n")

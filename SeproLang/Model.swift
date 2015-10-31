@@ -13,11 +13,11 @@
 
 
 public typealias Symbol = String
+// TODO: Add SymbolInfo: symbol, type, firstOccurence
 
-public typealias SlotList = [String];
-public typealias TagList = Set<String>;
-public typealias MeasureDict = [String:Int]
-public typealias StringDict = [String:String]
+public typealias SlotList = [Symbol];
+public typealias TagList = Set<Symbol>;
+public typealias MeasureDict = [Symbol:Int]
 
 /**
     Representation of a concept. Concept is the main model entity.

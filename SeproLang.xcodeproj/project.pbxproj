@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		F824639B1BE31F6A00641782 /* Predicate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F824639A1BE31F6A00641782 /* Predicate.swift */; };
 		F824639D1BE31F7500641782 /* Action.swift in Sources */ = {isa = PBXBuildFile; fileRef = F824639C1BE31F7500641782 /* Action.swift */; };
+		F82463A21BE4576600641782 /* Probe.swift in Sources */ = {isa = PBXBuildFile; fileRef = F82463A11BE4576600641782 /* Probe.swift */; };
 		F8F561851BE3117D00C53170 /* SeproLang.h in Headers */ = {isa = PBXBuildFile; fileRef = F8F561841BE3117D00C53170 /* SeproLang.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		F8F5618C1BE3117D00C53170 /* SeproLang.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F8F561811BE3117D00C53170 /* SeproLang.framework */; };
 		F8F561911BE3117D00C53170 /* SeproLangTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8F561901BE3117D00C53170 /* SeproLangTests.swift */; };
@@ -18,6 +19,7 @@
 		F8F561BC1BE312E900C53170 /* Engine.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8F561B91BE312E900C53170 /* Engine.swift */; };
 		F8F561BD1BE312E900C53170 /* Model.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8F561BA1BE312E900C53170 /* Model.swift */; };
 		F8F561BE1BE312E900C53170 /* Parser.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8F561BB1BE312E900C53170 /* Parser.swift */; };
+		F8F618F01BE4630F002A4DE3 /* Object.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8F618EF1BE4630F002A4DE3 /* Object.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -52,6 +54,8 @@
 /* Begin PBXFileReference section */
 		F824639A1BE31F6A00641782 /* Predicate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Predicate.swift; sourceTree = "<group>"; };
 		F824639C1BE31F7500641782 /* Action.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Action.swift; sourceTree = "<group>"; };
+		F824639F1BE3318A00641782 /* README */ = {isa = PBXFileReference; lastKnownFileType = text; path = README; sourceTree = "<group>"; };
+		F82463A11BE4576600641782 /* Probe.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Probe.swift; sourceTree = "<group>"; };
 		F8F561811BE3117D00C53170 /* SeproLang.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = SeproLang.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		F8F561841BE3117D00C53170 /* SeproLang.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SeproLang.h; sourceTree = "<group>"; };
 		F8F561861BE3117D00C53170 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -64,6 +68,7 @@
 		F8F561B91BE312E900C53170 /* Engine.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Engine.swift; sourceTree = "<group>"; };
 		F8F561BA1BE312E900C53170 /* Model.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Model.swift; sourceTree = "<group>"; };
 		F8F561BB1BE312E900C53170 /* Parser.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Parser.swift; sourceTree = "<group>"; };
+		F8F618EF1BE4630F002A4DE3 /* Object.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Object.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -103,9 +108,27 @@
 			name = Model;
 			sourceTree = "<group>";
 		};
+		F824639E1BE3312D00641782 /* Engine */ = {
+			isa = PBXGroup;
+			children = (
+				F8F561B91BE312E900C53170 /* Engine.swift */,
+				F8F618EF1BE4630F002A4DE3 /* Object.swift */,
+			);
+			name = Engine;
+			sourceTree = "<group>";
+		};
+		F82463A01BE456FA00641782 /* Observer */ = {
+			isa = PBXGroup;
+			children = (
+				F82463A11BE4576600641782 /* Probe.swift */,
+			);
+			name = Observer;
+			sourceTree = "<group>";
+		};
 		F8F561771BE3117D00C53170 = {
 			isa = PBXGroup;
 			children = (
+				F824639F1BE3318A00641782 /* README */,
 				F8F561831BE3117D00C53170 /* SeproLang */,
 				F8F5618F1BE3117D00C53170 /* SeproLangTests */,
 				F8F561A01BE3118D00C53170 /* sepro */,
@@ -126,9 +149,10 @@
 		F8F561831BE3117D00C53170 /* SeproLang */ = {
 			isa = PBXGroup;
 			children = (
+				F82463A01BE456FA00641782 /* Observer */,
+				F824639E1BE3312D00641782 /* Engine */,
 				F82463991BE31F5500641782 /* Model */,
 				F8F561B71BE3121300C53170 /* Extensions.swift */,
-				F8F561B91BE312E900C53170 /* Engine.swift */,
 				F8F561BB1BE312E900C53170 /* Parser.swift */,
 				F8F561841BE3117D00C53170 /* SeproLang.h */,
 				F8F561861BE3117D00C53170 /* Info.plist */,
@@ -287,7 +311,9 @@
 				F8F561BC1BE312E900C53170 /* Engine.swift in Sources */,
 				F8F561BE1BE312E900C53170 /* Parser.swift in Sources */,
 				F824639D1BE31F7500641782 /* Action.swift in Sources */,
+				F82463A21BE4576600641782 /* Probe.swift in Sources */,
 				F8F561B81BE3121300C53170 /* Extensions.swift in Sources */,
+				F8F618F01BE4630F002A4DE3 /* Object.swift in Sources */,
 				F8F561BD1BE312E900C53170 /* Model.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
