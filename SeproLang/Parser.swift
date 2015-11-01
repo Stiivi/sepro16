@@ -19,7 +19,7 @@ public let Keywords = [
     // Model Objects
     "CONCEPT", "TAG", "COUNTER", "SLOT",
     "STRUCT","OBJECT", "BIND", "OUTLET", "AS",
-    "PROBE",
+    "MEASURE",
     "WORLD",
 
     // predicates
@@ -336,7 +336,7 @@ public class Parser {
         var concepts = [Symbol:Concept]()
         var actuators = [Actuator]()
         var worlds = [World]()
-        var probes = [Probe]()
+        var measures = [Measure]()
 
         while(true) {
             if let concept = try self._concept() {
@@ -348,8 +348,8 @@ public class Parser {
             else if let world = try self._world() {
                 worlds.append(world)
             }
-            else if let probe = try self._probe() {
-                probes.append(probe)
+            else if let measure = try self._measure() {
+                measures.append(measure)
             }
             else if try self.accept(TokenType.End) {
                 break
@@ -711,47 +711,49 @@ public class Parser {
     }
 
     /**
-         PROBE counter IN ROOT
-         PROBE open_jars COUNT WHERE jar AND open
-         PROBE closed_jars COUNT WHERE jar AND closed
-         PROBE all_jars COUNT WHERE jar
-         PROBE free_lids COUNT WHERE lid AND free
-         PROBE all_lids COUNT WHERE lid OR open
+         MEASURE counter IN ROOT
+         MEASURE open_jars COUNT WHERE jar AND open
+         MEASURE closed_jars COUNT WHERE jar AND closed
+         MEASURE all_jars COUNT WHERE jar
+         MEASURE free_lids COUNT WHERE lid AND free
+         MEASURE all_lids COUNT WHERE lid OR open
      */
-    func _probe() throws -> Probe? {
+    func _measure() throws -> Measure? {
         let name: Symbol
-        let function: ProbeFunction
+        let function: AggregateFunction
+        let counter: Symbol?
 
-        if try !self.acceptKeyword("PROBE") {
+        if try !self.acceptKeyword("MEASURE") {
             return nil
         }
 
 
-        name = try self.expectSymbol("probe name")
+        name = try self.expectSymbol("measure name")
 
         if try self.acceptKeyword("COUNT") {
-            function = ProbeFunction.Count
+            function = AggregateFunction.Count
+            counter = nil
         }
         else if try self.acceptKeyword("SUM") {
-            function = ProbeFunction.Sum
-        }
-        else if try self.acceptKeyword("AVG") {
-            function = ProbeFunction.Avg
+            function = AggregateFunction.Sum
+            counter = try self.expectSymbol("counter name")
         }
         else if try self.acceptKeyword("MIN") {
-            function = ProbeFunction.Min
+            function = AggregateFunction.Min
+            counter = try self.expectSymbol("counter name")
         }
         else {
             try self.expectKeyword("MAX")
-            function = ProbeFunction.Max
+            function = AggregateFunction.Max
+            counter = try self.expectSymbol("counter name")
         }
 
         let predicates = try self._predicates()
 
-        let probe = AggregateProbe(name: name, type: ProbeType.Aggregate,
-            function: function, predicates: predicates)
+        let measure = AggregateMeasure(name: name, type: MeasureType.Aggregate,
+            counter: counter, function: function, predicates: predicates)
 
-        return probe
+        return measure
     }
 
     /** Parse list of symbols:

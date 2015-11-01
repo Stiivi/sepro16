@@ -327,7 +327,7 @@ public class SimpleEngine: Engine {
     /// Current step
     public var stepCount = 0
     /// Simulation instance
-    // TODO: change this to Store
+    // TODO: Integrate with Engine?
     public var store: SimpleStore
 
     /// Traps caught in the last step
@@ -335,18 +335,20 @@ public class SimpleEngine: Engine {
 
     /// Handler for traps
     public var onTrap:TrapHandler?
+    public var onHalt:HaltHandler?
 
     /// Flag saying whether the simulation is halted or not.
     public var isHalted: Bool
     // TODO: Make one trap that would require restart of the simulation,
     // something like a dead-end
 
-    /// Handler for halt
-    public var onHalt:HaltHandler?
-
     public var observer: Observer?
     public var probes: [Probe]
 
+
+    public var model: Model {
+        return self.store.model
+    }
 
     /**
         Create an object instance from concept
@@ -406,7 +408,7 @@ public class SimpleEngine: Engine {
     }
 
     func probe() {
-        let probes: [AggregateProbe]
+        let measures: [AggregateMeasure]
         let record: ProbeRecord
 
         if self.observer == nil {
@@ -414,26 +416,39 @@ public class SimpleEngine: Engine {
         }
 
         // TODO: We do only aggregate probes here for now
-        probes = self.probes.filter { $0.type == ProbeType.Aggregate }
-            . map { $0 as! AggregateProbe }
+        measures = self.model.measures.filter { $0.type == MeasureType.Aggregate }
+            . map { $0 as! AggregateMeasure }
 
-        record = self.probeAggregates(probes)
+        record = self.probeAggregates(measures)
 
         self.observer!.observe(self.stepCount, record: record)
     }
 
-    func probeAggregates(probes: [AggregateProbe]) -> ProbeRecord {
-        let record: ProbeRecord
+    func probeAggregates(measures: [AggregateMeasure]) -> ProbeRecord {
+        var record = ProbeRecord()
+        let probeList = measures.map {
+            measure in
+            (measure, createAggregateProbe(measure))
+        }
 
         self.store.objectMap.forEach {
             ref, object in
-            probes.forEach {
-                probe in
-                if probe.predicates.all({ $0.evaluate(object) }) {
-                    print("")
+            probeList.forEach {
+                measure, probe in
+                if measure.predicates.all({ $0.evaluate(object) }) {
+                    probe.probe(object)
                 }
             }
         }
+
+        // Gather the probe results
+        // TODO: replace this with Array<tuple> -> Dictionary
+        probeList.forEach {
+            measure, probe in
+            record[measure.name] = probe.value
+        }
+
+        return record
     }
 
     /**
@@ -635,7 +650,7 @@ public class SimpleEngine: Engine {
             target.counters[action.counter] = value + 1
         }
         else if let action = objectAction as? DecCounterAction {
-            let value = target.measures[action.counter]!
+            let value = target.counters[action.counter]!
             target.counters[action.counter] = value - 1
         }
         else if let action = objectAction as? ZeroCounterAction {

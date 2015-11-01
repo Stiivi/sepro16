@@ -311,9 +311,8 @@ public class Model {
     /// List of actuators
     public var actuators = [Actuator]()
 
-    /// List of probes
-    public var objectProbes = [ObjectProbe]()
-    public var aggregateProbes = [AggregateProbe]()
+    /// List of measures
+    public var measures = [Measure]()
 
     public init(concepts: [Symbol:Concept]?=nil, actuators: [Actuator]?=nil,
         worlds: [World]?=nil) {

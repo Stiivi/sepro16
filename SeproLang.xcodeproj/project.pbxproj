@@ -55,7 +55,7 @@
 /* Begin PBXFileReference section */
 		F824639A1BE31F6A00641782 /* Predicate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Predicate.swift; sourceTree = "<group>"; };
 		F824639C1BE31F7500641782 /* Action.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Action.swift; sourceTree = "<group>"; };
-		F824639F1BE3318A00641782 /* README */ = {isa = PBXFileReference; lastKnownFileType = text; path = README; sourceTree = "<group>"; };
+		F824639F1BE3318A00641782 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		F82463A11BE4576600641782 /* Probe.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Probe.swift; sourceTree = "<group>"; };
 		F8F561811BE3117D00C53170 /* SeproLang.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = SeproLang.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		F8F561841BE3117D00C53170 /* SeproLang.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SeproLang.h; sourceTree = "<group>"; };
@@ -71,6 +71,7 @@
 		F8F561BB1BE312E900C53170 /* Parser.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Parser.swift; sourceTree = "<group>"; };
 		F8F618EF1BE4630F002A4DE3 /* Object.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Object.swift; sourceTree = "<group>"; };
 		F8F618F11BE572F0002A4DE3 /* Observer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Observer.swift; sourceTree = "<group>"; };
+		F8F618F31BE6A771002A4DE3 /* TODO.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = TODO.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -100,38 +101,11 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		F82463991BE31F5500641782 /* Model */ = {
-			isa = PBXGroup;
-			children = (
-				F8F561BA1BE312E900C53170 /* Model.swift */,
-				F824639A1BE31F6A00641782 /* Predicate.swift */,
-				F824639C1BE31F7500641782 /* Action.swift */,
-			);
-			name = Model;
-			sourceTree = "<group>";
-		};
-		F824639E1BE3312D00641782 /* Engine */ = {
-			isa = PBXGroup;
-			children = (
-				F8F561B91BE312E900C53170 /* Engine.swift */,
-				F8F618EF1BE4630F002A4DE3 /* Object.swift */,
-			);
-			name = Engine;
-			sourceTree = "<group>";
-		};
-		F82463A01BE456FA00641782 /* Observer */ = {
-			isa = PBXGroup;
-			children = (
-				F82463A11BE4576600641782 /* Probe.swift */,
-				F8F618F11BE572F0002A4DE3 /* Observer.swift */,
-			);
-			name = Observer;
-			sourceTree = "<group>";
-		};
 		F8F561771BE3117D00C53170 = {
 			isa = PBXGroup;
 			children = (
-				F824639F1BE3318A00641782 /* README */,
+				F8F618F31BE6A771002A4DE3 /* TODO.md */,
+				F824639F1BE3318A00641782 /* README.md */,
 				F8F561831BE3117D00C53170 /* SeproLang */,
 				F8F5618F1BE3117D00C53170 /* SeproLangTests */,
 				F8F561A01BE3118D00C53170 /* sepro */,
@@ -152,11 +126,15 @@
 		F8F561831BE3117D00C53170 /* SeproLang */ = {
 			isa = PBXGroup;
 			children = (
-				F82463A01BE456FA00641782 /* Observer */,
-				F824639E1BE3312D00641782 /* Engine */,
-				F82463991BE31F5500641782 /* Model */,
-				F8F561B71BE3121300C53170 /* Extensions.swift */,
+				F8F561BA1BE312E900C53170 /* Model.swift */,
+				F824639A1BE31F6A00641782 /* Predicate.swift */,
+				F824639C1BE31F7500641782 /* Action.swift */,
+				F8F618EF1BE4630F002A4DE3 /* Object.swift */,
+				F8F561B91BE312E900C53170 /* Engine.swift */,
+				F82463A11BE4576600641782 /* Probe.swift */,
+				F8F618F11BE572F0002A4DE3 /* Observer.swift */,
 				F8F561BB1BE312E900C53170 /* Parser.swift */,
+				F8F561B71BE3121300C53170 /* Extensions.swift */,
 				F8F561841BE3117D00C53170 /* SeproLang.h */,
 				F8F561861BE3117D00C53170 /* Info.plist */,
 			);
