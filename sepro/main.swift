@@ -41,9 +41,9 @@ func main() {
 
     print("Compiling model...")
     let parser = Parser(source: source)
-    if let model:Model! = parser.compile() {
-        print("Model compiled: \(model!.concepts.count) concepts. \(model!.actuators.count) actuators")
-        engine = SimpleEngine(model:model!)
+    if let model:Model = parser.compile() {
+        print("Model compiled: \(model.concepts.count) concepts. \(model.actuators.count) actuators")
+        engine = SimpleEngine(model:model)
     }
     else {
         print("Error compiling model: \(parser.currentLine): \(parser.error!)")

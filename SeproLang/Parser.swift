@@ -17,12 +17,14 @@ public enum TokenType:Int {
 
 public let Keywords = [
     // Model Objects
-    "CONCEPT", "TAG", "MEASURE", "SLOT",
+    "CONCEPT", "TAG", "COUNTER", "SLOT",
     "STRUCT","OBJECT", "BIND", "OUTLET", "AS",
+    "PROBE",
     "WORLD",
 
     // predicates
     "WHERE", "DO", "RANDOM", "ALL",
+    "BOUND",
     "NOT", "AND",
     "IN", "ON",
 
@@ -30,6 +32,9 @@ public let Keywords = [
     "SET", "UNSET", "INC", "DEC", "ZERO",
     // Control actions
     "NOTHING", "TRAP", "NOTIFY",
+
+    // Probes
+    "COUNT", "AVG", "MIN", "MAX",
 
     "BIND", "TO",
     "ROOT", "THIS", "OTHER"
@@ -293,7 +298,7 @@ public class Parser {
         of the expected symbol can be provided as `expected` – it will be 
         displayed to the user on compilation error.
     */
-    func expectSymbol(expected:String?=nil) throws -> String {
+    func expectSymbol(expected:String?=nil) throws -> Symbol {
         return try self.expect(TokenType.Symbol, expected: expected)
     }
 
@@ -331,6 +336,7 @@ public class Parser {
         var concepts = [Symbol:Concept]()
         var actuators = [Actuator]()
         var worlds = [World]()
+        var probes = [Probe]()
 
         while(true) {
             if let concept = try self._concept() {
@@ -341,6 +347,9 @@ public class Parser {
             }
             else if let world = try self._world() {
                 worlds.append(world)
+            }
+            else if let probe = try self._probe() {
+                probes.append(probe)
             }
             else if try self.accept(TokenType.End) {
                 break
@@ -363,7 +372,7 @@ public class Parser {
     /**
         Parse concept description:
     
-            concept := CONCEPT name [TAGS tags] [SLOTS slots] [MEASURES measures]
+            concept := CONCEPT name [TAGS tags] [SLOTS slots] [COUNTERS counters]
     */
     func _concept() throws -> Concept? {
         var tags: TagList? = nil
@@ -562,12 +571,19 @@ public class Parser {
             return predicates
         }
 
+        // TODO: implement IN slot
+        // TODO: implement tag list, no commas so it reads: open jar
         while true {
             isNegated = try self.acceptKeyword("NOT")
 
             if try self.accept(TokenType.Symbol) {
                 let tag = self.currentValue!
                 let predicate = TagSetPredicate(tags:[tag], isNegated:isNegated)
+                predicates.append(predicate)
+            }
+            else if try self.accept(TokenType.Keyword, "BOUND") {
+                let slot = try self.expectSymbol()
+                let predicate = IsBoundPredicate(slot:slot, isNegated:isNegated)
                 predicates.append(predicate)
             }
             else {
@@ -692,6 +708,50 @@ public class Parser {
         }
 
         return (context, slot)
+    }
+
+    /**
+         PROBE counter IN ROOT
+         PROBE open_jars COUNT WHERE jar AND open
+         PROBE closed_jars COUNT WHERE jar AND closed
+         PROBE all_jars COUNT WHERE jar
+         PROBE free_lids COUNT WHERE lid AND free
+         PROBE all_lids COUNT WHERE lid OR open
+     */
+    func _probe() throws -> Probe? {
+        let name: Symbol
+        let function: ProbeFunction
+
+        if try !self.acceptKeyword("PROBE") {
+            return nil
+        }
+
+
+        name = try self.expectSymbol("probe name")
+
+        if try self.acceptKeyword("COUNT") {
+            function = ProbeFunction.Count
+        }
+        else if try self.acceptKeyword("SUM") {
+            function = ProbeFunction.Sum
+        }
+        else if try self.acceptKeyword("AVG") {
+            function = ProbeFunction.Avg
+        }
+        else if try self.acceptKeyword("MIN") {
+            function = ProbeFunction.Min
+        }
+        else {
+            try self.expectKeyword("MAX")
+            function = ProbeFunction.Max
+        }
+
+        let predicates = try self._predicates()
+
+        let probe = AggregateProbe(name: name, type: ProbeType.Aggregate,
+            function: function, predicates: predicates)
+
+        return probe
     }
 
     /** Parse list of symbols:

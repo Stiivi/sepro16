@@ -15,9 +15,14 @@
 public typealias Symbol = String
 // TODO: Add SymbolInfo: symbol, type, firstOccurence
 
+// Note: eventhough the counter type is specified as Int, it should be
+// unsigned. Use of Int follows the Swift language recommendation. See
+// the discussion about UInt unsigned integers in the language
+// reference.
+public typealias CounterType = Int
 public typealias SlotList = [Symbol];
 public typealias TagList = Set<Symbol>;
-public typealias MeasureDict = [Symbol:Int]
+public typealias CounterDict = [Symbol:Int]
 
 /**
     Representation of a concept. Concept is the main model entity.
@@ -25,8 +30,8 @@ public typealias MeasureDict = [Symbol:Int]
 
 public class Concept: CustomStringConvertible {
     public var name:String
-    /// Dictionary of measures
-    public var measures:MeasureDict
+    /// Dictionary of counters
+    public var counters:CounterDict
     /// Dictionary of slots
     public var slots:SlotList
     /// Dictionary of tags
@@ -36,31 +41,31 @@ public class Concept: CustomStringConvertible {
         Initializes the concept.
     
         - Parameters:
-            - measures: Dictionary of measures and their initial values.
+            - counters: Dictionary of counters and their initial values.
             - slots: List of slot symbols (unbound on initialization).
             - tags: List of tags present when object is instantiated.
 
     */
     public init(name:Symbol,
-                measures:MeasureDict?=nil,
+                counters:CounterDict?=nil,
                 slots:SlotList?=nil,
                 tags:TagList?=nil){
 
         self.name = name
-        self.measures = measures ?? MeasureDict()
+        self.counters = counters ?? CounterDict()
         self.slots = slots ?? SlotList()
         self.tags = tags ?? TagList()
     }
 
-    public func hasMeasure(name:Symbol) -> Bool {
-        return self.measures[name] != nil
+    public func hasCounter(name:Symbol) -> Bool {
+        return self.counters[name] != nil
     }
 
     /**
-    - Returns: measure value
+    - Returns: counter value
     */
-    public func getMeasure(name:Symbol) -> Int? {
-        return self.measures[name]
+    public func getCounter(name:Symbol) -> Int? {
+        return self.counters[name]
     }
 
     /// Short description of the concept.
@@ -75,9 +80,9 @@ public class Concept: CustomStringConvertible {
     */
     public func asString() -> String {
         var desc = "CONCEPT \(self.name)\n"
-        if !self.measures.isEmpty {
-            for (measure, value) in measures {
-                desc += "    MEASURE \(measure) = \(value)\n"
+        if !self.counters.isEmpty {
+            for (counter, value) in counters {
+                desc += "    COUNTER \(counter) = \(value)\n"
             }
         }
         if !self.tags.isEmpty {
@@ -305,6 +310,10 @@ public class Model {
     public var worlds = [Symbol:World]()
     /// List of actuators
     public var actuators = [Actuator]()
+
+    /// List of probes
+    public var objectProbes = [ObjectProbe]()
+    public var aggregateProbes = [AggregateProbe]()
 
     public init(concepts: [Symbol:Concept]?=nil, actuators: [Actuator]?=nil,
         worlds: [World]?=nil) {

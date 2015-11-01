@@ -12,9 +12,9 @@
 
     Object actions:
 
-    - `INC measure` - increase measure by 1
-    - `DEC measure` - decrease measure by 1
-    - `SET measure` - sets tag
+    - `INC counter` - increase counter by 1
+    - `DEC counter` - decrease counter by 1
+    - `SET counter` - sets tag
     - `UNSET tag` - unsets tag
     - `BIND slot->target` – binds object to slot
 
@@ -107,9 +107,9 @@ public enum ObjectContextType: Int, CustomStringConvertible {
 
         SET tags
         UNSET tags
-        INC measure
-        DEC measure
-        ZERO measure
+        INC counter
+        DEC counter
+        ZERO counter
 
 */
 public class ObjectAction: Action {
@@ -144,23 +144,23 @@ public class SetTagsAction: TagsAction {}
 /// Unset tags of the target object
 public class UnsetTagsAction: TagsAction {}
 
-/// Abstract class for measure related actions
-public class MeasureAction: ObjectAction {
-    public let measure: Symbol
-    public init(inContext:ObjectContextType, inSlot:Symbol?, measure: Symbol){
-        self.measure = measure
+/// Abstract class for counter related actions
+public class CounterAction: ObjectAction {
+    public let counter: Symbol
+    public init(inContext:ObjectContextType, inSlot:Symbol?, counter: Symbol){
+        self.counter = counter
         super.init(inContext:inContext, inSlot:inSlot)
     }
 
-    convenience public init(measure: Symbol) {
+    convenience public init(counter: Symbol) {
         self.init(inContext: ObjectContextType.This, inSlot:nil,
-                  measure:measure)
+                  counter:counter)
     }
 }
 
-public class IncMeasureAction: MeasureAction {}
-public class DecMeasureAction: MeasureAction {}
-public class ZeroMeasureAction: MeasureAction {}
+public class IncCounterAction: CounterAction {}
+public class DecCounterAction: CounterAction {}
+public class ZeroCounterAction: CounterAction {}
 
 /**
     Action representing binding. Left side of the bond can be object's slot or

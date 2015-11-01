@@ -30,7 +30,7 @@ public class Object: CustomStringConvertible {
     /// Object identifier
     public var id: ObjectRef = 0
     /// Measure values
-    public var measures = MeasureDict()
+    public var counters = CounterDict()
     /// Tags that are set
     public var tags = TagList()
     /// References to other objects

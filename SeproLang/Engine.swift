@@ -164,7 +164,7 @@ public class SimpleStore: Store {
 
         if concept != nil {
             obj.tags = concept.tags
-            obj.measures = concept.measures
+            obj.counters = concept.counters
             for slot in concept.slots {
                 obj.links[slot] = nil
             }
@@ -292,13 +292,12 @@ public class SimpleStore: Store {
         - Returns: `true` if the object matches condition.
     */
     func evaluateObjectPredicate(predicate: ObjectPredicate, _ obj:Object) -> Bool {
-        var result: Bool = false
         var target: Object
 
         // Try to get the target slot
         //
-        if predicate.slot != nil {
-            if let maybeTarget = obj.links[predicate.slot!] {
+        if predicate.inSlot != nil {
+            if let maybeTarget = obj.links[predicate.inSlot!] {
                 target = self.objectMap[maybeTarget]!
             }
             else {
@@ -311,36 +310,7 @@ public class SimpleStore: Store {
             target = obj
         }
 
-        // Note: The reason we do it here in a branched IF statement instead
-        // of using language class polymorphism is that we want to keep the
-        // example engine code close to the engine and the model free of
-        // computation logic.
-        //
-        // Compare the target object with conditions
-        //
-        if let cond = predicate as? TagSetPredicate {
-            result = cond.tags.isSubsetOf(obj.tags)
-        }
-        else if let cond = predicate as? TagUnsetPredicate {
-            result = cond.tags.isDisjointWith(obj.tags)
-        }
-        else if let cond = predicate as? ComparisonPredicate {
-            let value = target.measures[cond.measure]
-            switch cond.comparisonType {
-                case .Less: result = value < cond.value
-                case .Greater: result = value > cond.value
-            }
-        }
-        else if let cond = predicate as? ZeroPredicate {
-            let value = target.measures[cond.measure]
-            // Note: zero is not the same nil neither in the simulation
-            result = value == 0
-        }
-
-        // Optionally negate the result condition
-        //
-        return !predicate.isNegated && result
-                || predicate.isNegated && !result
+        return predicate.evaluate(target)
     }
 
 }
@@ -374,12 +344,18 @@ public class SimpleEngine: Engine {
     /// Handler for halt
     public var onHalt:HaltHandler?
 
+    public var observer: Observer?
+    public var probes: [Probe]
+
+
     /**
         Create an object instance from concept
     */
     public init(_ store:SimpleStore){
         self.store = store
         self.isHalted = false
+        self.observer = nil
+        self.probes = [Probe]()
     }
 
     convenience public init(model:Model){
@@ -394,10 +370,6 @@ public class SimpleEngine: Engine {
         for _ in 1...steps {
 
             self.step()
-
-            if !self.traps.isEmpty && self.onTrap != nil {
-                self.onTrap!(self, self.traps)
-            }
 
             if self.isHalted {
                 if self.onHalt != nil {
@@ -417,10 +389,51 @@ public class SimpleEngine: Engine {
 
         debugPrint("=== step \(stepCount) with \(store.actuators.count) actuators")
 
-        for actuator in store.actuators {
-            self.perform(actuator)
+        store.actuators.forEach {
+            actuator in self.perform(actuator)
         }
+
+        if self.observer != nil {
+            self.probe()
+        }
+
+        if !self.traps.isEmpty && self.onTrap != nil {
+            self.onTrap!(self, self.traps)
+        }
+
         stepCount += 1
+
+    }
+
+    func probe() {
+        let probes: [AggregateProbe]
+        let record: ProbeRecord
+
+        if self.observer == nil {
+            return
+        }
+
+        // TODO: We do only aggregate probes here for now
+        probes = self.probes.filter { $0.type == ProbeType.Aggregate }
+            . map { $0 as! AggregateProbe }
+
+        record = self.probeAggregates(probes)
+
+        self.observer!.observe(self.stepCount, record: record)
+    }
+
+    func probeAggregates(probes: [AggregateProbe]) -> ProbeRecord {
+        let record: ProbeRecord
+
+        self.store.objectMap.forEach {
+            ref, object in
+            probes.forEach {
+                probe in
+                if probe.predicates.all({ $0.evaluate(object) }) {
+                    print("")
+                }
+            }
+        }
     }
 
     /**
@@ -617,16 +630,16 @@ public class SimpleEngine: Engine {
         else if let action = objectAction as? UnsetTagsAction {
             target.tags = target.tags.subtract(action.tags)
         }
-        else if let action = objectAction as? IncMeasureAction {
-            let value = target.measures[action.measure]!
-            target.measures[action.measure] = value + 1
+        else if let action = objectAction as? IncCounterAction {
+            let value = target.counters[action.counter]!
+            target.counters[action.counter] = value + 1
         }
-        else if let action = objectAction as? DecMeasureAction {
-            let value = target.measures[action.measure]!
-            target.measures[action.measure] = value - 1
+        else if let action = objectAction as? DecCounterAction {
+            let value = target.measures[action.counter]!
+            target.counters[action.counter] = value - 1
         }
-        else if let action = objectAction as? ZeroMeasureAction {
-            target.measures[action.measure] = 0
+        else if let action = objectAction as? ZeroCounterAction {
+            target.counters[action.counter] = 0
         }
         else {
             print("ERROR!!! UNKNOWN ACTION \(objectAction)")

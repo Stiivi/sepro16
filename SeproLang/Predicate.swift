@@ -6,31 +6,55 @@
 //  Copyright © 2015 Stefan Urbanek. All rights reserved.
 //
 
-public class Predicate { }
+public protocol Predicate {
+    /**
+     Evaluate predicate on `object`.
+     
+     - Returns: `true` if `object` matches predicate, otherwise `false`
+     */
+    func evaluate(object: Object) -> Bool
+}
 
 /// Triggers every time the engine encounters it
 public class AllPredicate: Predicate, CustomStringConvertible {
     public var description:String {
         return "ALL"
     }
-}
 
-/// Triggers randomly – discrete uniform distribution.
-public class RandomPredicate: Predicate, CustomStringConvertible {
-    public var description:String {
-        return "RANDOM"
+    public func evaluate(object: Object) -> Bool {
+        return true
     }
 }
 
 /// Abstract base class for conditions by object state
 public class ObjectPredicate: Predicate {
     public let isNegated:Bool
-    public let slot:Symbol?
+    public let inSlot:Symbol?
 
-    init(slot: Symbol?=nil, isNegated:Bool=false) {
-        self.slot = slot
+    init(inSlot: Symbol?=nil, isNegated:Bool=false) {
+        self.inSlot = inSlot
         self.isNegated = isNegated
     }
+
+    public func evaluate(object: Object) -> Bool {
+        return false
+    }
+}
+
+/// Checks whether a slot is bound
+public class IsBoundPredicate: ObjectPredicate {
+    public let slot:Symbol
+
+    init(slot: Symbol, inSlot: Symbol?=nil, isNegated:Bool=false) {
+        self.slot = slot
+        super.init(inSlot: inSlot, isNegated: isNegated)
+    }
+
+    public override func evaluate(object: Object) -> Bool {
+        let result = object.links[self.slot] != nil
+        return !self.isNegated && result || self.isNegated && !result
+    }
+
 }
 
 /**
@@ -40,9 +64,9 @@ public class ObjectPredicate: Predicate {
 public class TagPredicate: ObjectPredicate {
     public let tags:TagList
 
-    init(tags: TagList, slot: Symbol?=nil, isNegated:Bool=false) {
+    init(tags: TagList, inSlot: Symbol?=nil, isNegated:Bool=false) {
         self.tags = tags
-        super.init(slot: slot, isNegated: isNegated)
+        super.init(inSlot: inSlot, isNegated: isNegated)
     }
 
 }
@@ -51,11 +75,21 @@ public class TagSetPredicate: TagPredicate, CustomStringConvertible {
     public var description:String {
         return "SET " + tags.joinWithSeparator(", ")
     }
+
+    public override func evaluate(object: Object) -> Bool {
+        let result = self.tags.isSubsetOf(object.tags)
+        return !self.isNegated && result || self.isNegated && !result
+    }
 }
 
 public class TagUnsetPredicate: TagPredicate, CustomStringConvertible {
     public var description:String {
         return "UNSET " + tags.joinWithSeparator(", ")
+    }
+
+    public override func evaluate(object: Object) -> Bool {
+        let result = self.tags.isDisjointWith(object.tags)
+        return !self.isNegated && result || self.isNegated && !result
     }
 }
 
@@ -71,25 +105,52 @@ public enum ComparisonType:Int {
 }
 
 public class ComparisonPredicate: ObjectPredicate {
-    public let measure: Symbol
+    public let counter: Symbol
     public let value: Int
     public let comparisonType: ComparisonType
 
-    init(measure: Symbol, value:Int, slot: Symbol?,
+    init(counter: Symbol, value:Int, inSlot: Symbol?,
         comparisonType: ComparisonType, isNegated:Bool=false) {
-            self.measure = measure
+            self.counter = counter
             self.value = value
             self.comparisonType = comparisonType
-            super.init(slot: slot, isNegated: isNegated)
+            super.init(inSlot: inSlot, isNegated: isNegated)
+    }
+
+    public override func evaluate(object: Object) -> Bool {
+        let result: Bool
+        if let value = object.counters[self.counter] {
+            switch self.comparisonType {
+                case .Less: result = value < self.value
+                case .Greater: result = value > self.value
+            }
+            return !self.isNegated && result || self.isNegated && !result
+        }
+        else {
+            return false
+        }
+
     }
 }
 
 public class ZeroPredicate: ObjectPredicate {
-    public let measure: Symbol
+    public let counter: Symbol
 
-    init(measure: Symbol, value:Int, slot: Symbol?, isNegated:Bool=false) {
-        self.measure = measure
-        super.init(slot: slot, isNegated: isNegated)
+    init(counter: Symbol, value:Int, inSlot: Symbol?, isNegated:Bool=false) {
+        self.counter = counter
+        super.init(inSlot: inSlot, isNegated: isNegated)
+    }
+
+    public override func evaluate(object: Object) -> Bool {
+        if let value = object.counters[self.counter] {
+            let result = value == 0
+            return !self.isNegated && result || self.isNegated && !result
+        }
+        else {
+            // TODO: Should we assume that absence of a measure is zero?
+            return false
+        }
+
     }
 }
 
