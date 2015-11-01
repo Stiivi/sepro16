@@ -369,6 +369,10 @@ public class SimpleEngine: Engine {
         Runs the simulation for `steps`.
     */
     public func run(steps:Int) {
+        if self.observer != nil {
+            self.observer!.observationWillStart(self.model.measures)
+        }
+
         for _ in 1...steps {
 
             self.step()
@@ -379,7 +383,10 @@ public class SimpleEngine: Engine {
                 }
                 break
             }
+        }
 
+        if self.observer != nil {
+            self.observer!.observationDidEnd()
         }
     }
 
@@ -388,8 +395,6 @@ public class SimpleEngine: Engine {
     */
     public func step() {
         self.traps.removeAll()
-
-        debugPrint("=== step \(stepCount) with \(store.actuators.count) actuators")
 
         store.actuators.forEach {
             actuator in self.perform(actuator)
@@ -496,9 +501,7 @@ public class SimpleEngine: Engine {
         // Cartesian product: everything 'this' interacts with everything
         // 'other'
         for this in thisObjects {
-            print("this: \(this.id)")
             for other in otherObjects{
-                print("    -> \(other.id)")
                 counter += 1
                 for action in actuator.actions {
                     self.apply(action, this: this, other: other)
@@ -562,7 +565,7 @@ public class SimpleEngine: Engine {
 
         if let action = genericAction as? TrapAction {
             // TODO: anonymous action
-            self.traps.add(action.type!)
+            self.traps.add(action.type)
         }
         else if let action = genericAction as? NotifyAction {
             // TODO: anonymous action
@@ -606,15 +609,10 @@ public class SimpleEngine: Engine {
 
     }
 
-    func notify(symbol: Symbol?) {
-        let str: String
-        if symbol == nil {
-            str = "(anonymous)"
+    func notify(symbol: Symbol) {
+        if self.observer != nil {
+            self.observer?.notify(self.stepCount, notification: symbol)
         }
-        else {
-            str = symbol!
-        }
-        print("NOTIFICATION \(str)")
     }
 
     /**

@@ -50,6 +50,7 @@ func main() {
         return
     }
 
+    engine.observer = PrintingObserver()
 
     do {
         try engine.store.initialize()

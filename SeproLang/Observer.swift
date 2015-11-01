@@ -18,6 +18,8 @@ public protocol Observer {
         - record: Observed record
      */
     func observe(step: Int, record: ProbeRecord)
+    func observationWillStart(measures: [Measure])
+    func observationDidEnd()
 
     /**
      Observe a notification.
@@ -34,15 +36,41 @@ public protocol Observer {
  Simple observer that prints to the standard output.
  */
 public class PrintingObserver: Observer {
+    var measures: [Measure]
+
+    public init() {
+        measures = [Measure]()
+    }
+
+    public func observationWillStart(measures: [Measure]) {
+        self.measures = measures
+
+        let names = self.measures.map { measure in measure.name }
+        let header = names.joinWithSeparator(",")
+        print(header)
+    }
+
+    public func observationDidEnd() {
+        // Do nothing
+    }
 
     public func observe(step:Int, record:ProbeRecord) {
-        let items = record.map {
-            key, value in
-            "\(key):\(value)"
+        var stringValues: [String]
+
+        stringValues = self.measures.map {
+            measure in
+            if let value = record[measure.name] {
+                return String(value)
+            }
+            else {
+                return ""
+            }
         }
 
-        let line = items.joinWithSeparator(",")
-        print("\(step)," + line)
+        stringValues.insert("\(step)", atIndex: 0)
+        let line = stringValues.joinWithSeparator(",")
+
+        print(line)
     }
 
     public func notify(step: Int, notification: Symbol) {

@@ -315,9 +315,10 @@ public class Model {
     public var measures = [Measure]()
 
     public init(concepts: [Symbol:Concept]?=nil, actuators: [Actuator]?=nil,
-        worlds: [World]?=nil) {
+        measures: [Measure]?=nil, worlds: [World]?=nil) {
             self.concepts = concepts ?? [Symbol:Concept]()
             self.actuators = actuators ?? [Actuator]()
+            self.measures = measures ?? [Measure]()
 
             if worlds != nil {
                 for world in worlds! {

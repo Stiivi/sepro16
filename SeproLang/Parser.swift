@@ -364,7 +364,7 @@ public class Parser {
         }
 
         let model = Model(concepts:concepts, actuators:actuators,
-                        worlds:worlds)
+            measures:measures, worlds:worlds)
 
         return model
     }
@@ -614,17 +614,11 @@ public class Parser {
                 actions.append(NoAction())
             }
             else if try self.acceptKeyword("TRAP") {
-                var symbol: Symbol? = nil
-                if try self.accept(TokenType.Symbol) {
-                    symbol = self.currentValue
-                }
+                let symbol = try self.expectSymbol("trap name")
                 actions.append(TrapAction(type: symbol))
             }
             else if try self.acceptKeyword("NOTIFY") {
-                var symbol: Symbol? = nil
-                if try self.accept(TokenType.Symbol) {
-                    symbol = self.currentValue
-                }
+                let symbol = try self.expectSymbol("notification name")
                 actions.append(NotifyAction(symbol: symbol))
             }
             else if try self.acceptKeyword("SET") {

@@ -68,9 +68,9 @@ public class NoAction: Action { }
 
 /// Register a notification
 public class NotifyAction:Action {
-    public var symbol: Symbol?
+    public var symbol: Symbol
 
-    public init(symbol: String?=nil) {
+    public init(symbol: Symbol) {
         self.symbol = symbol
     }
 }
@@ -80,9 +80,9 @@ public class HaltAction:Action { }
 
 /// Interrupt the simulation with an external action
 public class TrapAction:Action {
-    public var type: Symbol?
+    public var type: Symbol
 
-    public init(type: Symbol?) {
+    public init(type: Symbol) {
         self.type = type
     }
 }
