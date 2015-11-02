@@ -371,6 +371,7 @@ public class SimpleEngine: Engine {
     public func run(steps:Int) {
         if self.observer != nil {
             self.observer!.observationWillStart(self.model.measures)
+            self.probe()
         }
 
         for _ in 1...steps {
@@ -396,6 +397,8 @@ public class SimpleEngine: Engine {
     public func step() {
         self.traps.removeAll()
 
+        stepCount += 1
+
         store.actuators.forEach {
             actuator in self.perform(actuator)
         }
@@ -407,9 +410,6 @@ public class SimpleEngine: Engine {
         if !self.traps.isEmpty && self.onTrap != nil {
             self.onTrap!(self, self.traps)
         }
-
-        stepCount += 1
-
     }
 
     func probe() {

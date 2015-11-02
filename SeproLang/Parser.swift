@@ -116,8 +116,18 @@ public class Lexer {
 
     /// Advance to the next non-whitespace character
     public func skipWhitespace() {
-        while(isspace(self.currentChar)){
-            self.nextChar()
+        while(!self.atEnd()){
+            if self.currentChar == "#" {
+                while(self.currentChar != "\n" && !self.atEnd()) {
+                    self.nextChar()
+                }
+            }
+            else if isspace(self.currentChar) {
+                self.nextChar()
+            }
+            else {
+                break
+            }
         }
     }
 
