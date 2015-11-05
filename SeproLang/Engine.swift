@@ -275,23 +275,12 @@ public class SimpleStore: Store {
         }
     }
 
-    func evaluateObject(predicate:Predicate, _ obj: Object) -> Bool {
-        if predicate is AllPredicate {
-            return true
-        }
-        else if let objPred = predicate as? ObjectPredicate {
-            return evaluateObjectPredicate(objPred, obj)
-        }
-
-        return false
-    }
-
     /**
-        Dispatch object conditions
+        Evaluate predicate.
     
         - Returns: `true` if the object matches condition.
     */
-    func evaluateObjectPredicate(predicate: ObjectPredicate, _ obj:Object) -> Bool {
+    func evaluateObject(predicate:Predicate, _ obj: Object) -> Bool {
         var target: Object
 
         // Try to get the target slot
@@ -531,7 +520,8 @@ public class SimpleEngine: Engine {
     }
 
     /**
-        First action abstraction dispatcher: Catches system actions.
+        Get "current" object – choose between ROOT, THIS and OTHER then
+    optionally apply dereference to a slot, if specified.
     */
     func getCurrent(ref: CurrentRef, this: Object, other: Object!) -> Object! {
             let current: Object!

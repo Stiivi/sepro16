@@ -10,9 +10,18 @@
 applied to
 */
 
-public struct CurrentRef {
+public struct CurrentRef: CustomStringConvertible {
     public let type: CurrentType
     public let slot: Symbol?
+
+    public var description: String {
+        if slot == nil {
+            return String(type)
+        }
+        else {
+            return "\(type).\(slot)"
+        }
+    }
 }
 
 public enum CurrentType: Int, CustomStringConvertible {
@@ -22,9 +31,9 @@ public enum CurrentType: Int, CustomStringConvertible {
 
     public var description: String {
         switch self {
-        case.Root: return "root"
-        case.This: return "this"
-        case.Other: return "other"
+        case.Root: return "ROOT"
+        case.This: return "THIS"
+        case.Other: return "OTHER"
         }
     }
 }

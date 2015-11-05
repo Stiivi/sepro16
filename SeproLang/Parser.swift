@@ -12,6 +12,7 @@ public enum TokenType:Int {
     case Integer, Symbol
     case Keyword, Description
     case Comma, Arrow, Dot
+    case Less, Greater
     case Times
 }
 
@@ -187,6 +188,14 @@ public class Lexer {
             self.nextChar()
             type = TokenType.Times
         }
+        else if self.currentChar == "<" {
+            self.nextChar()
+            type = TokenType.Less
+        }
+        else if self.currentChar == ">" {
+            self.nextChar()
+            type = TokenType.Greater
+        }
         else if self.currentChar == "-" {
             if self.nextChar() == ">" {
                 self.nextChar()
@@ -310,6 +319,11 @@ public class Parser {
     */
     func expectSymbol(expected:String?=nil) throws -> Symbol {
         return try self.expect(TokenType.Symbol, expected: expected)
+    }
+
+    func expectInteger(expected:String?=nil) throws -> Int {
+        let str = try self.expect(TokenType.Integer, expected: expected)
+        return Int(str)!
     }
 
     /**
@@ -549,7 +563,7 @@ public class Parser {
 
         if try self.acceptKeyword("ALL") {
             // ALL -> only one predicate
-            predicates = [AllPredicate()]
+            predicates = [Predicate(.All)]
         }
         else {
             isRoot = try self.acceptKeyword("ROOT")
@@ -561,7 +575,7 @@ public class Parser {
         if try self.acceptKeyword("ON") {
             if try self.acceptKeyword("ALL") {
                 // ALL -> only one predicate
-                otherPredicates = [AllPredicate()]
+                otherPredicates = [Predicate(.All)]
             }
             else {
                 // rest of the predicates
@@ -574,10 +588,12 @@ public class Parser {
 
     func _predicates() throws -> [Predicate] {
         var predicates = [Predicate]()
+        var predicate: Predicate
         var isNegated: Bool
 
+        // TODO: Why again?? Check the grammar!
         if try self.acceptKeyword("ALL") {
-            predicates = [AllPredicate()]
+            predicates = [Predicate(.All)]
             return predicates
         }
 
@@ -586,20 +602,51 @@ public class Parser {
         while true {
             isNegated = try self.acceptKeyword("NOT")
 
-            if try self.accept(TokenType.Symbol) {
-                let tag = self.currentValue!
-                let predicate = TagSetPredicate(tags:[tag], isNegated:isNegated)
-                predicates.append(predicate)
+            if try self.acceptKeyword("SET") {
+                let tags = try self._tagList()
+
+                predicate = Predicate(.TagSet(tags), isNegated)
             }
-            else if try self.accept(TokenType.Keyword, "BOUND") {
+            else if try self.acceptKeyword("UNSET") {
+                let tags = try self._tagList()
+
+                predicate = Predicate(.TagUnset(tags), isNegated)
+            }
+            else if try self.acceptKeyword("ZERO") {
+                let counter = try self.expectSymbol()
+
+                predicate = Predicate(.CounterZero(counter), isNegated)
+            }
+            else if try self.acceptKeyword("BOUND") {
                 let slot = try self.expectSymbol()
-                let predicate = IsBoundPredicate(slot:slot, isNegated:isNegated)
-                predicates.append(predicate)
+
+                predicate = Predicate(.IsBound(slot), isNegated)
             }
             else {
-                let token = self.currentValue
-                throw SyntaxError.Syntax(message: "Expected predicate, got '\(token)'")
+                // TODO: If we decide to classify symbols, don't forget
+                // about this one
+                let symbol = try self.expectSymbol("counter name or tag")
+
+                if try self.accept(TokenType.Less) {
+                    let value = try self.expectInteger("counter value")
+                    predicate = Predicate(.CounterLess(symbol, value))
+                }
+                else if try self.accept(TokenType.Greater) {
+                    let value = try self.expectInteger("counter value")
+                    predicate = Predicate(.CounterGreater(symbol, value))
+                }
+                else if try self.accept(TokenType.Comma) {
+                    var tags = try self._tagList()
+                    tags.insert(symbol)
+                    predicate = Predicate(.TagSet(tags), isNegated)
+                    // taglist
+                }
+                else {
+                    predicate = Predicate(.TagSet(TagList([symbol])), isNegated)
+                }
             }
+
+            predicates.append(predicate)
 
             if try !self.acceptKeyword("AND") {
                 break
