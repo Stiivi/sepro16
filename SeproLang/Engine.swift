@@ -326,8 +326,8 @@ public typealias HaltHandler = (Engine) -> Void
 public class SimpleEngine: Engine {
     /// Current step
     public var stepCount = 0
-    /// Simulation instance
-    // TODO: Integrate with Engine?
+
+    /// Simulation state instance
     public var store: SimpleStore
 
     /// Traps caught in the last step
@@ -339,13 +339,18 @@ public class SimpleEngine: Engine {
 
     /// Flag saying whether the simulation is halted or not.
     public var isHalted: Bool
-    // TODO: Make one trap that would require restart of the simulation,
-    // something like a dead-end
 
-    public var observer: Observer?
+    // Probing
+    // -------
+
+    /// List of probes
     public var probes: [Probe]
 
+    /// Logging delegate – an object that implements the `Logger`
+    /// protocol
+    public var logger: Logger?
 
+    /// Simulation model
     public var model: Model {
         return self.store.model
     }
@@ -356,7 +361,7 @@ public class SimpleEngine: Engine {
     public init(_ store:SimpleStore){
         self.store = store
         self.isHalted = false
-        self.observer = nil
+        self.logger = nil
         self.probes = [Probe]()
     }
 
@@ -369,8 +374,8 @@ public class SimpleEngine: Engine {
         Runs the simulation for `steps`.
     */
     public func run(steps:Int) {
-        if self.observer != nil {
-            self.observer!.observationWillStart(self.model.measures)
+        if self.logger != nil {
+            self.logger!.loggingWillStart(self.model.measures)
             self.probe()
         }
 
@@ -386,8 +391,8 @@ public class SimpleEngine: Engine {
             }
         }
 
-        if self.observer != nil {
-            self.observer!.observationDidEnd()
+        if self.logger != nil {
+            self.logger!.loggingDidEnd()
         }
     }
 
@@ -403,7 +408,7 @@ public class SimpleEngine: Engine {
             actuator in self.perform(actuator)
         }
 
-        if self.observer != nil {
+        if self.logger != nil {
             self.probe()
         }
 
@@ -416,7 +421,7 @@ public class SimpleEngine: Engine {
         let measures: [AggregateMeasure]
         let record: ProbeRecord
 
-        if self.observer == nil {
+        if self.logger == nil {
             return
         }
 
@@ -426,7 +431,7 @@ public class SimpleEngine: Engine {
 
         record = self.probeAggregates(measures)
 
-        self.observer!.observe(self.stepCount, record: record)
+        self.logger!.logRecord(self.stepCount, record: record)
     }
 
     func probeAggregates(measures: [AggregateMeasure]) -> ProbeRecord {
@@ -486,8 +491,8 @@ public class SimpleEngine: Engine {
         var counter = 0
         for this in thisObjects {
             counter += 1
-            for action in actuator.actions {
-                self.apply(action, this: this)
+            for instruction in actuator.instructions {
+                self.execute(instruction, this: this)
             }
         }
 
@@ -503,8 +508,8 @@ public class SimpleEngine: Engine {
         for this in thisObjects {
             for other in otherObjects{
                 counter += 1
-                for action in actuator.actions {
-                    self.apply(action, this: this, other: other)
+                for instruction in actuator.instructions {
+                    self.execute(instruction, this: this, other: other)
                 }
 
                 // Break if `this` has been modified in the previous
@@ -528,137 +533,99 @@ public class SimpleEngine: Engine {
     /**
         First action abstraction dispatcher: Catches system actions.
     */
-    func getContext(contextType: ObjectContextType, slot: Symbol?,
-        this: Object, other: Object!) -> Object! {
-            let receiver: Object!
+    func getCurrent(ref: CurrentRef, this: Object, other: Object!) -> Object! {
+            let current: Object!
 
-            switch contextType {
+            switch ref.type {
             case .Root:
-                receiver = self.store.getRoot()
+                current = self.store.getRoot()
             case .This:
-                receiver = this
+                current = this
             case .Other:
-                receiver = other
+                current = other
             }
 
-            if receiver == nil {
+            if current == nil {
                 return nil
             }
 
-            if slot != nil {
-                return self.store.objectMap[receiver.links[slot!]!]
+            if ref.slot != nil {
+                return self.store.objectMap[current.links[ref.slot!]!]
             }
             else {
-                return receiver
+                return current
             }
     }
 
     /**
-        Apply action
+    Execute instruction
     */
 
-    func apply(genericAction:Action, this:Object, other:Object!=nil) {
+    func execute(instruction:Instruction, this:Object, other:Object!=nil) {
         // Note: Similar to the Predicate code, we are not using language
         // polymorphysm here. This is not proper way of doing it, but
         // untill the action objects are refined and their executable
         // counterparts defined, this should remain as it is.
 
-        if let action = genericAction as? TrapAction {
-            // TODO: anonymous action
-            self.traps.add(action.type)
-        }
-        else if let action = genericAction as? NotifyAction {
-            // TODO: anonymous action
-            self.notify(action.symbol)
-        }
-        else if genericAction is HaltAction {
+        switch instruction {
+        case .Nothing:
+            // Do nothing
+            break
+
+        case .Halt:
             self.isHalted = true
-        }
-        else if let action = genericAction as? UnbindAction {
-            let receiver = getContext(action.inContext, slot: action.inSlot,
-                                        this: this, other: other)
 
-            if receiver != nil {
-                this.links[action.slot] = nil
+        case .Trap(let symbol):
+            self.traps.add(symbol)
+
+        case .Notify(let symbol):
+            self.notify(symbol)
+
+        case .Modify(let currentRef, let modifier):
+            let current = self.getCurrent(currentRef, this: this, other: other)
+
+            switch modifier {
+            case .SetTags(let tags):
+                current.tags = current.tags.union(tags)
+
+            case .UnsetTags(let tags):
+                current.tags = current.tags.subtract(tags)
+
+            case .Inc(let counter):
+                let value = current.counters[counter]!
+                current.counters[counter] = value + 1
+
+            case .Dec(let counter):
+                let value = current.counters[counter]!
+                current.counters[counter] = value + 1
+
+            case .Zero(let counter):
+                current.counters[counter] = 0
+
+            case .Bind(let targetRef, let slot):
+                let target = self.getCurrent(targetRef, this: this, other: other)
+                if current != nil && target != nil {
+                    current.links[slot] = target.id
+                }
+                else {
+                    // TODO: isn't this an error or invalid state?
+                }
+
+            case .Unbind(let slot):
+                if current != nil {
+                    this.links[slot] = nil
+                }
+                else {
+                    // TODO: isn't this an error or invalid state?
+                }
             }
         }
-        else if let action = genericAction as? BindAction {
-            let receiver = getContext(action.inContext, slot: action.inSlot,
-                                        this: this, other: other)
-            let target = getContext(action.targetContext, slot: action.targetSlot,
-                                        this: this, other: other)
-
-            if receiver == nil || target == nil {
-                // TODO: isn't this an error?
-                return
-            }
-
-            receiver.links[action.slot] = target.id
-        }
-        else if let action = genericAction as? ObjectAction {
-            let receiver = getContext(action.inContext, slot: action.inSlot,
-                                        this: this, other: other)
-            if receiver != nil {
-                self.performObjectAction(action, obj: receiver!)
-            }
-        }
-        else {
-            print("ERROR!!! UNKNOWN ACTION \(genericAction)")
-            // pass
-        }
-
     }
 
     func notify(symbol: Symbol) {
-        if self.observer != nil {
-            self.observer?.notify(self.stepCount, notification: symbol)
+        if self.logger != nil {
+            self.logger?.logNotification(self.stepCount, notification: symbol)
         }
-    }
-
-    /**
-        Second action abstraction dispatcher: Catches object actions.
-    */
-    func performObjectAction(objectAction:ObjectAction, obj:Object) {
-        let target: Object
-        // Try to get the target slot
-        //
-
-        if objectAction.inSlot != nil {
-            if let targetRef = obj.links[objectAction.inSlot!],
-                let maybeTarget = self.store.objectMap[targetRef] {
-                target = maybeTarget
-            }
-            else {
-                // TODO: is this OK if the slot is not filled?
-                return
-            }
-        }
-        else {
-            target = obj
-        }
-
-        if let action = objectAction as? SetTagsAction {
-            target.tags = target.tags.union(action.tags)
-        }
-        else if let action = objectAction as? UnsetTagsAction {
-            target.tags = target.tags.subtract(action.tags)
-        }
-        else if let action = objectAction as? IncCounterAction {
-            let value = target.counters[action.counter]!
-            target.counters[action.counter] = value + 1
-        }
-        else if let action = objectAction as? DecCounterAction {
-            let value = target.counters[action.counter]!
-            target.counters[action.counter] = value - 1
-        }
-        else if let action = objectAction as? ZeroCounterAction {
-            target.counters[action.counter] = 0
-        }
-        else {
-            print("ERROR!!! UNKNOWN ACTION \(objectAction)")
-            // pass
-        }
-
     }
 
     public func debugDump() {

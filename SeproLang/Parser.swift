@@ -518,7 +518,7 @@ public class Parser {
     func _actuator() throws -> Actuator? {
         var predicates: [Predicate]
         var otherPredicates: [Predicate]?
-        var actions = [Action]()
+        var instructions = [Instruction]()
         var isRoot:Bool
 
         if try self.acceptKeyword("WHERE") {
@@ -530,9 +530,9 @@ public class Parser {
 
         try self.expectKeyword("DO")
 
-        actions = try self._actions()
+        instructions = try self._instructions()
 
-        return Actuator(predicates:predicates, actions:actions,
+        return Actuator(predicates:predicates, instructions:instructions,
                 otherPredicates:otherPredicates, isRoot:isRoot)
     }
 
@@ -610,108 +610,100 @@ public class Parser {
         return predicates
     }
 
-    func _actions() throws -> [Action] {
-        var actions = [Action]()
-        var context: ObjectContextType = ObjectContextType.This
-        var slot: Symbol? = nil
+    func _instructions() throws -> [Instruction] {
+        var instructions = [Instruction]()
 
         while true {
-            if try self.acceptKeyword("IN") {
-                (context, slot) = try self._context()
-            }
-
-            if try self.acceptKeyword("NOTHING") {
-                actions.append(NoAction())
-            }
-            else if try self.acceptKeyword("TRAP") {
-                let symbol = try self.expectSymbol("trap name")
-                actions.append(TrapAction(type: symbol))
-            }
-            else if try self.acceptKeyword("NOTIFY") {
-                let symbol = try self.expectSymbol("notification name")
-                actions.append(NotifyAction(symbol: symbol))
-            }
-            else if try self.acceptKeyword("SET") {
-                let tags = try self._symbolList()
-                let action = SetTagsAction(inContext: context, inSlot:slot,
-                                    tags: TagList(tags))
-                actions.append(action)
-            }
-            else if try self.acceptKeyword("UNSET") {
-                let tags = try self._symbolList()
-                let action = UnsetTagsAction(inContext: context, inSlot:slot,
-                                    tags: TagList(tags))
-                actions.append(action)
-            }
-            else if try self.acceptKeyword("BIND") {
-                let symbol:Symbol
-                var targetContext: ObjectContextType?
-                var targetSlot: Symbol? = nil
-
-                symbol = try self.expectSymbol()
-
-                try self.expectKeyword("TO")
-
-                (targetContext, targetSlot) = try self._target()
-                // Make the target context consistent with the 'IN' context
-                if targetContext == nil {
-                    targetContext = context
-                }
-
-                let action = BindAction(inContext: context, inSlot: slot,
-                    slot:symbol, targetContext:targetContext!, targetSlot:targetSlot)
-
-                actions.append(action)
+            if let instruction = try self._instruction() {
+                instructions.append(instruction)
             }
             else {
                 break
             }
-
         }
 
-        return actions
+        if instructions.count == 0 {
+            throw SyntaxError.Syntax(message: "expecting instruction")
+        }
+
+        return instructions
+    }
+    func _instruction() throws -> Instruction? {
+        var instruction: Instruction?
+        var ref: CurrentRef
+
+        if try self.acceptKeyword("IN") {
+            ref = try self._currentReference()
+        }
+        else {
+            ref = CurrentRef(type:.This, slot:nil)
+        }
+
+        if try self.acceptKeyword("NOTHING") {
+            instruction = .Nothing
+        }
+        else if try self.acceptKeyword("TRAP") {
+            let symbol = try self.expectSymbol("trap name")
+            instruction = .Trap(symbol)
+        }
+        else if try self.acceptKeyword("NOTIFY") {
+            let symbol = try self.expectSymbol("notification name")
+            instruction = .Notify(symbol)
+        }
+        else if try self.acceptKeyword("SET") {
+            let tags = try self._tagList()
+
+            instruction = .Modify(ref, .SetTags(tags))
+        }
+        else if try self.acceptKeyword("UNSET") {
+            let tags = try self._tagList()
+
+            instruction = .Modify(ref, .UnsetTags(tags))
+        }
+        else if try self.acceptKeyword("BIND") {
+            let targetRef: CurrentRef
+            let symbol: Symbol
+
+            symbol = try self.expectSymbol()
+
+            try self.expectKeyword("TO")
+
+            targetRef = try self._currentReference()
+
+            instruction = .Modify(ref, .Bind(targetRef, symbol))
+        }
+        else {
+            instruction = nil
+        }
+
+        return instruction
     }
 
-    func _context() throws -> (ObjectContextType, Symbol?) {
-        let context: ObjectContextType
+    func _currentReference() throws -> CurrentRef {
+        let type: CurrentType
         var slot: Symbol? = nil
 
-        context = try self._contextType()
+        type = try self._currentType()
 
         if try self.accept(TokenType.Dot) {
             slot = try self.expectSymbol("slot name")
         }
 
-        return (context, slot)
+        return CurrentRef(type:type, slot:slot)
     }
-    func _contextType() throws -> ObjectContextType {
+
+    func _currentType() throws -> CurrentType {
         if try self.acceptKeyword("THIS") {
-            return ObjectContextType.This
+            return .This
         }
         else if try self.acceptKeyword("OTHER") {
-            return ObjectContextType.Other
+            return .Other
         }
         else {
             try self.expectKeyword("ROOT",
                           expected: "Expected context specified THIS, OTHER or ROOT")
-            return ObjectContextType.Root
+            return .Root
         }
-    }
-    func _target() throws -> (ObjectContextType?, Symbol?) {
-        var context: ObjectContextType? = nil
-        var slot: Symbol? = nil
-
-        if try self.accept(TokenType.Symbol) {
-            slot = self.currentValue
-        }
-        else {
-            context = try self._contextType()
-            if try self.accept(TokenType.Dot) {
-                slot = try self.expectSymbol("target slot name")
-            }
-        }
-
-        return (context, slot)
     }
 
     /**
@@ -777,19 +769,9 @@ public class Parser {
 
         return symbols
     }
-    func ___tagList() throws -> TagList? {
-        var tags = TagList()
 
-        while(try self.accept(TokenType.Symbol)) {
-            let tag = self.currentValue!
-            tags.insert(tag)
-
-            if try !self.accept(TokenType.Comma) {
-                break
-            }
-        }
-
-        return tags
+    func _tagList() throws -> TagList {
+        return try TagList(self._symbolList())
     }
 
 }

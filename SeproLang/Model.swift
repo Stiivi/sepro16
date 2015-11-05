@@ -99,8 +99,8 @@ public class Concept: CustomStringConvertible {
 
 
 /**
-    Combines predicates with their respective actions that are triggered
- when the predicate is met.
+    Combines predicates with their respective instructions that are
+executed when the predicate is met.
 */
 public class Actuator {
     /// Denother whether the predicates are related to the root object
@@ -108,16 +108,16 @@ public class Actuator {
     /// Predicates that trigger the actuator
     public let predicates: [Predicate]
     /// Actions performed by the actuator in atomic way.
-    public let actions: [Action]
+    public let instructions: [Instruction]
     /// Actions performed by the actuator in atomic way.
     public let otherPredicates: [Predicate]?
 
-    public init(predicates: [Predicate], actions: [Action],
+    public init(predicates: [Predicate], instructions: [Instruction],
         otherPredicates: [Predicate]?=nil, isRoot:Bool=false) {
         self.isRoot = isRoot
         self.predicates = predicates
         self.otherPredicates = otherPredicates
-        self.actions = actions
+        self.instructions = instructions
     }
 
     public func asString() -> String {

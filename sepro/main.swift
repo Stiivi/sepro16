@@ -50,7 +50,7 @@ func main() {
         return
     }
 
-    engine.observer = PrintingObserver()
+    // engine.observer = CSVObserver("/tmp/sepro")
 
     do {
         try engine.store.initialize()
