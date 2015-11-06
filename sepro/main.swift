@@ -61,7 +61,9 @@ func main() {
     }
 
     engine.debugDump()
+    writeDot("/tmp/sepro/dots/start.dot", selection: AnySequence(engine.store.objectMap.values))
     engine.run(stepCount)
+    writeDot("/tmp/sepro/dots/final.dot", selection: AnySequence(engine.store.objectMap.values))
     engine.debugDump()
 
 }

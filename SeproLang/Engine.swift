@@ -35,7 +35,7 @@ public protocol Store {
        of the method even without state change of the store.
      - Returns: sequence of all object references
     */
-    var objects: AnySequence<ObjectRef> { get }
+    var objects: ObjectSelection { get }
 
     /**
         - Returns: sequence of all object references
@@ -101,8 +101,8 @@ public class SimpleStore: Store {
         self.actuators = [Actuator](model.actuators)
     }
 
-    public var objects: AnySequence<ObjectRef> {
-        get { return AnySequence(self.objectMap.keys) }
+    public var objects: ObjectSelection {
+        get { return AnySequence(self.objectMap.values) }
     }
 
     public func getObject(ref:ObjectRef) -> Object? {

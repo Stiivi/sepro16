@@ -10,6 +10,7 @@
 		F824639B1BE31F6A00641782 /* Predicate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F824639A1BE31F6A00641782 /* Predicate.swift */; };
 		F82463A21BE4576600641782 /* Probe.swift in Sources */ = {isa = PBXBuildFile; fileRef = F82463A11BE4576600641782 /* Probe.swift */; };
 		F85C0E7F1BEB403A00789741 /* Dot.swift in Sources */ = {isa = PBXBuildFile; fileRef = F85C0E7E1BEB403A00789741 /* Dot.swift */; };
+		F85C0E801BEC8B3500789741 /* Dot.swift in Sources */ = {isa = PBXBuildFile; fileRef = F85C0E7E1BEB403A00789741 /* Dot.swift */; };
 		F870872B1BE72CEE004C72A9 /* Observer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F870872A1BE72CEE004C72A9 /* Observer.swift */; };
 		F870872D1BE9D5D3004C72A9 /* Instruction.swift in Sources */ = {isa = PBXBuildFile; fileRef = F870872C1BE9D5D3004C72A9 /* Instruction.swift */; };
 		F870872F1BEB0806004C72A9 /* ParserTestCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = F870872E1BEB0806004C72A9 /* ParserTestCase.swift */; };
@@ -328,6 +329,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F8B9112D1BE727460025C4C8 /* CSVLogger.swift in Sources */,
+				F85C0E801BEC8B3500789741 /* Dot.swift in Sources */,
 				F8F561A21BE3118D00C53170 /* main.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
