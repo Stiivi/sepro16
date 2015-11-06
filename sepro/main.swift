@@ -50,7 +50,7 @@ func main() {
         return
     }
 
-    // engine.observer = CSVObserver("/tmp/sepro")
+    engine.logger = CSVLogger(path: "/tmp/sepro")
 
     do {
         try engine.store.initialize()

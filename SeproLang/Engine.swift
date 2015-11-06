@@ -13,7 +13,8 @@
 // process of conceptual optimizaiion.
 
 
-public typealias ObjectSelection = AnySequence<ObjectRef>
+public typealias ObjectSelection = AnySequence<Object>
+public typealias ObjectRefSelection = AnySequence<ObjectRef>
 
 public protocol Store {
     /** Initialize the store with `world`. If `world` is not specified then
@@ -47,6 +48,7 @@ public protocol Store {
      engine specific.
      */
     func select(predicates:[Predicate]) -> ObjectSelection
+    func selectRefs(predicates:[Predicate]) -> ObjectRefSelection
 
     func evaluate(predicate:Predicate,_ ref:ObjectRef) -> Bool
 }
@@ -230,15 +232,15 @@ public class SimpleStore: Store {
     */
 
 
-    public func select(predicates:[Predicate]) -> ObjectSelection {
+    public func selectRefs(predicates:[Predicate]) -> ObjectRefSelection {
         let selection = self.filterObjects(predicates).lazy.map {
             ref, _ in ref
         }
 
-        return ObjectSelection(selection)
+        return ObjectRefSelection(selection)
     }
 
-    func selectObjects(predicates:[Predicate]) -> AnySequence<Object> {
+    public func select(predicates:[Predicate]) -> ObjectSelection {
         let selection = self.filterObjects(predicates).lazy.map {
             _, object in object
         }
@@ -246,7 +248,7 @@ public class SimpleStore: Store {
         return AnySequence(selection)
     }
 
-    public func filterObjects(predicates:[Predicate]) -> AnySequence<(ObjectRef, Object)> {
+    func filterObjects(predicates:[Predicate]) -> AnySequence<(ObjectRef, Object)> {
         let filtered = self.objectMap.lazy.filter {ref, object in
 
             // Find at least one predicate that the inspected object
@@ -304,9 +306,10 @@ public class SimpleStore: Store {
 
 }
 
-public typealias TrapHandler = (Engine, CountedSet<Symbol>) -> Void
-public typealias HaltHandler = (Engine) -> Void
-
+public protocol EngineDelegate {
+    func handleTrap(engine: Engine, traps: CountedSet<Symbol>)
+    func handleHalt(engine: Engine)
+}
 /**
     SimpleEngine – simple implementation of computational engine. Performs
     computations of simulation steps, captures traps and observes probe values.
@@ -322,10 +325,6 @@ public class SimpleEngine: Engine {
     /// Traps caught in the last step
     public var traps = CountedSet<Symbol>()
 
-    /// Handler for traps
-    public var onTrap:TrapHandler?
-    public var onHalt:HaltHandler?
-
     /// Flag saying whether the simulation is halted or not.
     public var isHalted: Bool
 
@@ -338,6 +337,10 @@ public class SimpleEngine: Engine {
     /// Logging delegate – an object that implements the `Logger`
     /// protocol
     public var logger: Logger?
+
+    /// Delegate for handling traps, halt and other events
+    public var delegate: EngineDelegate?
+
 
     /// Simulation model
     public var model: Model {
@@ -373,8 +376,8 @@ public class SimpleEngine: Engine {
             self.step()
 
             if self.isHalted {
-                if self.onHalt != nil {
-                    self.onHalt!(self)
+                if self.delegate != nil {
+                    self.delegate!.handleHalt(self)
                 }
                 break
             }
@@ -401,8 +404,8 @@ public class SimpleEngine: Engine {
             self.probe()
         }
 
-        if !self.traps.isEmpty && self.onTrap != nil {
-            self.onTrap!(self, self.traps)
+        if !self.traps.isEmpty && self.delegate != nil {
+            self.delegate!.handleTrap(self, traps: self.traps)
         }
     }
 
@@ -454,6 +457,7 @@ public class SimpleEngine: Engine {
         Dispatch an `actuator` – reactive vs. interactive.
      */
     func perform(actuator:Actuator){
+        // TODO: take into account Actuator.isRoot as cartesian
         if actuator.otherPredicates != nil {
             self.performCartesian(actuator)
         }
@@ -475,7 +479,7 @@ public class SimpleEngine: Engine {
         4. Perform reactive action on the objects.
     */
     func performSingle(actuator:Actuator) {
-        let thisObjects = self.store.selectObjects(actuator.predicates)
+        let thisObjects = self.store.select(actuator.predicates)
 
         var counter = 0
         for this in thisObjects {
@@ -488,30 +492,26 @@ public class SimpleEngine: Engine {
     }
 
     func performCartesian(actuator:Actuator) {
-        let thisObjects = self.store.selectObjects(actuator.predicates)
-        let otherObjects = self.store.selectObjects(actuator.otherPredicates!)
-        var counter = 0
+        let thisObjects = self.store.select(actuator.predicates)
+        let otherObjects = self.store.select(actuator.otherPredicates!)
 
         // Cartesian product: everything 'this' interacts with everything
         // 'other'
         for this in thisObjects {
             for other in otherObjects{
-                counter += 1
                 for instruction in actuator.instructions {
                     self.execute(instruction, this: this, other: other)
                 }
 
-                // Break if `this` has been modified in the previous
-                // action
-                // Reversed logic: detect first predicate that matches
-                let match = actuator.predicates.indexOf {
+                // Check whether 'this' still matches the predicates
+                let match = actuator.predicates.all {
                     predicate in
                     self.store.evaluateObject(predicate, this)
                 }
 
-                // if there is a failed predicate found, then advance
-                // to the next `this` object
-                if match != nil {
+                // ... predicates don't match the object, therefore we
+                // skip to the next one
+                if !match {
                     break
                 }
             }

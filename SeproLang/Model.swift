@@ -359,6 +359,14 @@ public class Model {
         }
         return out
     }
+
+
+    // Future functions:
+    //
+    public func renameSymbol() {
+
+    }
+
 }
 
 public class ModelValidator {
