@@ -9,6 +9,9 @@
 import SeproLang
 import Foundation
 
+/**
+Simple CSV writer. Does not do quoting.
+*/
 public class CSVWriter {
     let path:String
     let file: NSFileHandle

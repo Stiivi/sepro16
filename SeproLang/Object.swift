@@ -45,7 +45,7 @@ public class Object: CustomStringConvertible {
             let links = self.links.map(){ (key, value) in "\(key)->\(value)" }
                             . joinWithSeparator(", ")
             let tagsStr = self.tags.map { String($0)} . joinWithSeparator(", ")
-            return "\(tagsStr) \(links)"
+            return "\(id)[\(tagsStr);\(links)]"
         }
     }
 

@@ -9,6 +9,16 @@
 			<key>orderHint</key>
 			<integer>0</integer>
 		</dict>
+		<key>Seprolab.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>3</integer>
+		</dict>
+		<key>libSeproLang.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>2</integer>
+		</dict>
 		<key>sepro.xcscheme</key>
 		<dict>
 			<key>orderHint</key>
@@ -17,6 +27,26 @@
 	</dict>
 	<key>SuppressBuildableAutocreation</key>
 	<dict>
+		<key>F85C0E861BEDC0C300789741</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>F85C0E941BEDC67800789741</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>F85C0EA21BEDC67800789741</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>F85C0EAD1BEDC67800789741</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
 		<key>F8F561801BE3117D00C53170</key>
 		<dict>
 			<key>primary</key>

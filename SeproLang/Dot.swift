@@ -62,6 +62,8 @@ public func writeDot(path: String, selection: AnySequence<Object>) {
     let manager = NSFileManager.defaultManager()
     var line: String!
 
+    print("Writing dot \(path)")
+
     manager.createFileAtPath(path, contents:nil, attributes:nil)
     file = NSFileHandle.init(forWritingAtPath: path)!
 
@@ -71,7 +73,9 @@ public func writeDot(path: String, selection: AnySequence<Object>) {
     selection.forEach {
         obj in
         line = objectToDot(obj)
-        file.writeData(line.dataUsingEncoding(NSUTF8StringEncoding)!)
+        if let data = line.dataUsingEncoding(NSUTF8StringEncoding) {
+            file.writeData(data)
+        }
     }
 
     line = "}"

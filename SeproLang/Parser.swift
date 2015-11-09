@@ -38,6 +38,7 @@ public let Keywords = [
     "COUNT", "AVG", "MIN", "MAX",
 
     "BIND", "TO",
+    "UNBIND",
     "ROOT", "THIS", "OTHER"
 ]
 
@@ -719,6 +720,11 @@ public class Parser {
 
             instruction = .Modify(ref, .Bind(targetRef, symbol))
         }
+        else if try self.acceptKeyword("UNBIND") {
+            let symbol = try self.expectSymbol()
+
+            instruction = .Modify(ref, .Unbind(symbol))
+        }
         else {
             instruction = nil
         }
@@ -748,7 +754,7 @@ public class Parser {
         }
         else {
             try self.expectKeyword("ROOT",
-                          expected: "Expected context specified THIS, OTHER or ROOT")
+                          expected: "context specified THIS, OTHER or ROOT")
             return .Root
         }
     }

@@ -26,9 +26,10 @@ func main() {
         usage()
         return
     }
-
-    modelFile = args[1]
-    stepCount = Int(args[2])!
+    else {
+        modelFile = args[1]
+        stepCount = Int(args[2])!
+    }
 
     print("Loading model from \(modelFile)...")
 
@@ -51,19 +52,19 @@ func main() {
     }
 
     engine.logger = CSVLogger(path: "/tmp/sepro")
-
+    engine.delegate = CLIDelegate()
+    
     do {
-        try engine.store.initialize()
+        try engine.store.initialize("main")
     }
     catch {
         print("Error: Can't initialize engine")
         return
     }
 
+
     engine.debugDump()
-    writeDot("/tmp/sepro/dots/start.dot", selection: AnySequence(engine.store.objectMap.values))
     engine.run(stepCount)
-    writeDot("/tmp/sepro/dots/final.dot", selection: AnySequence(engine.store.objectMap.values))
     engine.debugDump()
 
 }

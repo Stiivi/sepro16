@@ -38,9 +38,14 @@ public protocol Store {
     var objects: ObjectSelection { get }
 
     /**
-        - Returns: sequence of all object references
+    - Returns: sequence of all object references
     */
     func getObject(ref: ObjectRef) -> Object?
+
+    /**
+    - Returns: root object
+     */
+    func getRoot() -> Object
 
     /**
      Iterates through all objects mathing `predicates`. Similar to
@@ -50,7 +55,10 @@ public protocol Store {
     func select(predicates:[Predicate]) -> ObjectSelection
     func selectRefs(predicates:[Predicate]) -> ObjectRefSelection
 
-    func evaluate(predicate:Predicate,_ ref:ObjectRef) -> Bool
+    func evaluate(predicate:Predicate,ref:ObjectRef) -> Bool
+    func evaluate(predicate:Predicate,object:Object) -> Bool
+
+    var model:Model { get }
 }
 
 /**
@@ -67,6 +75,9 @@ public protocol Engine {
      can not be resumed unless re-initialized.
      */
     func step()
+    var stepCount:Int { get }
+
+    var store:SimpleStore { get }
 }
 
 // MARK: Selection Generator
@@ -114,6 +125,7 @@ public class SimpleStore: Store {
     be discarded.
     */
     public func initialize(worldName: Symbol="main") throws {
+        // FIXME: handle non-existing world
         let world = self.model.getWorld(worldName)!
 
         // Clean-up the objects container
@@ -257,7 +269,7 @@ public class SimpleStore: Store {
 
             predicates.indexOf {
                 predicate in
-                !self.evaluateObject(predicate, object)
+                !self.evaluate(predicate, object: object)
             } == nil
         }
 
@@ -267,9 +279,9 @@ public class SimpleStore: Store {
         Evaluates the predicate against object.
         - Returns: `true` if the object matches the predicate
     */
-    public func evaluate(predicate:Predicate, _ ref: ObjectRef) -> Bool {
+    public func evaluate(predicate:Predicate, ref: ObjectRef) -> Bool {
         if let obj = self.objectMap[ref] {
-            return self.evaluateObject(predicate, obj)
+            return self.evaluate(predicate, object: obj)
         }
         else {
             // TODO: Exception?
@@ -282,13 +294,13 @@ public class SimpleStore: Store {
     
         - Returns: `true` if the object matches condition.
     */
-    func evaluateObject(predicate:Predicate, _ obj: Object) -> Bool {
+    public func evaluate(predicate:Predicate, object: Object) -> Bool {
         var target: Object
 
         // Try to get the target slot
         //
         if predicate.inSlot != nil {
-            if let maybeTarget = obj.links[predicate.inSlot!] {
+            if let maybeTarget = object.links[predicate.inSlot!] {
                 target = self.objectMap[maybeTarget]!
             }
             else {
@@ -298,7 +310,7 @@ public class SimpleStore: Store {
             }
         }
         else {
-            target = obj
+            target = object
         }
 
         return predicate.evaluate(target)
@@ -307,9 +319,15 @@ public class SimpleStore: Store {
 }
 
 public protocol EngineDelegate {
+    func willRun(engine: Engine)
+    func didRun(engine: Engine)
+    func willStep(engine: Engine, objects:ObjectSelection)
+    func didStep(engine: Engine)
+
     func handleTrap(engine: Engine, traps: CountedSet<Symbol>)
     func handleHalt(engine: Engine)
 }
+
 /**
     SimpleEngine – simple implementation of computational engine. Performs
     computations of simulation steps, captures traps and observes probe values.
@@ -355,6 +373,7 @@ public class SimpleEngine: Engine {
         self.isHalted = false
         self.logger = nil
         self.probes = [Probe]()
+        self.delegate = nil
     }
 
     convenience public init(model:Model){
@@ -370,22 +389,21 @@ public class SimpleEngine: Engine {
             self.logger!.loggingWillStart(self.model.measures)
             self.probe()
         }
+        
+        // self.delegate?.willRun(self)
 
         for _ in 1...steps {
 
             self.step()
 
             if self.isHalted {
-                if self.delegate != nil {
-                    self.delegate!.handleHalt(self)
-                }
+                self.delegate?.handleHalt(self)
                 break
             }
         }
 
-        if self.logger != nil {
-            self.logger!.loggingDidEnd()
-        }
+        self.logger?.loggingDidEnd()
+        // self.delegate?.didRun(self)
     }
 
     /**
@@ -396,23 +414,29 @@ public class SimpleEngine: Engine {
 
         stepCount += 1
 
-        store.actuators.forEach {
+        self.delegate?.willStep(self, objects: self.store.objects)
+        // The main step...
+        // --> Start of step
+        self.model.actuators.forEach {
             actuator in self.perform(actuator)
         }
+        // <-- End of step
+
+        self.delegate?.didStep(self)
 
         if self.logger != nil {
             self.probe()
         }
 
-        if !self.traps.isEmpty && self.delegate != nil {
-            self.delegate!.handleTrap(self, traps: self.traps)
+        if !self.traps.isEmpty {
+            self.delegate?.handleTrap(self, traps: self.traps)
         }
     }
-
     func probe() {
         let measures: [AggregateMeasure]
         let record: ProbeRecord
 
+        // Nothing to probe if we have no logger
         if self.logger == nil {
             return
         }
@@ -433,8 +457,8 @@ public class SimpleEngine: Engine {
             (measure, createAggregateProbe(measure))
         }
 
-        self.store.objectMap.forEach {
-            ref, object in
+        self.store.objects.forEach {
+            object in
             probeList.forEach {
                 measure, probe in
                 if measure.predicates.all({ $0.evaluate(object) }) {
@@ -484,6 +508,7 @@ public class SimpleEngine: Engine {
         var counter = 0
         for this in thisObjects {
             counter += 1
+            print("EXEC SINGLE")
             for instruction in actuator.instructions {
                 self.execute(instruction, this: this)
             }
@@ -499,6 +524,7 @@ public class SimpleEngine: Engine {
         // 'other'
         for this in thisObjects {
             for other in otherObjects{
+                print("EXEC DOUBLE")
                 for instruction in actuator.instructions {
                     self.execute(instruction, this: this, other: other)
                 }
@@ -506,7 +532,7 @@ public class SimpleEngine: Engine {
                 // Check whether 'this' still matches the predicates
                 let match = actuator.predicates.all {
                     predicate in
-                    self.store.evaluateObject(predicate, this)
+                    self.store.evaluate(predicate, object:this)
                 }
 
                 // ... predicates don't match the object, therefore we
@@ -540,7 +566,7 @@ public class SimpleEngine: Engine {
             }
 
             if ref.slot != nil {
-                return self.store.objectMap[current.links[ref.slot!]!]
+                return self.store.getObject(current.links[ref.slot!]!)
             }
             else {
                 return current
@@ -574,6 +600,8 @@ public class SimpleEngine: Engine {
         case .Modify(let currentRef, let modifier):
             let current = self.getCurrent(currentRef, this: this, other: other)
 
+            print("MODIFY \(modifier) IN \(currentRef)(\(current.id)) \(this)<->\(other)")
+
             switch modifier {
             case .SetTags(let tags):
                 current.tags = current.tags.union(tags)
@@ -594,6 +622,7 @@ public class SimpleEngine: Engine {
 
             case .Bind(let targetRef, let slot):
                 let target = self.getCurrent(targetRef, this: this, other: other)
+                print("   TARGET \(target) (\(targetRef))")
                 if current != nil && target != nil {
                     current.links[slot] = target.id
                 }
@@ -613,18 +642,42 @@ public class SimpleEngine: Engine {
     }
 
     func notify(symbol: Symbol) {
-        if self.logger != nil {
-            self.logger?.logNotification(self.stepCount, notification: symbol)
-        }
+        self.logger?.logNotification(self.stepCount, notification: symbol)
+    }
+
+    // Delegate functions
+    //
+
+    public func handleHalt(engine: Engine) {
+        debugPrint("Engine \(engine) halted")
+    }
+
+    public func handleTrap(engine: Engine, traps: CountedSet<Symbol>) {
+        debugPrint("Engine \(engine) traps: \(traps)")
+    }
+
+    public func willStep(engine: Engine, objects:ObjectSelection) {
+        // do nothing
+    }
+
+    public func didStep(engine: Engine) {
+        // do nothing
+    }
+
+    public func willRun(engine: Engine) {
+        // do nothing
+    }
+
+    public func didRun(engine: Engine) {
+        // do nothing
     }
 
     public func debugDump() {
         print("ENGINE DUMP START\n")
         print("STEP \(self.stepCount)")
-        let keys = self.store.objectMap.keys.sort()
-        for key in keys {
-            let obj = self.store.objectMap[key]
-            print("\(key): \(obj!.debugString)")
+        self.store.objects.forEach {
+            obj in
+            print("\(obj.debugString)")
         }
         print("END OF DUMP\n")
     }
