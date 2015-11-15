@@ -7,7 +7,7 @@
 //
 
 
-public enum PredicateType: CustomStringConvertible {
+public enum PredicateType: CustomStringConvertible, Equatable {
     /// Triggers every time the engine encounters it
     case All
     /**
@@ -65,7 +65,27 @@ public enum PredicateType: CustomStringConvertible {
 
 }
 
-public struct Predicate {
+public func ==(left: PredicateType, right: PredicateType) -> Bool {
+    switch (left, right) {
+    case (.All, .All): return true
+    case (.TagSet(let ltags), .TagSet(let rtags)) where ltags == rtags:
+            return true
+    case (.TagUnset(let ltags), .TagUnset(let rtags)) where ltags == rtags:
+            return true
+    case (.CounterLess(let lcount, let lvalue), .CounterLess(let rcount, let rvalue)) where lcount == rcount && lvalue == rvalue:
+            return true
+    case (.CounterGreater(let lcount, let lvalue), .CounterGreater(let rcount, let rvalue)) where lcount == rcount && lvalue == rvalue:
+            return true
+    case (.CounterZero(let lcount), .CounterZero(let rcount)) where lcount == rcount:
+            return true
+    case (.IsBound(let lslot), .IsBound(let rslot)) where lslot == rslot:
+            return true
+    default:
+        return false
+    }
+}
+
+public struct Predicate: Equatable {
     public let type: PredicateType
     public let isNegated: Bool
     public let inSlot: Symbol?
@@ -130,3 +150,8 @@ public struct Predicate {
     }
 }
 
+public func ==(left: Predicate, right: Predicate) -> Bool {
+    return left.type == right.type
+            && left.isNegated == right.isNegated
+            && left.inSlot == right.inSlot
+}

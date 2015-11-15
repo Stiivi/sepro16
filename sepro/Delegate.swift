@@ -24,22 +24,14 @@ public class CLIDelegate: EngineDelegate {
 
     public func willRun(engine: Engine) {
         writeDot("/tmp/sepro/dots/0.dot", selection: engine.store.objects)
-        // do nothing
     }
 
     public func didRun(engine: Engine) {
         writeDot("/tmp/sepro/dots/final.dot", selection: engine.store.objects)
-        // do nothing
     }
 
     public func willStep(engine: Engine, objects: ObjectSelection) {
-        // FIXME: this is very awkward hack, since we are getting some
-        // bad error here
-        print("Will step \(engine.stepCount)")
-        let xxx = (engine.store as! SimpleStore).objectMap.values
-        let objects = AnySequence(xxx)
         writeDot("/tmp/sepro/dots/\(engine.stepCount).dot", selection: objects)
-        // do nothing
     }
 
     public func didStep(engine: Engine) {

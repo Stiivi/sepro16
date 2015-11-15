@@ -617,7 +617,7 @@ public class SimpleEngine: Engine {
                 let value = current.counters[counter]!
                 current.counters[counter] = value + 1
 
-            case .Zero(let counter):
+            case .Clear(let counter):
                 current.counters[counter] = 0
 
             case .Bind(let targetRef, let slot):
@@ -643,33 +643,6 @@ public class SimpleEngine: Engine {
 
     func notify(symbol: Symbol) {
         self.logger?.logNotification(self.stepCount, notification: symbol)
-    }
-
-    // Delegate functions
-    //
-
-    public func handleHalt(engine: Engine) {
-        debugPrint("Engine \(engine) halted")
-    }
-
-    public func handleTrap(engine: Engine, traps: CountedSet<Symbol>) {
-        debugPrint("Engine \(engine) traps: \(traps)")
-    }
-
-    public func willStep(engine: Engine, objects:ObjectSelection) {
-        // do nothing
-    }
-
-    public func didStep(engine: Engine) {
-        // do nothing
-    }
-
-    public func willRun(engine: Engine) {
-        // do nothing
-    }
-
-    public func didRun(engine: Engine) {
-        // do nothing
     }
 
     public func debugDump() {

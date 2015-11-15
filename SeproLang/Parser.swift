@@ -284,7 +284,8 @@ public class Parser {
         expected:String?=nil) throws -> String {
 
         if try self.accept(type, value) {
-            return currentValue!
+            // TODO: why empty string?
+            return currentValue ?? ""
         }
 
         let currValue:String = self.lexer.currentToken!.value ?? "(nil)"
@@ -410,11 +411,11 @@ public class Parser {
         let name = try self.expect(TokenType.Symbol, expected: "concept name")
 
         if try self.acceptKeyword("TAG") {
-            tags = TagList(try self._symbolList())
+            tags = TagList(try self.parseSymbolList())
         }
 
         if try self.acceptKeyword("SLOT") {
-            slots = SlotList(try self._symbolList())
+            slots = SlotList(try self.parseSymbolList())
         }
 
         let concept = Concept(name: name, tags: tags, slots: slots)
@@ -676,10 +677,26 @@ public class Parser {
 
         return instructions
     }
-    func _instruction() throws -> Instruction? {
+
+    /** Parses a single instruction string */
+    public func parseInstruction() -> Instruction? {
+        do {
+            if let instruction = try self._instruction() {
+                try self.expect(TokenType.End)
+                return instruction
+            }
+        }
+        catch {
+            return nil
+        }
+        return nil
+    }
+
+    public func _instruction() throws -> Instruction? {
         var instruction: Instruction?
         var ref: CurrentRef
 
+        // TODO: make this part of modifier instruction only
         if try self.acceptKeyword("IN") {
             ref = try self._currentReference()
         }
@@ -809,7 +826,7 @@ public class Parser {
     
         symbol_list := symbol [, symbol]*
     */
-    func _symbolList() throws -> [Symbol] {
+    public func parseSymbolList() throws -> [Symbol] {
         var symbols = [Symbol]()
         let first = try self.expect(TokenType.Symbol)
 
@@ -824,7 +841,7 @@ public class Parser {
     }
 
     func _tagList() throws -> TagList {
-        return try TagList(self._symbolList())
+        return try TagList(self.parseSymbolList())
     }
 
 }

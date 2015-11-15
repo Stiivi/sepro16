@@ -10,7 +10,7 @@
 applied to
 */
 
-public struct CurrentRef: CustomStringConvertible {
+public struct CurrentRef: CustomStringConvertible, Equatable {
     public let type: CurrentType
     public let slot: Symbol?
 
@@ -22,6 +22,10 @@ public struct CurrentRef: CustomStringConvertible {
             return "\(type).\(slot)"
         }
     }
+}
+
+public func ==(left: CurrentRef, right: CurrentRef) -> Bool {
+    return (left.type == right.type) && (left.slot == right.slot)
 }
 
 public enum CurrentType: Int, CustomStringConvertible {
@@ -54,14 +58,15 @@ Modifiers:
 
 - `INC counter` - increase counter by 1
 - `DEC counter` - decrease counter by 1
-- `SET counter` - sets tag
+- `CLEAR counter` - make counter zero
+- `SET tag` - sets tag
 - `UNSET tag` - unsets tag
 - `BIND slot->target` – binds object to slot
 
 
 */
 
-public enum Instruction: CustomStringConvertible {
+public enum Instruction: CustomStringConvertible, Equatable {
     /// Special place-holder without any effect
     case Nothing
 
@@ -96,6 +101,18 @@ public enum Instruction: CustomStringConvertible {
 
 }
 
+public func ==(left: Instruction, right: Instruction) -> Bool {
+    switch (left, right) {
+    case (.Nothing, .Nothing): return true
+    case (.Halt, .Halt): return true
+    case (.Trap(let a), .Trap(let b)) where a == b: return true
+    case (.Notify(let a), .Notify(let b)) where a == b: return true
+    case (.Modify(let lref, let lmod), .Modify(let rref, let rmod))
+            where lref == rref && lmod == rmod: return true
+    default: return false
+    }
+}
+
 
 // Note: We are leaning towards a single (or a very few) "modifier"
 // instructions, therefore we are logically wrapping it under one
@@ -104,13 +121,13 @@ public enum Instruction: CustomStringConvertible {
 /**
   Object modifier.
 */
-public enum Modifier: CustomStringConvertible {
+public enum Modifier: CustomStringConvertible, Equatable {
     // Object modifiers
     case SetTags(TagList)
     case UnsetTags(TagList)
     case Inc(Symbol)
     case Dec(Symbol)
-    case Zero(Symbol)
+    case Clear(Symbol)
     case Bind(CurrentRef, Symbol)
     case Unbind(Symbol)
 
@@ -124,9 +141,31 @@ public enum Modifier: CustomStringConvertible {
                     return "UNSET \(str)"
         case .Inc(let symbol): return "INC \(symbol)"
         case .Dec(let symbol): return "DEC \(symbol)"
-        case .Zero(let symbol): return "ZERO \(symbol)"
+        case .Clear(let symbol): return "CLEAR \(symbol)"
         case .Bind(let ref, let symbol): return "BIND \(ref).\(symbol)"
         case .Unbind(let symbol): return "UNBIND \(symbol)"
         }
+    }
+}
+
+public func ==(left: Modifier, right: Modifier) -> Bool {
+    switch(left, right) {
+    case (.SetTags(let ltags), .SetTags(let rtags)) where ltags == rtags:
+            return true
+    case (.UnsetTags(let ltags), .UnsetTags(let rtags)) where ltags == rtags:
+            return true
+    case (.Inc(let lsym), .Inc(let rsym)) where lsym == rsym:
+            return true
+    case (.Dec(let lsym), .Dec(let rsym)) where lsym == rsym:
+            return true
+    case (.Clear(let lsym), .Clear(let rsym)) where lsym == rsym:
+            return true
+    case (.Bind(let lref, let lsym), .Bind(let rref, let rsym))
+        where lref == rref && lsym == rsym:
+            return true
+    case (.Unbind(let lsym), .Unbind(let rsym)) where lsym == rsym:
+            return true
+    default:
+            return false
     }
 }
