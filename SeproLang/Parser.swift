@@ -429,11 +429,12 @@ public class Parser {
         if self.lexer.currentToken != nil {
             switch self.lexer.currentToken! {
             case .Integer(let value):
+                self.lexer.next()
                 return value
             default: break
             }
         }
-        throw self.makeUnexpected("expectation")
+        throw self.makeUnexpected(expectation)
     }
 
 
