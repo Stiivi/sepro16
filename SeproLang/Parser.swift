@@ -485,25 +485,29 @@ public class Parser {
         var measures = [Measure]()
 
         while(true) {
-            if let concept = try self._concept() {
+
+            if self << "CONCEPT" {
+                let concept = try self._concept()
                 concepts[concept.name] = concept
             }
-            else if let actuator = try self._actuator() {
+            else if self << "WHERE" {
+                let actuator = try self._actuator()
                 actuators.append(actuator)
             }
-            else if let world = try self._world() {
+            else if self << "WORLD" {
+                let world = try self._world()
                 worlds.append(world)
             }
-            else if let measure = try self._measure() {
+            else if self << "MEASURE" {
+                let measure = try self._measure()
                 measures.append(measure)
             }
-            else if self.accept(.End) {
+            else if self << .End {
                 break
             }
             else {
                 throw self.makeUnexpected("model object")
             }
-
         }
 
         let model = Model(concepts:concepts, actuators:actuators,
@@ -517,65 +521,49 @@ public class Parser {
     
             concept := CONCEPT name [TAGS tags] [SLOTS slots] [COUNTERS counters]
     */
-    func _concept() throws -> Concept? {
-        var tags: TagList? = nil
-        var slots: SlotList? = nil
-
-        if !self.acceptKeyword("CONCEPT") {
-            return nil
-        }
+    func _concept() throws -> Concept {
+        var tags = TagList()
+        var slots = SlotList()
 
         let name = try self.expectSymbol("concept name")
 
-        if self.acceptKeyword("TAG") {
-            tags = TagList(try self.parseSymbolList())
-        }
+        while(true) {
+            if self << "TAG" {
+                // TODO: check for multiple tag redefinition
+                let newTags = TagList(try self.parseSymbolList())
+                tags.unionInPlace(newTags)
+            }
+            else if self << "SLOT" {
+                // TODO: check for multiple slot redefinition
+                let newSlots = SlotList(try self.parseSymbolList())
+                slots.appendContentsOf(newSlots)
+            }
+            else {
+                break
+            }
 
-        if self.acceptKeyword("SLOT") {
-            slots = SlotList(try self.parseSymbolList())
         }
 
         let concept = Concept(name: name, tags: tags, slots: slots)
         return concept
     }
 
-    func _world() throws -> World? {
+    func _world() throws -> World {
         var root: Symbol? = nil
         var name: Symbol
         let graph = GraphDescription()
 
-        if !self.acceptKeyword("WORLD") {
-            return nil
-        }
-
         name = try self.expectSymbol("world name")
 
-        if self.acceptKeyword("ROOT") {
+        if self << "ROOT" {
             root = try self.expectSymbol("root concept")
         }
 
         while true {
-            if self.acceptKeyword("OBJECT") {
-                var concept: Symbol
-                var alias: Symbol?
-                var count: Int?
-
+            if self << "OBJECT" {
                 while true {
-                    (concept, alias, count) = try self._instanceSpec()
-
-                    if alias == nil && count == nil {
-                        graph.addObject(concept)
-                    }
-                    else if alias != nil {
-                        graph.addObject(concept, alias: alias)
-                    }
-                    else if count != nil {
-                        graph.addObjectCount(concept, count: count!)
-                    }
-                    else {
-                        // TODO: This should not happen
-                        throw SyntaxError.Internal(message: "Instance should not have both count and alias")
-                    }
+                    let obj = try self._instanceSpec()
+                    graph.addObject(obj)
 
                     if !self.accept(.Comma) {
                         break
@@ -583,7 +571,7 @@ public class Parser {
                 }
 
             }
-            else if self.acceptKeyword("BIND") {
+            else if self << "BIND" {
                 var source: Symbol
                 var sourceSlot: Symbol
                 var target: Symbol
@@ -617,21 +605,21 @@ public class Parser {
 
 
      */
-    func _instanceSpec() throws -> (Symbol, Symbol?, Int?) {
+    func _instanceSpec() throws -> ContentObject {
         let concept: Symbol
 
         concept = try self.expectSymbol("concept name")
 
-        if self.acceptKeyword("AS") {
+        if self << "AS" {
             let alias = try self.expectSymbol("object alias")
-            return (concept, alias, nil)
+            return .Named(concept, alias)
         }
-        else if self.accept(.Times) {
+        else if self << .Times {
             let count = try self.expectInteger("instance count")
-            return (concept, nil, count)
+            return .Many(concept, count)
         }
         else {
-            return (concept, nil, nil)
+            return .Many(concept, 1)
         }
 
     }
@@ -648,18 +636,13 @@ public class Parser {
         actuator := WHERE selector DO actions
 
      */
-    func _actuator() throws -> Actuator? {
+    func _actuator() throws -> Actuator {
         var predicates: [Predicate]
         var otherPredicates: [Predicate]?
         var instructions = [Instruction]()
         var isRoot:Bool
 
-        if self.acceptKeyword("WHERE") {
-            (isRoot, predicates, otherPredicates) = try self._selector()
-        }
-        else {
-            return nil
-        }
+        (isRoot, predicates, otherPredicates) = try self._selector()
 
         try self.expectKeyword("DO")
 
@@ -680,19 +663,19 @@ public class Parser {
         var predicates: [Predicate]
         var otherPredicates: [Predicate]? = nil
 
-        if self.acceptKeyword("ALL") {
+        if self << "ALL" {
             // ALL -> only one predicate
             predicates = [Predicate(.All)]
         }
         else {
-            isRoot = self.acceptKeyword("ROOT")
+            isRoot = self << "ROOT"
             // rest of the predicates
             predicates = try self._predicates()
         }
 
         // Is interactive?
-        if self.acceptKeyword("ON") {
-            if self.acceptKeyword("ALL") {
+        if self << "ON" {
+            if self << "ALL" {
                 // ALL -> only one predicate
                 otherPredicates = [Predicate(.All)]
             }
@@ -711,7 +694,7 @@ public class Parser {
         var isNegated: Bool
 
         // TODO: Why again?? Check the grammar!
-        if self.acceptKeyword("ALL") {
+        if self << "ALL" {
             predicates = [Predicate(.All)]
             return predicates
         }
@@ -719,24 +702,24 @@ public class Parser {
         // TODO: implement IN slot
         // TODO: implement tag list, no commas so it reads: open jar
         while true {
-            isNegated = self.acceptKeyword("NOT")
+            isNegated = self << "NOT"
 
-            if self.acceptKeyword("SET") {
+            if self << "SET" {
                 let tags = try self._tagList()
 
                 predicate = Predicate(.TagSet(tags), isNegated)
             }
-            else if self.acceptKeyword("UNSET") {
+            else if self << "UNSET" {
                 let tags = try self._tagList()
 
                 predicate = Predicate(.TagUnset(tags), isNegated)
             }
-            else if self.acceptKeyword("ZERO") {
+            else if self << "ZERO" {
                 let counter = try self.expectSymbol()
 
                 predicate = Predicate(.CounterZero(counter), isNegated)
             }
-            else if self.acceptKeyword("BOUND") {
+            else if self << "BOUND" {
                 let slot = try self.expectSymbol()
 
                 predicate = Predicate(.IsBound(slot), isNegated)
@@ -754,7 +737,7 @@ public class Parser {
                     let value = try self.expectInteger("counter value")
                     predicate = Predicate(.CounterGreater(symbol, value))
                 }
-                else if self.accept(.Comma) {
+                else if self << .Comma {
                     var tags = try self._tagList()
                     tags.insert(symbol)
                     predicate = Predicate(.TagSet(tags), isNegated)
@@ -818,35 +801,35 @@ public class Parser {
         var ref: CurrentRef
 
         // TODO: make this part of modifier instruction only
-        if self.acceptKeyword("IN") {
+        if self << "IN" {
             ref = try self._currentReference()
         }
         else {
             ref = CurrentRef(type:.This, slot:nil)
         }
 
-        if self.acceptKeyword("NOTHING") {
+        if self << "NOTHING" {
             instruction = .Nothing
         }
         else if self.acceptKeyword("TRAP") {
             let symbol = try self.expectSymbol("trap name")
             instruction = .Trap(symbol)
         }
-        else if self.acceptKeyword("NOTIFY") {
+        else if self << "NOTIFY" {
             let symbol = try self.expectSymbol("notification name")
             instruction = .Notify(symbol)
         }
-        else if self.acceptKeyword("SET") {
+        else if self << "SET" {
             let tags = try self._tagList()
 
             instruction = .Modify(ref, .SetTags(tags))
         }
-        else if self.acceptKeyword("UNSET") {
+        else if self << "UNSET" {
             let tags = try self._tagList()
 
             instruction = .Modify(ref, .UnsetTags(tags))
         }
-        else if self.acceptKeyword("BIND") {
+        else if self << "BIND" {
             let targetRef: CurrentRef
             let symbol: Symbol
 
@@ -858,7 +841,7 @@ public class Parser {
 
             instruction = .Modify(ref, .Bind(targetRef, symbol))
         }
-        else if self.acceptKeyword("UNBIND") {
+        else if self << "UNBIND" {
             let symbol = try self.expectSymbol()
 
             instruction = .Modify(ref, .Unbind(symbol))
@@ -876,7 +859,7 @@ public class Parser {
 
         type = try self._currentType()
 
-        if self.accept(.Dot) {
+        if self << .Dot {
             slot = try self.expectSymbol("slot name")
         }
 
@@ -884,10 +867,10 @@ public class Parser {
     }
 
     func _currentType() throws -> CurrentType {
-        if self.acceptKeyword("THIS") {
+        if self << "THIS" {
             return .This
         }
-        else if self.acceptKeyword("OTHER") {
+        else if self << "OTHER" {
             return .Other
         }
         else {
@@ -905,27 +888,22 @@ public class Parser {
          MEASURE free_lids COUNT WHERE lid AND free
          MEASURE all_lids COUNT WHERE lid OR open
      */
-    func _measure() throws -> Measure? {
+    func _measure() throws -> Measure {
         let name: Symbol
         let function: AggregateFunction
         let counter: Symbol?
 
-        if !self.acceptKeyword("MEASURE") {
-            return nil
-        }
-
-
         name = try self.expectSymbol("measure name")
 
-        if self.acceptKeyword("COUNT") {
+        if self << "COUNT" {
             function = AggregateFunction.Count
             counter = nil
         }
-        else if self.acceptKeyword("SUM") {
+        else if self << "SUM" {
             function = AggregateFunction.Sum
             counter = try self.expectSymbol("counter name")
         }
-        else if self.acceptKeyword("MIN") {
+        else if self << "MIN" {
             function = AggregateFunction.Min
             counter = try self.expectSymbol("counter name")
         }
@@ -953,7 +931,7 @@ public class Parser {
 
         symbols.append(first)
 
-        while(self.accept(.Comma)) {
+        while(self << .Comma) {
             let symbol = try self.expectSymbol()
             symbols.append(symbol)
         }
@@ -969,5 +947,9 @@ public class Parser {
 
 public func <<(parser: Parser, keyword: String) -> Bool {
     return parser.acceptKeyword(keyword)
+}
+
+public func <<(parser: Parser, token: Token) -> Bool {
+    return parser.accept(token)
 }
 

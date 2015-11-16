@@ -148,41 +148,50 @@ public class Binding {
     }
 }
 
+public enum ContentObject: CustomStringConvertible {
+    case Named(Symbol, Symbol)
+    case Many(Symbol, Int)
+
+    public var description: String {
+        switch self {
+        case let .Named(concept, name):
+            return "\(concept) AS \(name)"
+        case let .Many(concept, count):
+            return "\(concept) * \(count)"
+        }
+    }
+}
+
 /**
     Descrption of an object container. Contains collection of objects
  that can be referenced by their names and collection of anonymous
  objects with multiple instances of the same concept.
 */
 public class StructContents {
+    /// List of all content object
+    public var contentObjects = [ContentObject]()
+
     /// Map of objects that have name. Objects with name can be used for
     /// bindings.
     public var namedObjects = [Symbol:Symbol]()
-    /// List of anonymous objects.
-    public var countedObjects = CountedSet<Symbol>()
 
-    public func addObjectCount(concept:Symbol, count:Int) {
-        countedObjects[concept] = count
-    }
-    public func addObject(concept:Symbol, alias:Symbol?=nil) {
-        if alias == nil {
-            countedObjects.add(concept)
+    public func addObject(obj: ContentObject) {
+        switch obj {
+        case let .Named(concept, name):
+            self.namedObjects[name] = concept
+        case .Many(_, _):
+            break
         }
-        else {
-            self.namedObjects[alias!] = concept
-        }
+
+        self.contentObjects.append(obj)
     }
 
     public func asString() -> String {
-        var out = String()
-
-        for (alias, concept) in namedObjects {
-            out += "    OBJECT \(concept) AS \(alias)\n"
-        }
-        for (concept, count) in countedObjects {
-            out += "    OBJECT \(concept) * \(count)\n"
+        let lines = self.contentObjects.map() { obj in
+            return "    OBJECT \(obj)"
         }
 
-        return out
+        return lines.joinWithSeparator("\n")
     }
 }
 

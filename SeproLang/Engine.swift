@@ -148,13 +148,14 @@ public class SimpleStore: Store {
     func instantiateStructContents(contents: StructContents) throws -> ObjectMap {
         var map = ObjectMap()
 
-        for (alias, conceptName) in contents.namedObjects {
-            map[alias] = try self.instantiate(conceptName)
-        }
-
-        for (conceptName, count) in contents.countedObjects {
-            for _ in 1...count {
-                try self.instantiate(conceptName)
+        try contents.contentObjects.forEach() { obj in
+            switch obj {
+            case let .Named(concept, name):
+                map[name] = try self.instantiate(concept)
+            case let .Many(concept, count):
+                for _ in 1...count {
+                    try self.instantiate(concept)
+                }
             }
         }
 
