@@ -6,10 +6,10 @@
 //  Copyright © 2015 Stefan Urbanek. All rights reserved.
 //
 
-import SeproLang
+@testable import SeproLang
 import XCTest
 
-class ParserTestCase: XCTestCase {
+class LexerTestCase: XCTestCase {
     override func setUp() {
         super.setUp()
         // Put setup code here. This method is called before the invocation of each test method in the class.
@@ -22,66 +22,96 @@ class ParserTestCase: XCTestCase {
 
     func testEmpty() {
         var lexer = Lexer(source: "")
-        var token = lexer.nextToken()
+        var token = lexer.next()
 
-        XCTAssertEqual(token.type, TokenType.End)
+        XCTAssertEqual(token, Token.End)
 
         lexer = Lexer(source: "  ")
-        token = lexer.nextToken()
-        XCTAssertEqual(token.type, TokenType.End)
+        token = lexer.next()
+
+        XCTAssertEqual(token, Token.End)
     }
 
     func testNumber() {
         let lexer = Lexer(source: "1234")
-        let token = lexer.nextToken()
+        let token = lexer.next()
 
-        XCTAssertEqual(token.type, TokenType.Integer)
-        XCTAssertEqual(token.value, "1234")
+        XCTAssertEqual(token, Token.Integer(1234))
     }
+
+    func assertError(token: Token, _ str: String) {
+        switch token {
+        case .Error(let val) where val.containsString(str):
+            break
+        default:
+            XCTFail("Token \(token) is not an error containing '\(str)'")
+        }
+    }
+
+    func testInvalidNumber() {
+        let lexer = Lexer(source: "1234x")
+
+        let token = lexer.next()
+        self.assertError(token, " in number")
+    }
+
+    func testInvalidArrow() {
+        var lexer = Lexer(source: "-")
+
+        var token = lexer.next()
+        self.assertError(token, "Did you mean '->'")
+
+        lexer = Lexer(source: "- ")
+
+        token = lexer.next()
+        self.assertError(token, "Did you mean '->'")
+    }
+
 
     func testKeyword() {
         let lexer = Lexer(source: "CONCEPT")
-        let token = lexer.nextToken()
+        let token = lexer.next()
 
-        XCTAssertEqual(token.type, TokenType.Keyword)
-        XCTAssertEqual(token.value, "CONCEPT")
+        XCTAssertEqual(token, Token.Keyword("CONCEPT"))
     }
 
     func testKeywordCase() {
-        let lexer = Lexer(source: "CONCEPT")
-        let token = lexer.nextToken()
+        let lexer = Lexer(source: "cOnCePt")
+        let token = lexer.next()
 
-        XCTAssertEqual(token.type, TokenType.Keyword)
-        XCTAssertEqual(token.value, "CONCEPT")
+        XCTAssertEqual(token, Token.Keyword("CONCEPT"))
     }
 
     func testSymbol() {
-        let lexer = Lexer(source: "something")
-        let token = lexer.nextToken()
+        let lexer = Lexer(source: "this_is_something")
+        let token = lexer.next()
 
-        XCTAssertEqual(token.type, TokenType.Symbol)
-        XCTAssertEqual(token.value, "something")
+        XCTAssertEqual(token, Token.Symbol("this_is_something"))
     }
 
     func testMultiple() {
-        let lexer = Lexer(source: "this that 10, 20, 30")
-        var token = lexer.nextToken()
+        let lexer = Lexer(source: "this that 10, 20, 30 ")
+        var token = lexer.next()
 
-        XCTAssertEqual(token.type, TokenType.Keyword)
-        XCTAssertEqual(token.value, "THIS")
+        XCTAssertEqual(token, Token.Keyword("THIS"))
 
-        token = lexer.nextToken()
-        XCTAssertEqual(token.type, TokenType.Symbol)
-        XCTAssertEqual(token.value, "that")
+        token = lexer.next()
+        XCTAssertEqual(token, Token.Symbol("that"))
 
-        for val in ["10", "20"] {
-            token = lexer.nextToken()
-            XCTAssertEqual(token.type, TokenType.Integer)
-            XCTAssertEqual(token.value, val)
+        for val in [10, 20] {
+            token = lexer.next()
+            XCTAssertEqual(token, Token.Integer(val))
 
-            token = lexer.nextToken()
-            XCTAssertEqual(token.type, TokenType.Comma)
+            token = lexer.next()
+            XCTAssertEqual(token, Token.Comma)
         }
+
+        token = lexer.next()
+        XCTAssertEqual(token, Token.Integer(30))
+
+        token = lexer.next()
+        XCTAssertEqual(token, Token.End)
+
     }
 }
 
@@ -124,6 +154,80 @@ class CompilerTestase: XCTestCase {
         error = self.compileError("CONCEPT")
         XCTAssertNotNil(error)
 
+    }
+
+    func testAccept() {
+        var parser = Parser(source: "")
+
+        XCTAssertTrue(parser.accept(.End))
+
+        parser = Parser(source: "CONCEPT something")
+        XCTAssertFalse(parser.accept(.End))
+
+        XCTAssertTrue(parser.accept(.Keyword("CONCEPT")))
+        XCTAssertFalse(parser.accept(.Keyword("CONCEPT")))
+        XCTAssertFalse(parser.accept(.End))
+
+        XCTAssertTrue(parser.accept(.Symbol("something")))
+        XCTAssertFalse(parser.accept(.Symbol("something")))
+
+        // The same with helper methods
+        parser = Parser(source: "CONCEPT something")
+        XCTAssertFalse(parser.accept(.End))
+
+        XCTAssertTrue(parser.acceptKeyword("CONCEPT"))
+    }
+
+    func assertError(error: String, block: () throws -> Void) {
+        do {
+            try block()
+            XCTFail("Exception with error '\(error)' not raised")
+        }
+        catch SyntaxError.Syntax(let message) {
+            if !message.containsString(error) {
+                XCTFail("Thrown error does not contain '\(error)'. Got '\(message)'")
+            }
+        }
+        catch {
+            XCTFail("Unexpected error catched")
+        }
+
+    }
+    func testExpect() {
+        var parser = Parser(source:"")
+
+        self.assertError("got end") {
+            try parser.expect(.Symbol("nothing"))
+        }
+
+        parser = Parser(source:"concept foo")
+        self.assertError("Expected symbol") {
+            try parser.expect(.Symbol("concept"))
+        }
+
+    }
+
+    func testExpectMultiple() {
+        let parser: Parser
+
+        parser = Parser(source:"concept foo")
+        do {
+            let result = try parser.expectKeyword("CONCEPT")
+            XCTAssertTrue(result)
+        }
+        catch {
+            XCTFail()
+        }
+        do {
+            let result = try parser.expectSymbol()
+            XCTAssertEqual(result, "foo")
+        }
+        catch SyntaxError.Syntax(let message) {
+            XCTFail("Symbol expectation failed: \(message)")
+        }
+        catch {
+            XCTFail()
+        }
     }
 
     func testSymbolList() {

@@ -6,14 +6,79 @@
 //  Copyright © 2015 Stefan Urbanek. All rights reserved.
 //
 
-public enum TokenType:Int {
-    case Error = 0
+public enum Token: CustomStringConvertible, Equatable {
+    case Error(String)
     case End
-    case Integer, Symbol
-    case Keyword, Description
-    case Comma, Arrow, Dot
-    case Less, Greater
+    case Integer(Int)
+    case Symbol(String)
+    case Keyword(String)
+    case Description(String)
+    case Comma
+    case Arrow
+    case Dot
+    case Less
+    case Greater
     case Times
+
+    public var description: String {
+        switch self {
+        case Error(let error):
+            return "parser error: \(error)"
+        case End:
+            return "end"
+        case Integer(let value):
+            return "integer \(value)"
+        case Symbol(let symbol):
+            return "symbol \"\(symbol)\""
+        case Keyword(let keyword):
+            return "\(keyword)"
+        case Description( _):
+            return "description"
+        case Comma:
+            return "comma ','"
+        case Arrow:
+            return "arrow '->'"
+        case Dot:
+            return "dot '.'"
+        case Less:
+            return "less '<'"
+        case Greater:
+            return "greater '>'"
+        case Times:
+            return "times '*'"
+        }
+    }
+}
+
+public func ==(left: Token, right: Token) -> Bool {
+    switch (left, right) {
+    case (.Error(let lstr), .Error(let rstr)) where lstr == rstr:
+        return true
+    case (.End, .End):
+        return true
+    case (.Integer(let lint), .Integer(let rint)) where lint == rint:
+        return true
+    case (.Symbol(let lstr), .Symbol(let rstr)) where lstr == rstr:
+        return true
+    case (.Keyword(let lstr), .Keyword(let rstr)) where lstr == rstr:
+        return true
+    case (.Description(let lstr), .Description(let rstr)) where lstr == rstr:
+        return true
+    case (.Comma, .Comma):
+        return true
+    case (.Arrow, .Arrow):
+        return true
+    case (.Dot, .Dot):
+        return true
+    case (.Less, .Less):
+        return true
+    case (.Greater, .Greater):
+        return true
+    case (.Times, .Times):
+        return true
+    default:
+        return false
+    }
 }
 
 public let Keywords = [
@@ -42,11 +107,6 @@ public let Keywords = [
     "ROOT", "THIS", "OTHER"
 ]
 
-public struct SourceToken {
-    public let type: TokenType
-    public let value: String?
-}
-
 
 /**
     Tokenize the model source into lexical units.
@@ -59,7 +119,7 @@ public class Lexer {
     var chars: String.CharacterView
     var pos: String.CharacterView.Index!
 
-    public var currentToken: SourceToken?
+    public var currentToken: Token!
 
     /**
         Initialize the lexer with model source.
@@ -75,16 +135,18 @@ public class Lexer {
         self.nextChar()
     }
 
-    public func parse() -> [SourceToken]{
-        var tokens = [SourceToken]()
+    public func parse() -> [Token]{
+        var tokens = [Token]()
 
-        while(true) {
-            let token = self.nextToken()
+        loop: while(true) {
+            let token = self.next()
             
             tokens.append(token)
-            if token.type == TokenType.End ||
-                token.type == TokenType.Error {
-                    break
+
+            switch token {
+            case .Error: break loop
+            case .End: break loop
+            default: break // switch
             }
         }
 
@@ -140,87 +202,126 @@ public class Lexer {
         return self.pos >= self.chars.endIndex
     }
 
+    func tokenFrom(start: String.CharacterView.Index) -> String {
+        let end = self.pos.predecessor()
+        return self.source.substringWithRange(start...end)
+    }
+
+    /** Accept characters that are equal to the `char` character */
+    private func accept(char: Character) -> Bool {
+        if self.currentChar == char {
+            self.nextChar()
+            return true
+        }
+        else {
+            return false
+        }
+    }
+
+    /** Accept characters that match `test` predicate */
+    private func accept(test: Character -> Bool) -> Bool {
+        if self.currentChar != nil && test(self.currentChar!) {
+            self.nextChar()
+            return true
+        }
+        else {
+            return false
+        }
+    }
+
     /**
         Parse next token.
     
         - Returns: currently parsed SourceToken
     */
-    public func nextToken() -> SourceToken {
+    public func next() -> Token {
         let start: String.CharacterView.Index
-        let end: String.CharacterView.Index
-        var type: TokenType = TokenType.Error
-
-        if self.currentToken?.type == TokenType.Error {
-            return self.currentToken!
-        }
+        var token: Token
 
         self.skipWhitespace()
+
         start = self.pos
 
         if self.atEnd() {
-            self.currentToken = SourceToken(type:TokenType.End, value:nil)
-            return self.currentToken!
+            token = Token.End
         }
+        else if self << isnumber {
+            self <<* isnumber
 
-        if isnumber(self.currentChar) {
-            while(isnumber(self.nextChar())) {
-            }
             if isalpha(self.currentChar) || self.currentChar == "_" {
-                type = TokenType.Error
+                token = Token.Error("Invalid character \(self.currentChar) in number")
             }
             else {
-                type = TokenType.Integer
+                let value = self.tokenFrom(start)
+                if let ivalue = Int(value) {
+                    token = Token.Integer(ivalue)
+
+                }
+                else {
+                    token = Token.Error("Can't convert '\(value)' to integer")
+                }
             }
         }
-        else if isalpha(self.currentChar) {
-            while(isidentifier(self.nextChar())){
+        else if self << isalpha {
+            self <<* isidentifier
+
+            let value = self.tokenFrom(start)
+            let upvalue = value.uppercaseString
+
+            if Keywords.contains(upvalue) {
+                token = Token.Keyword(upvalue)
             }
-            type = TokenType.Symbol
+            else {
+                token = Token.Symbol(value)
+            }
         }
-        else if self.currentChar == "." {
-            self.nextChar()
-            type = TokenType.Dot
+        else if self << "." {
+            token = Token.Dot
         }
-        else if self.currentChar == "," {
-            self.nextChar()
-            type = TokenType.Comma
+        else if self << "," {
+            token = Token.Comma
         }
-        else if self.currentChar == "*" {
-            self.nextChar()
-            type = TokenType.Times
+        else if self << "*" {
+            token = Token.Times
         }
-        else if self.currentChar == "<" {
-            self.nextChar()
-            type = TokenType.Less
+        else if self << "<" {
+            token = Token.Less
         }
-        else if self.currentChar == ">" {
-            self.nextChar()
-            type = TokenType.Greater
+        else if self << ">" {
+            token = Token.Greater
         }
-        else if self.currentChar == "-" {
-            if self.nextChar() == ">" {
-                self.nextChar()
-                type = TokenType.Arrow
+        else if self << "-" {
+            if self << ">" {
+                token = Token.Arrow
+            }
+            else {
+                token = Token.Error("Invalid character '-'. Did you mean '->'?")
             }
         }
         else {
-            self.nextChar()
+            token = Token.Error("Invalid character '\(self.currentChar)'")
         }
 
-        end = self.pos.predecessor()
-        var value = self.source.substringWithRange(start...end)
+        self.currentToken = token
 
-        if type == TokenType.Symbol && Keywords.contains(value.uppercaseString) {
-            value = value.uppercaseString
-            type = TokenType.Keyword
-        }
-
-        self.currentToken = SourceToken(type:type, value:value)
-        return self.currentToken!
+        return token
     }
-
 }
 
+public func <<(lexer: Lexer, char: Character) -> Bool {
+    return lexer.accept(char)
+}
+
+public func <<(lexer: Lexer, test: Character -> Bool) -> Bool {
+    return lexer.accept(test)
+}
+
+/// Accept zero or more times
+infix operator <<* {}
+public func <<*(lexer: Lexer, test: Character -> Bool) -> Bool {
+    while(lexer << test) { /* just skip */ }
+    return true
+}
 
 // MARK: Parser
 
@@ -238,8 +339,6 @@ public class Parser {
     public var error: String?
     public var offendingToken: String?
 
-    public var currentValue: String?
-
     // TODO: Add the following
     // * symbol location
     // * symbol type
@@ -249,7 +348,7 @@ public class Parser {
     */
     public init(source:String) {
         self.lexer = Lexer(source:source)
-        self.lexer.nextToken()
+        self.lexer.next()
     }
 
 
@@ -257,61 +356,42 @@ public class Parser {
         return lexer.currentLine
     }
 
-    func accept(type:TokenType,_ value:String?=nil) throws -> Bool {
-        if let token:SourceToken = self.lexer.currentToken {
-            if token.type == TokenType.Error {
-                throw SyntaxError.Parser(message: "Parser error")
-            }
-            if token.type == type && (value == nil || token.value == value){
-                    self.currentValue = token.value
-                    self.lexer.nextToken()
-                    return true
-            }
-            return false
+    func accept(token: Token) -> Bool {
+        if token == self.lexer.currentToken {
+            self.lexer.next()
+            return true
         }
         else {
             return false
         }
     }
 
-    // Convenience
-    func acceptKeyword(keyword: String) throws -> Bool {
-        return try self.accept(TokenType.Keyword, keyword)
-    }
-
-    /** Expects a token */
-    func expect(type:TokenType,_ value:String?=nil,
-        expected:String?=nil) throws -> String {
-
-        if try self.accept(type, value) {
-            // TODO: why empty string?
-            return currentValue ?? ""
+    func acceptKeyword(keyword: String) -> Bool {
+        if self.lexer.currentToken == nil {
+            return false
         }
 
-        let currValue:String = self.lexer.currentToken!.value ?? "(nil)"
-        let currType:String = String(self.lexer.currentToken!.type) ?? "(nil)"
+        switch self.lexer.currentToken! {
+        case .Keyword(let value) where value == keyword:
+            self.lexer.next()
+            return true
+        default:
+            return false
+        }
+    }
 
-        if expected != nil {
-            self.error = "Expected \(expected!), got '\(currValue)'"
+    private func makeUnexpected(expected: String) -> SyntaxError {
+        let unexpected: String
+        if self.lexer.currentToken == nil {
+            unexpected = "nothing"
         }
         else {
-            let displayValue: String
-
-            displayValue = value ?? "(nil)"
-
-            self.error = "Expected \(type) '\(displayValue)', " +
-                            "got \(currType) '\(currValue)'"
+            unexpected = String(self.lexer.currentToken)
         }
-        self.offendingToken = self.currentValue
 
-        throw SyntaxError.Syntax(message: self.error!)
-    }
+        let error = "Expected \(expected), got \(unexpected)"
 
-    // Convenience
-    func expectKeyword(keyword: String, expected:String?=nil) throws
-        -> String {
-            return try self.expect(TokenType.Keyword, keyword,
-                expected: expected)
+        return SyntaxError.Syntax(message: error)
     }
 
     /**
@@ -320,12 +400,52 @@ public class Parser {
         displayed to the user on compilation error.
     */
     func expectSymbol(expected:String?=nil) throws -> Symbol {
-        return try self.expect(TokenType.Symbol, expected: expected)
+        let alias = expected ?? "symbol"
+
+        if self.lexer.currentToken != nil {
+            switch self.lexer.currentToken! {
+            case .Symbol(let value):
+                self.lexer.next()
+                return value
+            default: break
+            }
+        }
+
+        throw self.makeUnexpected(alias)
     }
 
-    func expectInteger(expected:String?=nil) throws -> Int {
-        let str = try self.expect(TokenType.Integer, expected: expected)
-        return Int(str)!
+
+    // TODO: do we need the -> Bool here?
+    func expectKeyword(keyword: String) throws -> Bool {
+        if self.acceptKeyword(keyword) {
+            return true
+        }
+        else {
+            throw self.makeUnexpected("keyword \(keyword)")
+        }
+    }
+
+    func expectInteger(expectation: String) throws -> Int {
+        if self.lexer.currentToken != nil {
+            switch self.lexer.currentToken! {
+            case .Integer(let value):
+                return value
+            default: break
+            }
+        }
+        throw self.makeUnexpected("expectation")
+    }
+
+
+
+    /** Expects a token */
+    func expect(token:Token) throws -> Bool {
+
+        if self.accept(token) {
+            return true
+        }
+
+        throw self.makeUnexpected(String(token))
     }
 
     /**
@@ -377,14 +497,11 @@ public class Parser {
             else if let measure = try self._measure() {
                 measures.append(measure)
             }
-            else if try self.accept(TokenType.End) {
+            else if self.accept(.End) {
                 break
             }
             else {
-                let message: String
-                let value = self.lexer.currentToken!.value
-                message = "Expecting model object, got '\(value)'"
-                throw SyntaxError.Syntax(message: message)
+                throw self.makeUnexpected("model object")
             }
 
         }
@@ -404,17 +521,17 @@ public class Parser {
         var tags: TagList? = nil
         var slots: SlotList? = nil
 
-        if try !self.acceptKeyword("CONCEPT") {
+        if !self.acceptKeyword("CONCEPT") {
             return nil
         }
 
-        let name = try self.expect(TokenType.Symbol, expected: "concept name")
+        let name = try self.expectSymbol("concept name")
 
-        if try self.acceptKeyword("TAG") {
+        if self.acceptKeyword("TAG") {
             tags = TagList(try self.parseSymbolList())
         }
 
-        if try self.acceptKeyword("SLOT") {
+        if self.acceptKeyword("SLOT") {
             slots = SlotList(try self.parseSymbolList())
         }
 
@@ -427,18 +544,18 @@ public class Parser {
         var name: Symbol
         let graph = GraphDescription()
 
-        if try !self.acceptKeyword("WORLD") {
+        if !self.acceptKeyword("WORLD") {
             return nil
         }
 
         name = try self.expectSymbol("world name")
 
-        if try self.acceptKeyword("ROOT") {
+        if self.acceptKeyword("ROOT") {
             root = try self.expectSymbol("root concept")
         }
 
         while true {
-            if try self.acceptKeyword("OBJECT") {
+            if self.acceptKeyword("OBJECT") {
                 var concept: Symbol
                 var alias: Symbol?
                 var count: Int?
@@ -460,27 +577,27 @@ public class Parser {
                         throw SyntaxError.Internal(message: "Instance should not have both count and alias")
                     }
 
-                    if try !self.accept(TokenType.Comma) {
+                    if !self.accept(.Comma) {
                         break
                     }
                 }
 
             }
-            else if try self.acceptKeyword("BIND") {
+            else if self.acceptKeyword("BIND") {
                 var source: Symbol
                 var sourceSlot: Symbol
                 var target: Symbol
 
                 while true {
                     source = try self.expectSymbol("source object")
-                    try self.expect(TokenType.Dot)
+                    try self.expect(.Dot)
                     sourceSlot = try self.expectSymbol("source slot")
                     try self.expectKeyword("TO")
                     target = try self.expectSymbol("target object")
 
                     graph.bind(source, sourceSlot: sourceSlot, target: target)
 
-                    if try !self.accept(TokenType.Comma) {
+                    if !self.accept(.Comma) {
                         break
                     }
                 }
@@ -505,13 +622,13 @@ public class Parser {
 
         concept = try self.expectSymbol("concept name")
 
-        if try self.acceptKeyword("AS") {
+        if self.acceptKeyword("AS") {
             let alias = try self.expectSymbol("object alias")
             return (concept, alias, nil)
         }
-        else if try self.accept(TokenType.Times) {
-            let count = try self.expect(TokenType.Integer, expected:"instance count")
-            return (concept, nil, Int(count))
+        else if self.accept(.Times) {
+            let count = try self.expectInteger("instance count")
+            return (concept, nil, count)
         }
         else {
             return (concept, nil, nil)
@@ -537,7 +654,7 @@ public class Parser {
         var instructions = [Instruction]()
         var isRoot:Bool
 
-        if try self.acceptKeyword("WHERE") {
+        if self.acceptKeyword("WHERE") {
             (isRoot, predicates, otherPredicates) = try self._selector()
         }
         else {
@@ -563,19 +680,19 @@ public class Parser {
         var predicates: [Predicate]
         var otherPredicates: [Predicate]? = nil
 
-        if try self.acceptKeyword("ALL") {
+        if self.acceptKeyword("ALL") {
             // ALL -> only one predicate
             predicates = [Predicate(.All)]
         }
         else {
-            isRoot = try self.acceptKeyword("ROOT")
+            isRoot = self.acceptKeyword("ROOT")
             // rest of the predicates
             predicates = try self._predicates()
         }
 
         // Is interactive?
-        if try self.acceptKeyword("ON") {
-            if try self.acceptKeyword("ALL") {
+        if self.acceptKeyword("ON") {
+            if self.acceptKeyword("ALL") {
                 // ALL -> only one predicate
                 otherPredicates = [Predicate(.All)]
             }
@@ -594,7 +711,7 @@ public class Parser {
         var isNegated: Bool
 
         // TODO: Why again?? Check the grammar!
-        if try self.acceptKeyword("ALL") {
+        if self.acceptKeyword("ALL") {
             predicates = [Predicate(.All)]
             return predicates
         }
@@ -602,24 +719,24 @@ public class Parser {
         // TODO: implement IN slot
         // TODO: implement tag list, no commas so it reads: open jar
         while true {
-            isNegated = try self.acceptKeyword("NOT")
+            isNegated = self.acceptKeyword("NOT")
 
-            if try self.acceptKeyword("SET") {
+            if self.acceptKeyword("SET") {
                 let tags = try self._tagList()
 
                 predicate = Predicate(.TagSet(tags), isNegated)
             }
-            else if try self.acceptKeyword("UNSET") {
+            else if self.acceptKeyword("UNSET") {
                 let tags = try self._tagList()
 
                 predicate = Predicate(.TagUnset(tags), isNegated)
             }
-            else if try self.acceptKeyword("ZERO") {
+            else if self.acceptKeyword("ZERO") {
                 let counter = try self.expectSymbol()
 
                 predicate = Predicate(.CounterZero(counter), isNegated)
             }
-            else if try self.acceptKeyword("BOUND") {
+            else if self.acceptKeyword("BOUND") {
                 let slot = try self.expectSymbol()
 
                 predicate = Predicate(.IsBound(slot), isNegated)
@@ -629,15 +746,15 @@ public class Parser {
                 // about this one
                 let symbol = try self.expectSymbol("counter name or tag")
 
-                if try self.accept(TokenType.Less) {
+                if self.accept(.Less) {
                     let value = try self.expectInteger("counter value")
                     predicate = Predicate(.CounterLess(symbol, value))
                 }
-                else if try self.accept(TokenType.Greater) {
+                else if self.accept(.Greater) {
                     let value = try self.expectInteger("counter value")
                     predicate = Predicate(.CounterGreater(symbol, value))
                 }
-                else if try self.accept(TokenType.Comma) {
+                else if self.accept(.Comma) {
                     var tags = try self._tagList()
                     tags.insert(symbol)
                     predicate = Predicate(.TagSet(tags), isNegated)
@@ -650,7 +767,7 @@ public class Parser {
 
             predicates.append(predicate)
 
-            if try !self.acceptKeyword("AND") {
+            if !self.acceptKeyword("AND") {
                 break
             }
 
@@ -682,11 +799,15 @@ public class Parser {
     public func parseInstruction() -> Instruction? {
         do {
             if let instruction = try self._instruction() {
-                try self.expect(TokenType.End)
+                try self.expect(.End)
                 return instruction
             }
         }
+        catch SyntaxError.Syntax(let message) {
+            self.error = message
+        }
         catch {
+            self.error = "Unknown error"
             return nil
         }
         return nil
@@ -697,35 +818,35 @@ public class Parser {
         var ref: CurrentRef
 
         // TODO: make this part of modifier instruction only
-        if try self.acceptKeyword("IN") {
+        if self.acceptKeyword("IN") {
             ref = try self._currentReference()
         }
         else {
             ref = CurrentRef(type:.This, slot:nil)
         }
 
-        if try self.acceptKeyword("NOTHING") {
+        if self.acceptKeyword("NOTHING") {
             instruction = .Nothing
         }
-        else if try self.acceptKeyword("TRAP") {
+        else if self.acceptKeyword("TRAP") {
             let symbol = try self.expectSymbol("trap name")
             instruction = .Trap(symbol)
         }
-        else if try self.acceptKeyword("NOTIFY") {
+        else if self.acceptKeyword("NOTIFY") {
             let symbol = try self.expectSymbol("notification name")
             instruction = .Notify(symbol)
         }
-        else if try self.acceptKeyword("SET") {
+        else if self.acceptKeyword("SET") {
             let tags = try self._tagList()
 
             instruction = .Modify(ref, .SetTags(tags))
         }
-        else if try self.acceptKeyword("UNSET") {
+        else if self.acceptKeyword("UNSET") {
             let tags = try self._tagList()
 
             instruction = .Modify(ref, .UnsetTags(tags))
         }
-        else if try self.acceptKeyword("BIND") {
+        else if self.acceptKeyword("BIND") {
             let targetRef: CurrentRef
             let symbol: Symbol
 
@@ -737,7 +858,7 @@ public class Parser {
 
             instruction = .Modify(ref, .Bind(targetRef, symbol))
         }
-        else if try self.acceptKeyword("UNBIND") {
+        else if self.acceptKeyword("UNBIND") {
             let symbol = try self.expectSymbol()
 
             instruction = .Modify(ref, .Unbind(symbol))
@@ -755,7 +876,7 @@ public class Parser {
 
         type = try self._currentType()
 
-        if try self.accept(TokenType.Dot) {
+        if self.accept(.Dot) {
             slot = try self.expectSymbol("slot name")
         }
 
@@ -763,15 +884,15 @@ public class Parser {
     }
 
     func _currentType() throws -> CurrentType {
-        if try self.acceptKeyword("THIS") {
+        if self.acceptKeyword("THIS") {
             return .This
         }
-        else if try self.acceptKeyword("OTHER") {
+        else if self.acceptKeyword("OTHER") {
             return .Other
         }
         else {
-            try self.expectKeyword("ROOT",
-                          expected: "context specified THIS, OTHER or ROOT")
+            // FIXME: expected: "context specified THIS, OTHER or ROOT")
+            try self.expectKeyword("ROOT")
             return .Root
         }
     }
@@ -789,22 +910,22 @@ public class Parser {
         let function: AggregateFunction
         let counter: Symbol?
 
-        if try !self.acceptKeyword("MEASURE") {
+        if !self.acceptKeyword("MEASURE") {
             return nil
         }
 
 
         name = try self.expectSymbol("measure name")
 
-        if try self.acceptKeyword("COUNT") {
+        if self.acceptKeyword("COUNT") {
             function = AggregateFunction.Count
             counter = nil
         }
-        else if try self.acceptKeyword("SUM") {
+        else if self.acceptKeyword("SUM") {
             function = AggregateFunction.Sum
             counter = try self.expectSymbol("counter name")
         }
-        else if try self.acceptKeyword("MIN") {
+        else if self.acceptKeyword("MIN") {
             function = AggregateFunction.Min
             counter = try self.expectSymbol("counter name")
         }
@@ -828,12 +949,12 @@ public class Parser {
     */
     public func parseSymbolList() throws -> [Symbol] {
         var symbols = [Symbol]()
-        let first = try self.expect(TokenType.Symbol)
+        let first = try self.expectSymbol()
 
         symbols.append(first)
 
-        while(try self.accept(TokenType.Comma)) {
-            let symbol = try self.expect(TokenType.Symbol)
+        while(self.accept(.Comma)) {
+            let symbol = try self.expectSymbol()
             symbols.append(symbol)
         }
 
@@ -845,3 +966,8 @@ public class Parser {
     }
 
 }
+
+public func <<(parser: Parser, keyword: String) -> Bool {
+    return parser.acceptKeyword(keyword)
+}
+
