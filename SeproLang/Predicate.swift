@@ -150,6 +150,7 @@ public struct Predicate: Equatable {
     }
 }
 
+
 public func ==(left: Predicate, right: Predicate) -> Bool {
     return left.type == right.type
             && left.isNegated == right.isNegated

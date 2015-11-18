@@ -18,7 +18,7 @@
 		F85C0EA81BEDC67800789741 /* SeprolabTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F85C0EA71BEDC67800789741 /* SeprolabTests.swift */; };
 		F85C0EB31BEDC67800789741 /* SeprolabUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F85C0EB21BEDC67800789741 /* SeprolabUITests.swift */; };
 		F85C0EBF1BEE91AD00789741 /* Delegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F85C0EBE1BEE91AD00789741 /* Delegate.swift */; };
-		F85C0EC11BF8930600789741 /* Parser2.swift in Sources */ = {isa = PBXBuildFile; fileRef = F85C0EC01BF8930600789741 /* Parser2.swift */; };
+		F865894F1BFC3EA300A5A4EF /* Selection.swift in Sources */ = {isa = PBXBuildFile; fileRef = F865894E1BFC3EA300A5A4EF /* Selection.swift */; };
 		F870872B1BE72CEE004C72A9 /* Observer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F870872A1BE72CEE004C72A9 /* Observer.swift */; };
 		F870872D1BE9D5D3004C72A9 /* Instruction.swift in Sources */ = {isa = PBXBuildFile; fileRef = F870872C1BE9D5D3004C72A9 /* Instruction.swift */; };
 		F870872F1BEB0806004C72A9 /* ParserTestCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = F870872E1BEB0806004C72A9 /* ParserTestCase.swift */; };
@@ -97,7 +97,7 @@
 		F85C0EB21BEDC67800789741 /* SeprolabUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeprolabUITests.swift; sourceTree = "<group>"; };
 		F85C0EB41BEDC67800789741 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		F85C0EBE1BEE91AD00789741 /* Delegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Delegate.swift; sourceTree = "<group>"; };
-		F85C0EC01BF8930600789741 /* Parser2.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Parser2.swift; sourceTree = "<group>"; };
+		F865894E1BFC3EA300A5A4EF /* Selection.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Selection.swift; sourceTree = "<group>"; };
 		F870872A1BE72CEE004C72A9 /* Observer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Observer.swift; sourceTree = "<group>"; };
 		F870872C1BE9D5D3004C72A9 /* Instruction.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Instruction.swift; sourceTree = "<group>"; };
 		F870872E1BEB0806004C72A9 /* ParserTestCase.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ParserTestCase.swift; sourceTree = "<group>"; };
@@ -196,6 +196,36 @@
 			path = SeprolabUITests;
 			sourceTree = "<group>";
 		};
+		F865894B1BFC3E5500A5A4EF /* Engine */ = {
+			isa = PBXGroup;
+			children = (
+				F8F561B91BE312E900C53170 /* Engine.swift */,
+				F865894E1BFC3EA300A5A4EF /* Selection.swift */,
+			);
+			name = Engine;
+			sourceTree = "<group>";
+		};
+		F865894C1BFC3E6300A5A4EF /* Model */ = {
+			isa = PBXGroup;
+			children = (
+				F8F561BA1BE312E900C53170 /* Model.swift */,
+				F824639A1BE31F6A00641782 /* Predicate.swift */,
+				F870872C1BE9D5D3004C72A9 /* Instruction.swift */,
+				F8F618EF1BE4630F002A4DE3 /* Object.swift */,
+			);
+			name = Model;
+			sourceTree = "<group>";
+		};
+		F865894D1BFC3E7800A5A4EF /* Observer */ = {
+			isa = PBXGroup;
+			children = (
+				F82463A11BE4576600641782 /* Probe.swift */,
+				F8F618F11BE572F0002A4DE3 /* Logger.swift */,
+				F870872A1BE72CEE004C72A9 /* Observer.swift */,
+			);
+			name = Observer;
+			sourceTree = "<group>";
+		};
 		F8F561771BE3117D00C53170 = {
 			isa = PBXGroup;
 			children = (
@@ -227,19 +257,13 @@
 		F8F561831BE3117D00C53170 /* SeproLang */ = {
 			isa = PBXGroup;
 			children = (
-				F8F561BA1BE312E900C53170 /* Model.swift */,
-				F824639A1BE31F6A00641782 /* Predicate.swift */,
-				F8F618EF1BE4630F002A4DE3 /* Object.swift */,
-				F8F561B91BE312E900C53170 /* Engine.swift */,
-				F82463A11BE4576600641782 /* Probe.swift */,
-				F8F618F11BE572F0002A4DE3 /* Logger.swift */,
+				F865894C1BFC3E6300A5A4EF /* Model */,
+				F865894B1BFC3E5500A5A4EF /* Engine */,
+				F865894D1BFC3E7800A5A4EF /* Observer */,
 				F8F561BB1BE312E900C53170 /* Parser.swift */,
 				F8F561B71BE3121300C53170 /* Extensions.swift */,
 				F8F561841BE3117D00C53170 /* SeproLang.h */,
 				F8F561861BE3117D00C53170 /* Info.plist */,
-				F870872A1BE72CEE004C72A9 /* Observer.swift */,
-				F870872C1BE9D5D3004C72A9 /* Instruction.swift */,
-				F85C0EC01BF8930600789741 /* Parser2.swift */,
 			);
 			path = SeproLang;
 			sourceTree = "<group>";
@@ -510,6 +534,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F865894F1BFC3EA300A5A4EF /* Selection.swift in Sources */,
 				F824639B1BE31F6A00641782 /* Predicate.swift in Sources */,
 				F85C0E7F1BEB403A00789741 /* Dot.swift in Sources */,
 				F870872B1BE72CEE004C72A9 /* Observer.swift in Sources */,
@@ -517,7 +542,6 @@
 				F8F561BC1BE312E900C53170 /* Engine.swift in Sources */,
 				F870872D1BE9D5D3004C72A9 /* Instruction.swift in Sources */,
 				F8F561BE1BE312E900C53170 /* Parser.swift in Sources */,
-				F85C0EC11BF8930600789741 /* Parser2.swift in Sources */,
 				F82463A21BE4576600641782 /* Probe.swift in Sources */,
 				F8F561B81BE3121300C53170 /* Extensions.swift in Sources */,
 				F8F618F01BE4630F002A4DE3 /* Object.swift in Sources */,
@@ -839,6 +863,7 @@
 				F85C0EB71BEDC67800789741 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		F85C0EB81BEDC67800789741 /* Build configuration list for PBXNativeTarget "SeprolabTests" */ = {
 			isa = XCConfigurationList;
@@ -847,6 +872,7 @@
 				F85C0EBA1BEDC67800789741 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		F85C0EBB1BEDC67800789741 /* Build configuration list for PBXNativeTarget "SeprolabUITests" */ = {
 			isa = XCConfigurationList;
@@ -855,6 +881,7 @@
 				F85C0EBD1BEDC67800789741 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		F8F5617B1BE3117D00C53170 /* Build configuration list for PBXProject "SeproLang" */ = {
 			isa = XCConfigurationList;

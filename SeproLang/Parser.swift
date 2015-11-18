@@ -854,6 +854,7 @@ public class Parser {
         return instruction
     }
 
+    /** Parse a current reference: */
     func _currentReference() throws -> CurrentRef {
         let type: CurrentType
         var slot: Symbol? = nil

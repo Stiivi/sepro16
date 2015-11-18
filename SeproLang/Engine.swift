@@ -13,9 +13,6 @@
 // process of conceptual optimizaiion.
 
 
-public typealias ObjectSelection = AnySequence<Object>
-public typealias ObjectRefSelection = AnySequence<ObjectRef>
-
 public protocol Store {
     /** Initialize the store with `world`. If `world` is not specified then
     `main` is used.
@@ -52,11 +49,8 @@ public protocol Store {
      `objects` the order in which the objects are iterated over is
      engine specific.
      */
-    func select(predicates:[Predicate]) -> ObjectSelection
-    func selectRefs(predicates:[Predicate]) -> ObjectRefSelection
-
-    func evaluate(predicate:Predicate,ref:ObjectRef) -> Bool
-    func evaluate(predicate:Predicate,object:Object) -> Bool
+    func select(predicates:[Predicate]) -> Selection
+    func evaluate(predicate:Predicate, _ ref:ObjectRef) -> Bool
 
     var model:Model { get }
 }
@@ -101,7 +95,6 @@ public class SimpleStore: Store {
 
     /// Reference to the root object in the object memory
     public var root: ObjectRef!
-    public var actuators: [Actuator]
 
     public init(model:Model) {
         self.model = model
@@ -109,7 +102,6 @@ public class SimpleStore: Store {
         self.root = nil
         self.stepCount = 0
 
-        self.actuators = [Actuator](model.actuators)
     }
 
     public var objects: ObjectSelection {
@@ -245,78 +237,40 @@ public class SimpleStore: Store {
     */
 
 
-    public func selectRefs(predicates:[Predicate]) -> ObjectRefSelection {
-        let selection = self.filterObjects(predicates).lazy.map {
-            ref, _ in ref
-        }
-
-        return ObjectRefSelection(selection)
+    public func select(predicates:[Predicate]) -> Selection {
+        return Selection(store: self, predicates: predicates)
     }
 
-    public func select(predicates:[Predicate]) -> ObjectSelection {
-        let selection = self.filterObjects(predicates).lazy.map {
-            _, object in object
-        }
-
-        return AnySequence(selection)
-    }
-
-    func filterObjects(predicates:[Predicate]) -> AnySequence<(ObjectRef, Object)> {
-        let filtered = self.objectMap.lazy.filter {ref, object in
-
-            // Find at least one predicate that the inspected object
-            // does not satisfy (!evaluate). If such predicate is found
-            // (index != nil), then filter out the inspected object.
-
-            predicates.indexOf {
-                predicate in
-                !self.evaluate(predicate, object: object)
-            } == nil
-        }
-
-        return AnySequence(filtered)
-    }
     /**
         Evaluates the predicate against object.
         - Returns: `true` if the object matches the predicate
     */
-    public func evaluate(predicate:Predicate, ref: ObjectRef) -> Bool {
-        if let obj = self.objectMap[ref] {
-            return self.evaluate(predicate, object: obj)
+    public func evaluate(predicate:Predicate,_ ref: ObjectRef) -> Bool {
+        if let object = self.objectMap[ref] {
+            var target: Object
+
+            // Try to get the target slot
+            //
+            if predicate.inSlot != nil {
+                if let maybeTarget = object.links[predicate.inSlot!] {
+                    target = self.objectMap[maybeTarget]!
+                }
+                else {
+                    // TODO: is this OK if the slot is not filled and the condition is
+                    // negated?
+                    return false
+                }
+            }
+            else {
+                target = object
+            }
+            return predicate.evaluate(target)
         }
         else {
             // TODO: Exception?
             return false
         }
     }
-
-    /**
-        Evaluate predicate.
-    
-        - Returns: `true` if the object matches condition.
-    */
-    public func evaluate(predicate:Predicate, object: Object) -> Bool {
-        var target: Object
-
-        // Try to get the target slot
-        //
-        if predicate.inSlot != nil {
-            if let maybeTarget = object.links[predicate.inSlot!] {
-                target = self.objectMap[maybeTarget]!
-            }
-            else {
-                // TODO: is this OK if the slot is not filled and the condition is
-                // negated?
-                return false
-            }
-        }
-        else {
-            target = object
-        }
-
-        return predicate.evaluate(target)
-    }
-
 }
 
 public protocol EngineDelegate {
@@ -533,7 +487,7 @@ public class SimpleEngine: Engine {
                 // Check whether 'this' still matches the predicates
                 let match = actuator.predicates.all {
                     predicate in
-                    self.store.evaluate(predicate, object:this)
+                    self.store.evaluate(predicate, this.id)
                 }
 
                 // ... predicates don't match the object, therefore we

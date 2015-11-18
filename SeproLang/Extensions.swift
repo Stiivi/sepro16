@@ -21,13 +21,13 @@ extension Array {
     /**
      - Returns: `true` when all elements match `predicate`
      */
-    func all(predicate: (Element) -> Bool) -> Bool {
+    public func all(predicate: (Element) -> Bool) -> Bool {
         return self.indexOf { item in !predicate(item) } == nil
     }
     /**
      - Returns: `true` when at least one element matches `predicate`
      */
-    func any(predicate: (Element) -> Bool) -> Bool {
+    public func any(predicate: (Element) -> Bool) -> Bool {
         return self.indexOf(predicate) != nil
     }
 }
