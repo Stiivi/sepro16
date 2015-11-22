@@ -43,17 +43,6 @@ public enum CurrentType: Int, CustomStringConvertible {
 }
 
 /**
-Instruction represents a command to the engine. There are two groups of
-instructions: *system instructions* – have no influence on
-the actual state of the simulation, *modifiers* – modify object state.
-
-System instructions:
-
-- `NOP` - no action, just a placeholder
-- `HALT` – stop simulation
-- `TRAP` – require observer's interaction
-- `NOTIFY channel[, data]` - notify channel that an event occured
-
 Modifiers:
 
 - `INC counter` - increase counter by 1
@@ -63,66 +52,22 @@ Modifiers:
 - `UNSET tag` - unsets tag
 - `BIND slot->target` – binds object to slot
 
-
 */
 
-public enum Instruction: CustomStringConvertible, Equatable {
-    /// Special place-holder without any effect
-    case Nothing
-
-    /** Stop the computation. This instruction should be used when there
-     is no point to continue the simulation, either because an
-     expected or invalid state was reached.
-     
-    Computation can not continue unless the halt flag is cleared.
-     */
-    case Halt
-
-    /// Interrupt the computation and handle the trap externally.
-    case Trap(Symbol)
-
-    /** Passes a notification symbol to the logger without interrupting
-     the computation.
-     */
-    case Notify(Symbol)
-
-    /** Modifies a state of an object */
-    case Modify(CurrentRef, Modifier)
+public struct Modifier: CustomStringConvertible {
+    let currentRef:CurrentRef
+    let action: ModifierAction
 
     public var description: String {
-        switch self {
-        case .Nothing: return "NOTHING"
-        case .Halt: return "HALT"
-        case .Trap(let symbol): return "TRAP \(symbol)"
-        case .Notify(let symbol): return "NOTIFY \(symbol)"
-        case .Modify(let ref, let modifier): return "\(ref) \(modifier.description)"
-        }
-    }
-
-}
-
-public func ==(left: Instruction, right: Instruction) -> Bool {
-    switch (left, right) {
-    case (.Nothing, .Nothing): return true
-    case (.Halt, .Halt): return true
-    case (.Trap(let a), .Trap(let b)) where a == b: return true
-    case (.Notify(let a), .Notify(let b)) where a == b: return true
-    case (.Modify(let lref, let lmod), .Modify(let rref, let rmod))
-            where lref == rref && lmod == rmod: return true
-    default: return false
+        return "IN \(currentRef) \(action)"
     }
 }
 
-
-// Note: We are leaning towards a single (or a very few) "modifier"
-// instructions, therefore we are logically wrapping it under one
-// enumeration
-//
 /**
   Object modifier.
 */
-public enum Modifier: CustomStringConvertible, Equatable {
-    // Object modifiers
+public enum ModifierAction: CustomStringConvertible, Equatable {
+    case Nothing
     case SetTags(TagList)
     case UnsetTags(TagList)
     case Inc(Symbol)
@@ -133,6 +78,7 @@ public enum Modifier: CustomStringConvertible, Equatable {
 
     public var description: String {
         switch self {
+        case .Nothing: return "NOTHING"
         case .SetTags(let symbols):
                     let str = symbols.joinWithSeparator(", ")
                     return "SET \(str)"
@@ -148,8 +94,10 @@ public enum Modifier: CustomStringConvertible, Equatable {
     }
 }
 
-public func ==(left: Modifier, right: Modifier) -> Bool {
+public func ==(left: ModifierAction, right: ModifierAction) -> Bool {
     switch(left, right) {
+    case (.Nothing, .Nothing):
+            return true
     case (.SetTags(let ltags), .SetTags(let rtags)) where ltags == rtags:
             return true
     case (.UnsetTags(let ltags), .UnsetTags(let rtags)) where ltags == rtags:

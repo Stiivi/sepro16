@@ -24,12 +24,6 @@ extension Array {
     public func all(predicate: (Element) -> Bool) -> Bool {
         return self.indexOf { item in !predicate(item) } == nil
     }
-    /**
-     - Returns: `true` when at least one element matches `predicate`
-     */
-    public func any(predicate: (Element) -> Bool) -> Bool {
-        return self.indexOf(predicate) != nil
-    }
 }
 
 /** Primitive implementation of CountedSet used for counting anonymous

@@ -20,37 +20,31 @@ PROBE unlinked SUM counter WHERE
 
 */
 
-public enum AggregateFunction: String {
-    case Count = "COUNT"
-    case Sum = "SUM"
-    case Min = "MIN"
-    case Max = "MAX"
+public enum AggregateFunction {
+    case Count
+    case Sum(Symbol)
+    case Min(Symbol)
+    case Max(Symbol)
 }
 
-public enum MeasureType: String {
-    case Object = "OBJECT"
-    case Aggregate = "AGGREGATE"
+public enum MeasureType {
+    case CounterByName(Symbol, Symbol)
+    case CounterByRef(ObjectRef, Symbol)
+    case Aggregate(AggregateFunction, [Predicate])
 }
 
-public protocol Measure {
-    var name: Symbol { get }
-    var type: MeasureType { get }
-}
+public struct Measure {
+    let name: Symbol
+    let type: MeasureType
 
-
-public struct CounterMeasure: Measure {
-    public let name: Symbol
-    public let type: MeasureType
-    public let counter: Symbol
-}
-
-
-public struct AggregateMeasure: Measure {
-    public let name:Symbol
-    public let type: MeasureType
-    public let counter: Symbol!
-    public let function: AggregateFunction
-    public let predicates: [Predicate]
+    public var predicates: [Predicate] {
+        switch type {
+        case let .Aggregate(_, predicates):
+            return predicates
+        default:
+            return []
+        }
+    }
 }
 
 // MARK: Probes
@@ -60,46 +54,54 @@ public protocol Probe {
     func probe(object:Object)
 }
 
-
 // TODO: not nice aggregate measures are supported for now
-public func createAggregateProbe(measure: AggregateMeasure) -> Probe {
+public func createProbe(measure: Measure) -> Probe {
     let probe: Probe
-    switch measure.function {
-    case .Count: probe = CountProbe(measure:measure)
-    case .Sum: probe = SumProbe(measure:measure)
-    case .Min: probe = MinProbe(measure:measure)
-    case .Max: probe = MaxProbe(measure:measure)
+
+    switch measure.type {
+    case .CounterByName(_, _):
+        return NullProbe()
+    case .CounterByRef(_, _):
+        return NullProbe()
+    case let .Aggregate(function, _):
+        switch function {
+        case .Count: probe = CountProbe()
+        case .Sum(let counter): probe = SumProbe(counter)
+        case .Min(let counter): probe = MinProbe(counter)
+        case .Max(let counter): probe = MaxProbe(counter)
+        }
     }
     return probe
 }
 
-public class CountProbe: Probe {
-    public let measure: AggregateMeasure
-    var count: Int = 0
+/// Dummy proble during development, does nothing, returns 0
+public class NullProbe: Probe {
+    public var value: Int = 0
 
-    public init(measure: AggregateMeasure) {
-        self.measure = measure
-    }
-
-    public func probe(object:Object) {
-        self.count += 1
-    }
-
-    public var value: Int {
-        return count
+    public func probe(object: Object) {
+        // Do nothing
     }
 }
 
+public class CountProbe: Probe {
+    public var value: Int = 0
+
+    public func probe(object:Object) {
+        self.value += 1
+    }
+
+}
+
 public class SumProbe: Probe {
-    public let measure: AggregateMeasure
+    public let counter: Symbol
     var sum: Int = 0
 
-    public init(measure: AggregateMeasure) {
-        self.measure = measure
+    public init(_ counter: Symbol) {
+        self.counter = counter
     }
 
     public func probe(object:Object) {
-        if let value = object.links[self.measure.counter] {
+        if let value = object.counters[self.counter] {
             self.sum += value
         }
     }
@@ -110,15 +112,15 @@ public class SumProbe: Probe {
 }
 
 public class MaxProbe: Probe {
-    public let measure: AggregateMeasure
+    public let counter: Symbol
     var current: Int = 0
 
-    public init(measure: AggregateMeasure) {
-        self.measure = measure
+    public init(_ counter: Symbol) {
+        self.counter = counter
     }
 
     public func probe(object:Object) {
-        if let value = object.links[self.measure.counter] {
+        if let value = object.counters[self.counter] {
             if value > current {
                 current = value
             }
@@ -129,15 +131,15 @@ public class MaxProbe: Probe {
 }
 
 public class MinProbe: Probe {
-    public let measure: AggregateMeasure
+    public let counter: Symbol
     var current: Int = 0
 
-    public init(measure: AggregateMeasure) {
-        self.measure = measure
+    public init(_ counter: Symbol) {
+        self.counter = counter
     }
 
     public func probe(object:Object) {
-        if let value = object.links[self.measure.counter] {
+        if let value = object.links[self.counter] {
             if value < current {
                 current = value
             }

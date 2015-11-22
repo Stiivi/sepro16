@@ -9,6 +9,13 @@
 public typealias ObjectSelection = AnySequence<Object>
 public typealias ObjectRefSelection = AnySequence<ObjectRef>
 
+public enum Ordering {
+    /// As stored in the store, might differ between requests
+    case Natural
+
+    /// Randomized ordering, differs between requests
+    case Randomized
+}
 
 public struct Selection: SequenceType {
     public let predicates: [Predicate]?

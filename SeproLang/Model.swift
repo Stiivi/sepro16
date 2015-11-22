@@ -98,34 +98,6 @@ public class Concept: CustomStringConvertible {
 }
 
 
-/**
-    Combines predicates with their respective instructions that are
-executed when the predicate is met.
-*/
-public class Actuator {
-    /// Denother whether the predicates are related to the root object
-    public let isRoot: Bool
-    /// Predicates that trigger the actuator
-    public let predicates: [Predicate]
-    /// Actions performed by the actuator in atomic way.
-    public let instructions: [Instruction]
-    /// Actions performed by the actuator in atomic way.
-    public let otherPredicates: [Predicate]?
-
-    public init(predicates: [Predicate], instructions: [Instruction],
-        otherPredicates: [Predicate]?=nil, isRoot:Bool=false) {
-        self.isRoot = isRoot
-        self.predicates = predicates
-        self.otherPredicates = otherPredicates
-        self.instructions = instructions
-    }
-
-    public func asString() -> String {
-        // TODO: Implement string representation of the actuator
-        return "# (some actuator)"
-    }
-}
-
 // MARK: Model
 /**
     Binding between a slot and target object represented by symbols.

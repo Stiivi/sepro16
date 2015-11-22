@@ -10,8 +10,16 @@ public typealias ProbeRecord = [Symbol:Int]
 
 public protocol Logger {
 
-    func loggingWillStart(measures: [Measure])
-    func loggingDidEnd()
+    /**
+     Prepare before the engine runs for `steps`. The list of
+     measures might change between subsequent calls. It is up to the
+     logger how to handle the change.
+     */
+    func loggingWillStart(measures: [Measure], steps: Int)
+    /** Engine finished running and it did run for `steps`, which might
+     be the same or less than the number of steps advertised in the
+     `loggingWillStart()` call.*/
+    func loggingDidEnd(steps: Int)
 
     /**
      Allows the observe to observe probed simulation state.
@@ -43,7 +51,7 @@ public class PrintingLogger: Logger {
         measures = [Measure]()
     }
 
-    public func loggingWillStart(measures: [Measure]) {
+    public func loggingWillStart(measures: [Measure], steps: Int) {
         self.measures = measures
 
         let names = self.measures.map { measure in measure.name }
@@ -51,7 +59,7 @@ public class PrintingLogger: Logger {
         print(header)
     }
 
-    public func loggingDidEnd() {
+    public func loggingDidEnd(steps: Int) {
         // Do nothing
     }
 

@@ -416,12 +416,17 @@ public class Parser {
 
 
     // TODO: do we need the -> Bool here?
-    func expectKeyword(keyword: String) throws -> Bool {
+    func expectKeyword(keyword: String, expected: String?=nil) throws -> Bool {
         if self.acceptKeyword(keyword) {
             return true
         }
         else {
-            throw self.makeUnexpected("keyword \(keyword)")
+            if expected != nil {
+                throw self.makeUnexpected(expected!)
+            }
+            else {
+                throw self.makeUnexpected("keyword \(keyword)")
+            }
         }
     }
 
@@ -638,19 +643,38 @@ public class Parser {
 
      */
     func _actuator() throws -> Actuator {
-        var predicates: [Predicate]
-        var otherPredicates: [Predicate]?
-        var instructions = [Instruction]()
-        var isRoot:Bool
+        var modifiers = [Modifier]()
+        let selector: Selector
+        var notifications = [Symbol]()
+        var traps = [Symbol]()
+        let doesHalt: Bool
 
-        (isRoot, predicates, otherPredicates) = try self._selector()
+        selector = try self._selector()
 
         try self.expectKeyword("DO")
 
-        instructions = try self._instructions()
+        modifiers = try self._modifiers()
 
-        return Actuator(predicates:predicates, instructions:instructions,
-                otherPredicates:otherPredicates, isRoot:isRoot)
+        if self << "NOTIFY" {
+            let symbols = try self.parseSymbolList()
+            notifications.appendContentsOf(symbols)
+        }
+
+        if self << "TRAP" {
+            let symbols = try self.parseSymbolList()
+            traps.appendContentsOf(symbols)
+        }
+
+        if self << "HALT" {
+            doesHalt = true
+        }
+        else {
+            doesHalt = false
+        }
+
+        return Actuator(selector:selector, modifiers:modifiers,
+            traps: traps, notifications: notifications,
+            doesHalt:doesHalt)
     }
 
     /**
@@ -659,14 +683,14 @@ public class Parser {
      selector := ( ALL | [ROOT] predicates ) [ON (ALL | predicates)]
      ```
      */
-    func _selector() throws -> (Bool, [Predicate], [Predicate]?) {
+    func _selector() throws -> Selector {
         var isRoot:Bool = false
         var predicates: [Predicate]
         var otherPredicates: [Predicate]? = nil
 
         if self << "ALL" {
             // ALL -> only one predicate
-            predicates = [Predicate(.All)]
+            predicates = []
         }
         else {
             isRoot = self << "ROOT"
@@ -686,7 +710,9 @@ public class Parser {
             }
         }
 
-        return (isRoot, predicates, otherPredicates)
+        return Selector(predicates: predicates,
+                         otherPredicates: otherPredicates,
+                         isRoot: isRoot)
     }
 
     func _predicates() throws -> [Predicate] {
@@ -760,31 +786,31 @@ public class Parser {
         return predicates
     }
 
-    func _instructions() throws -> [Instruction] {
-        var instructions = [Instruction]()
+    func _modifiers() throws -> [Modifier] {
+        var modifiers = [Modifier]()
 
         while true {
-            if let instruction = try self._instruction() {
-                instructions.append(instruction)
+            if let modifier = try self._modifier() {
+                modifiers.append(modifier)
             }
             else {
                 break
             }
         }
 
-        if instructions.count == 0 {
-            throw SyntaxError.Syntax(message: "expecting instruction")
+        if modifiers.isEmpty {
+            throw SyntaxError.Syntax(message: "expected at least one modifier")
         }
 
-        return instructions
+        return modifiers
     }
 
     /** Parses a single instruction string */
-    public func parseInstruction() -> Instruction? {
+    public func parseModifier() -> Modifier? {
         do {
-            if let instruction = try self._instruction() {
+            if let modifier = try self._modifier() {
                 try self.expect(.End)
-                return instruction
+                return modifier
             }
         }
         catch SyntaxError.Syntax(let message) {
@@ -797,9 +823,9 @@ public class Parser {
         return nil
     }
 
-    public func _instruction() throws -> Instruction? {
-        var instruction: Instruction?
-        var ref: CurrentRef
+    public func _modifier() throws -> Modifier? {
+        let action: ModifierAction
+        let ref: CurrentRef
 
         // TODO: make this part of modifier instruction only
         if self << "IN" {
@@ -810,25 +836,17 @@ public class Parser {
         }
 
         if self << "NOTHING" {
-            instruction = .Nothing
-        }
-        else if self.acceptKeyword("TRAP") {
-            let symbol = try self.expectSymbol("trap name")
-            instruction = .Trap(symbol)
-        }
-        else if self << "NOTIFY" {
-            let symbol = try self.expectSymbol("notification name")
-            instruction = .Notify(symbol)
+            action = .Nothing
         }
         else if self << "SET" {
             let tags = try self._tagList()
 
-            instruction = .Modify(ref, .SetTags(tags))
+            action = .SetTags(tags)
         }
         else if self << "UNSET" {
             let tags = try self._tagList()
 
-            instruction = .Modify(ref, .UnsetTags(tags))
+            action = .UnsetTags(tags)
         }
         else if self << "BIND" {
             let targetRef: CurrentRef
@@ -840,18 +858,18 @@ public class Parser {
 
             targetRef = try self._currentReference()
 
-            instruction = .Modify(ref, .Bind(targetRef, symbol))
+            action = .Bind(targetRef, symbol)
         }
         else if self << "UNBIND" {
             let symbol = try self.expectSymbol()
 
-            instruction = .Modify(ref, .Unbind(symbol))
+            action = .Unbind(symbol)
         }
         else {
-            instruction = nil
+            return nil
         }
 
-        return instruction
+        return Modifier(currentRef:ref, action:action)
     }
 
     /** Parse a current reference: */
@@ -893,32 +911,31 @@ public class Parser {
     func _measure() throws -> Measure {
         let name: Symbol
         let function: AggregateFunction
-        let counter: Symbol?
+        let counter: Symbol
 
         name = try self.expectSymbol("measure name")
 
         if self << "COUNT" {
             function = AggregateFunction.Count
-            counter = nil
         }
         else if self << "SUM" {
-            function = AggregateFunction.Sum
             counter = try self.expectSymbol("counter name")
+            function = AggregateFunction.Sum(counter)
         }
         else if self << "MIN" {
-            function = AggregateFunction.Min
             counter = try self.expectSymbol("counter name")
+            function = AggregateFunction.Min(counter)
         }
         else {
-            try self.expectKeyword("MAX")
-            function = AggregateFunction.Max
+            try self.expectKeyword("MAX", expected: "aggregate function")
             counter = try self.expectSymbol("counter name")
+            function = AggregateFunction.Max(counter)
         }
 
         let predicates = try self._predicates()
 
-        let measure = AggregateMeasure(name: name, type: MeasureType.Aggregate,
-            counter: counter, function: function, predicates: predicates)
+        // TODO: we support only aggregate function now
+        let measure = Measure(name: name, type:.Aggregate(function, predicates))
 
         return measure
     }

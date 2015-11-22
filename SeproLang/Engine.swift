@@ -61,14 +61,15 @@ public protocol Store {
 public protocol Engine {
 
     /**
-     Perform one simulation step. Increase step counter. If a trap
-     was encountered during execution, causes the trap handler to be
-     invoked with a collection of captured traps.
+     Run simulation for `steps` number of steps.
+
+     If a trap occurs during the execution the delegate will be notified
+     and the simulation run will be stopped.
      
      If `HALT` action was encountered, the simulation is terminated and
      can not be resumed unless re-initialized.
      */
-    func step()
+    func run(steps:Int)
     var stepCount:Int { get }
 
     var store:SimpleStore { get }
@@ -341,11 +342,13 @@ public class SimpleEngine: Engine {
     */
     public func run(steps:Int) {
         if self.logger != nil {
-            self.logger!.loggingWillStart(self.model.measures)
+            self.logger!.loggingWillStart(self.model.measures, steps: steps)
+            // TODO: this should be called only on first run
             self.probe()
         }
         
         // self.delegate?.willRun(self)
+        var stepsRun = 0
 
         for _ in 1...steps {
 
@@ -355,26 +358,27 @@ public class SimpleEngine: Engine {
                 self.delegate?.handleHalt(self)
                 break
             }
+
+            stepsRun += 1
         }
 
-        self.logger?.loggingDidEnd()
-        // self.delegate?.didRun(self)
+        self.logger?.loggingDidEnd(stepsRun)
     }
 
     /**
         Compute one step of the simulation by evaluating all actuators.
     */
-    public func step() {
+    func step() {
         self.traps.removeAll()
 
         stepCount += 1
 
         self.delegate?.willStep(self, objects: self.store.objects)
+
         // The main step...
         // --> Start of step
-        self.model.actuators.forEach {
-            actuator in self.perform(actuator)
-        }
+        self.model.actuators.forEach(self.perform)
+
         // <-- End of step
 
         self.delegate?.didStep(self)
@@ -387,36 +391,33 @@ public class SimpleEngine: Engine {
             self.delegate?.handleTrap(self, traps: self.traps)
         }
     }
+
+    /**
+     Probe the simulation and pass the results to the logger. Probing
+     is ignored when logger is not provided.
+
+     - Complexity: O(n) – does full scan on all objects
+     */
     func probe() {
-        let measures: [AggregateMeasure]
-        let record: ProbeRecord
+        var record = ProbeRecord()
 
         // Nothing to probe if we have no logger
         if self.logger == nil {
             return
         }
 
-        // TODO: We do only aggregate probes here for now
-        measures = self.model.measures.filter { $0.type == MeasureType.Aggregate }
-            . map { $0 as! AggregateMeasure }
-
-        record = self.probeAggregates(measures)
-
-        self.logger!.logRecord(self.stepCount, record: record)
-    }
-
-    func probeAggregates(measures: [AggregateMeasure]) -> ProbeRecord {
-        var record = ProbeRecord()
-        let probeList = measures.map {
+        // Create the probes
+        let probeList = self.model.measures.map {
             measure in
-            (measure, createAggregateProbe(measure))
+            (measure, createProbe(measure))
         }
 
+        // TODO: too complex
         self.store.objects.forEach {
             object in
             probeList.forEach {
                 measure, probe in
-                if measure.predicates.all({ $0.evaluate(object) }) {
+                if measure.predicates.all({ self.store.evaluate($0, object.id) }) {
                     probe.probe(object)
                 }
             }
@@ -429,7 +430,7 @@ public class SimpleEngine: Engine {
             record[measure.name] = probe.value
         }
 
-        return record
+        self.logger!.logRecord(self.stepCount, record: record)
     }
 
     /**
@@ -437,55 +438,80 @@ public class SimpleEngine: Engine {
      */
     func perform(actuator:Actuator){
         // TODO: take into account Actuator.isRoot as cartesian
-        if actuator.otherPredicates != nil {
+        if actuator.selector.otherPredicates != nil {
             self.performCartesian(actuator)
         }
         else
         {
             self.performSingle(actuator)
         }
+
+        // FIXME: this is lame, make sure the types are compatible
+        if actuator.traps != nil {
+            actuator.traps!.forEach {
+                trap in
+                self.traps.add(trap)
+            }
+        }
+
+        // TODO: handle 'ONCE'
+        // TODO: maybe handle similar way as traps
+        if actuator.notifications != nil {
+            actuator.notifications!.forEach {
+                notification in
+                self.notify(notification)
+            }
+        }
+
+        self.isHalted = actuator.doesHalt
     }
 
     /**
-        Interactive actuator execution.
-    
-        Algorithm:
-    
-        1. Find objects matching conditions for `this`
-        2. Find objects matching conditions for `other`
-        3. If any of the sets is empty, don't perform anything – there is
-           no reaction
-        4. Perform reactive action on the objects.
+    Interactive actuator execution.
+
+    Algorithm:
+
+    1. Find objects matching conditions for `this`
+    2. Find objects matching conditions for `other`
+    3. If any of the sets is empty, don't perform anything – there is
+       no reaction
+    4. Perform reactive action on the objects.
+
+    - Complexity: O(n) - performs full scan
     */
     func performSingle(actuator:Actuator) {
-        let thisObjects = self.store.select(actuator.predicates)
+        let thisObjects = self.store.select(actuator.selector.predicates)
 
         var counter = 0
         for this in thisObjects {
             counter += 1
-            print("EXEC SINGLE")
-            for instruction in actuator.instructions {
-                self.execute(instruction, this: this)
+            actuator.modifiers.forEach {
+                modifier in
+                self.applyModifier(modifier, this: this)
             }
         }
 
     }
 
+    /**
+    - Complexity: O(n^2) - performs cartesian product on two full scans
+    */
+
     func performCartesian(actuator:Actuator) {
-        let thisObjects = self.store.select(actuator.predicates)
-        let otherObjects = self.store.select(actuator.otherPredicates!)
+        let thisObjects = self.store.select(actuator.selector.predicates)
+        let otherObjects = self.store.select(actuator.selector.otherPredicates!)
 
         // Cartesian product: everything 'this' interacts with everything
         // 'other'
         for this in thisObjects {
             for other in otherObjects{
-                print("EXEC DOUBLE")
-                for instruction in actuator.instructions {
-                    self.execute(instruction, this: this, other: other)
+                actuator.modifiers.forEach {
+                    modifier in
+                    self.applyModifier(modifier, this: this, other: other)
                 }
 
                 // Check whether 'this' still matches the predicates
-                let match = actuator.predicates.all {
+                let match = actuator.selector.predicates.all {
                     predicate in
                     self.store.evaluate(predicate, this.id)
                 }
@@ -532,66 +558,53 @@ public class SimpleEngine: Engine {
     Execute instruction
     */
 
-    func execute(instruction:Instruction, this:Object, other:Object!=nil) {
+    func applyModifier(modifier:Modifier, this:Object, other:Object!=nil) {
         // Note: Similar to the Predicate code, we are not using language
         // polymorphysm here. This is not proper way of doing it, but
         // untill the action objects are refined and their executable
         // counterparts defined, this should remain as it is.
 
-        switch instruction {
+        let current = self.getCurrent(modifier.currentRef, this: this, other: other)
+        print("MODIFY \(modifier.action) IN \(modifier.currentRef)(\(current.id)) \(this)<->\(other)")
+
+        switch modifier.action {
         case .Nothing:
             // Do nothing
             break
 
-        case .Halt:
-            self.isHalted = true
+        case .SetTags(let tags):
+            current.tags = current.tags.union(tags)
 
-        case .Trap(let symbol):
-            self.traps.add(symbol)
+        case .UnsetTags(let tags):
+            current.tags = current.tags.subtract(tags)
 
-        case .Notify(let symbol):
-            self.notify(symbol)
+        case .Inc(let counter):
+            let value = current.counters[counter]!
+            current.counters[counter] = value + 1
 
-        case .Modify(let currentRef, let modifier):
-            let current = self.getCurrent(currentRef, this: this, other: other)
+        case .Dec(let counter):
+            let value = current.counters[counter]!
+            current.counters[counter] = value + 1
 
-            print("MODIFY \(modifier) IN \(currentRef)(\(current.id)) \(this)<->\(other)")
+        case .Clear(let counter):
+            current.counters[counter] = 0
 
-            switch modifier {
-            case .SetTags(let tags):
-                current.tags = current.tags.union(tags)
+        case .Bind(let targetRef, let slot):
+            let target = self.getCurrent(targetRef, this: this, other: other)
+            print("   TARGET \(target) (\(targetRef))")
+            if current != nil && target != nil {
+                current.links[slot] = target.id
+            }
+            else {
+                // TODO: isn't this an error or invalid state?
+            }
 
-            case .UnsetTags(let tags):
-                current.tags = current.tags.subtract(tags)
-
-            case .Inc(let counter):
-                let value = current.counters[counter]!
-                current.counters[counter] = value + 1
-
-            case .Dec(let counter):
-                let value = current.counters[counter]!
-                current.counters[counter] = value + 1
-
-            case .Clear(let counter):
-                current.counters[counter] = 0
-
-            case .Bind(let targetRef, let slot):
-                let target = self.getCurrent(targetRef, this: this, other: other)
-                print("   TARGET \(target) (\(targetRef))")
-                if current != nil && target != nil {
-                    current.links[slot] = target.id
-                }
-                else {
-                    // TODO: isn't this an error or invalid state?
-                }
-
-            case .Unbind(let slot):
-                if current != nil {
-                    this.links[slot] = nil
-                }
-                else {
-                    // TODO: isn't this an error or invalid state?
-                }
+        case .Unbind(let slot):
+            if current != nil {
+                this.links[slot] = nil
+            }
+            else {
+                // TODO: isn't this an error or invalid state?
             }
         }
     }
