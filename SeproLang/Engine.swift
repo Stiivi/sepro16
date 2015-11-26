@@ -109,7 +109,7 @@ public class SimpleEngine: Engine {
             self.probe()
         }
         
-        // self.delegate?.willRun(self)
+        self.delegate?.willRun(self)
         var stepsRun = 0
 
         for _ in 1...steps {

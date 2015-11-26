@@ -36,8 +36,9 @@ public class CLIDelegate: EngineDelegate {
         writeDot(self.path + "/dots/final.dot", selection: engine.store.select())
     }
 
-    public func willStep(engine: Engine, objects: ObjectSequence) {
-        writeDot(self.path + "/dots/\(engine.stepCount).dot", selection: objects)
+    public func willStep(engine: Engine) {
+        writeDot(self.path + "/dots/\(engine.stepCount).dot",
+                 selection: engine.store.select())
     }
 
     public func didStep(engine: Engine) {
