@@ -6,21 +6,21 @@
 //  Copyright © 2015 Stefan Urbanek. All rights reserved.
 //
 
-public struct Selector {
-    /// Denother whether the predicates are related to the root object
-    public let isRoot: Bool
-    /// Predicates that trigger the actuator
-    public let predicates: [Predicate]
-    /// Actions performed by the actuator in atomic way.
-    public let otherPredicates: [Predicate]?
 
-    public init(predicates: [Predicate], otherPredicates: [Predicate]?=nil,
-        isRoot:Bool=false) {
-        self.isRoot = isRoot
-        self.predicates = predicates
-        self.otherPredicates = otherPredicates
-    }
+public enum Selector {
+    /// Selects only one set of objects
+    case Unary(Specifier)
+    /// Selects a cartesian product of two sets of objects
+    case Binary(Specifier, Specifier)
+}
 
+public enum Specifier {
+    /// All objects
+    case All
+    /// Objects matching all predicates
+    case CompoundPredicate([Predicate])
+    /// Root object if matches all predicates
+    case Root([Predicate])
 }
 
 /**

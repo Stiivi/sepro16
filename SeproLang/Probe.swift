@@ -34,8 +34,8 @@ public enum MeasureType {
 }
 
 public struct Measure {
-    let name: Symbol
-    let type: MeasureType
+    public let name: Symbol
+    public let type: MeasureType
 
     public var predicates: [Predicate] {
         switch type {

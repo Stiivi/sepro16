@@ -47,9 +47,9 @@ public class Concept: CustomStringConvertible {
 
     */
     public init(name:Symbol,
-                counters:CounterDict?=nil,
-                slots:SlotList?=nil,
-                tags:TagList?=nil){
+                 counters:CounterDict?=nil,
+                 slots:SlotList?=nil,
+                 tags:TagList?=nil){
 
         self.name = name
         self.counters = counters ?? CounterDict()

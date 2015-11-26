@@ -7,54 +7,6 @@
 //
 
 
-// Note: The code might be over-modularized and there might be too many
-// classes, but that is intentional during the early development phase as it
-// helps in the thinking process. Concepts might be merged later in the
-// process of conceptual optimizaiion.
-
-
-public protocol Store {
-    /** Initialize the store with `world`. If `world` is not specified then
-    `main` is used.
-    */
-    func initialize(world: Symbol) throws
-
-    /** Instantiate concept `name`.
-     - Returns: reference to the newly created object
-     */
-    func instantiate(name: Symbol) throws -> ObjectRef
-
-    /**
-     Iterator through all objects.
-     
-     - Note: Order is implementation specific and is not guaranteed
-       neigher between implementations or even between distinct calls
-       of the method even without state change of the store.
-     - Returns: sequence of all object references
-    */
-    var objects: ObjectSelection { get }
-
-    /**
-    - Returns: sequence of all object references
-    */
-    func getObject(ref: ObjectRef) -> Object?
-
-    /**
-    - Returns: root object
-     */
-    func getRoot() -> Object
-
-    /**
-     Iterates through all objects mathing `predicates`. Similar to
-     `objects` the order in which the objects are iterated over is
-     engine specific.
-     */
-    func select(predicates:[Predicate]) -> Selection
-    func evaluate(predicate:Predicate, _ ref:ObjectRef) -> Bool
-
-    var model:Model { get }
-}
-
 /**
     Simulation engine interface
 */
@@ -72,7 +24,19 @@ public protocol Engine {
     func run(steps:Int)
     var stepCount:Int { get }
 
-    var store:SimpleStore { get }
+    var store:Store { get }
+
+    /** Initialize the store with `world`. If `world` is not specified then
+    `main` is used.
+    */
+    func initialize(world: Symbol) throws
+
+    /** Instantiate concept `name`.
+     - Returns: reference to the newly created object
+     */
+    // TODO: move to engine, change this to add(object)
+    func instantiate(name: Symbol) throws -> ObjectRef
+
 }
 
 // MARK: Selection Generator
@@ -80,204 +44,10 @@ public protocol Engine {
 // TODO: make this a protocol, since we can't expose our internal
 // implementation of object
 
-/**
-Container representing the state of the world.
-*/
-public class SimpleStore: Store {
-    // TODO: Merge this with engine, make distinction between public methods
-    // with IDs and private methods with direct object references
-
-    public var model: Model
-    public var stepCount: Int
-
-    /// The object memory
-    public var objectMap: [ObjectRef:Object]
-    public var objectCounter: Int = 1
-
-    /// Reference to the root object in the object memory
-    public var root: ObjectRef!
-
-    public init(model:Model) {
-        self.model = model
-        self.objectMap = [ObjectRef:Object]()
-        self.root = nil
-        self.stepCount = 0
-
-    }
-
-    public var objects: ObjectSelection {
-        get { return AnySequence(self.objectMap.values) }
-    }
-
-    public func getObject(ref:ObjectRef) -> Object? {
-        return self.objectMap[ref]
-    }
-
-    /**
-        Initialize the store according to the model. All existing objects will
-    be discarded.
-    */
-    public func initialize(worldName: Symbol="main") throws {
-        // FIXME: handle non-existing world
-        let world = self.model.getWorld(worldName)!
-
-        // Clean-up the objects container
-        self.objectMap.removeAll()
-        self.objectCounter = 1
-
-        if let rootConcept = world.root {
-            self.root = try self.instantiate(rootConcept)
-        }
-        else {
-            self.root = self.create()
-        }
-
-        try self.instantiateStructContents(world.contents)
-    }
-    /**
-     Creates instances of objects in the GraphDescription and returns a
-     dictionary of created named objects.
-     */
-    func instantiateStructContents(contents: StructContents) throws -> ObjectMap {
-        var map = ObjectMap()
-
-        try contents.contentObjects.forEach() { obj in
-            switch obj {
-            case let .Named(concept, name):
-                map[name] = try self.instantiate(concept)
-            case let .Many(concept, count):
-                for _ in 1...count {
-                    try self.instantiate(concept)
-                }
-            }
-        }
-
-        return map
-    }
-
-    public func instantiate(name:Symbol) throws -> ObjectRef {
-        let concept = self.model.getConcept(name)
-        return self.create(concept!)
-    }
-
-    /**
-     Create an object instance from `concept`. If concept is not provided,
-     then creates an empty object.
-     
-     - Returns: reference to the newly created object
-    */
-    public func create(concept: Concept!=nil) -> ObjectRef {
-        let ref = self.objectCounter
-        let obj = Object(ref)
-
-        if concept != nil {
-            obj.tags = concept.tags
-            obj.counters = concept.counters
-            for slot in concept.slots {
-                obj.links[slot] = nil
-            }
-
-            // Concept name is one of the tags
-            obj.tags.insert(concept.name)
-        }
-
-        self.objectMap[ref] = obj
-        self.objectCounter += 1
-
-        return ref
-    }
-
-    public subscript(ref: ObjectRef) -> Object? {
-        return self.objectMap[ref]
-    }
-
-    /**
-    - Returns: instance of the root object.
-    */
-    public func getRoot() -> Object {
-        // Note: this must be fullfilled
-        return self[self.root]!
-    }
-
-    /**
-        Create a structure of conceptual objects
-    */
-    public func createStruct(str:Struct) throws {
-        // var instances = [String:Object]()
-
-        // Create concept instances
-//        for (name, concept) in str.concepts {
-//            let obj = self.createObject(concept)
-//            instances[name] = obj
-//        }
-//
-//
-//        for (sourceRef, targetRef) in str.links {
-//
-//            guard let source = instances[sourceRef.owner] else {
-//                throw SimulationError.UnknownObject(name:sourceRef.owner)
-//            }
-//            guard let target = instances[targetRef] else  {
-//                throw SimulationError.UnknownObject(name:targetRef)
-//            }
-//
-//
-//            source.links[sourceRef.property] = target
-//        }
-    }
-
-
-
-    /**
-        Matches objects of the simulation against `conditions`.
-    
-        - Returns: Generator of matching objects.
-        - Note: If selection matches an object first, then object
-          changes state so that it does not match the predicate,
-          the object will not be included in the result.
-    */
-
-
-    public func select(predicates:[Predicate]) -> Selection {
-        return Selection(store: self, predicates: predicates)
-    }
-
-    /**
-        Evaluates the predicate against object.
-        - Returns: `true` if the object matches the predicate
-    */
-    public func evaluate(predicate:Predicate,_ ref: ObjectRef) -> Bool {
-        if let object = self.objectMap[ref] {
-            var target: Object
-
-            // Try to get the target slot
-            //
-            if predicate.inSlot != nil {
-                if let maybeTarget = object.links[predicate.inSlot!] {
-                    target = self.objectMap[maybeTarget]!
-                }
-                else {
-                    // TODO: is this OK if the slot is not filled and the condition is
-                    // negated?
-                    return false
-                }
-            }
-            else {
-                target = object
-            }
-            return predicate.evaluate(target)
-        }
-        else {
-            // TODO: Exception?
-            return false
-        }
-    }
-}
-
 public protocol EngineDelegate {
     func willRun(engine: Engine)
     func didRun(engine: Engine)
-    func willStep(engine: Engine, objects:ObjectSelection)
+    func willStep(engine: Engine)
     func didStep(engine: Engine)
 
     func handleTrap(engine: Engine, traps: CountedSet<Symbol>)
@@ -294,13 +64,13 @@ public class SimpleEngine: Engine {
     public var stepCount = 0
 
     /// Simulation state instance
-    public var store: SimpleStore
+    public var store: Store
 
     /// Traps caught in the last step
     public var traps = CountedSet<Symbol>()
 
     /// Flag saying whether the simulation is halted or not.
-    public var isHalted: Bool
+    public var isHalted: Bool = false
 
     // Probing
     // -------
@@ -310,31 +80,23 @@ public class SimpleEngine: Engine {
 
     /// Logging delegate – an object that implements the `Logger`
     /// protocol
-    public var logger: Logger?
+    public var logger: Logger? = nil
 
     /// Delegate for handling traps, halt and other events
-    public var delegate: EngineDelegate?
+    public var delegate: EngineDelegate? = nil
 
 
     /// Simulation model
-    public var model: Model {
-        return self.store.model
-    }
+    public let model: Model
 
     /**
         Create an object instance from concept
     */
-    public init(_ store:SimpleStore){
-        self.store = store
-        self.isHalted = false
-        self.logger = nil
-        self.probes = [Probe]()
-        self.delegate = nil
-    }
+    public init(model:Model){
+        self.store = Store()
+        self.model = model
 
-    convenience public init(model:Model){
-        let store = SimpleStore(model: model)
-        self.init(store)
+        self.probes = [Probe]()
     }
 
     /**
@@ -373,7 +135,7 @@ public class SimpleEngine: Engine {
 
         stepCount += 1
 
-        self.delegate?.willStep(self, objects: self.store.objects)
+        self.delegate?.willStep(self)
 
         // The main step...
         // --> Start of step
@@ -413,7 +175,7 @@ public class SimpleEngine: Engine {
         }
 
         // TODO: too complex
-        self.store.objects.forEach {
+        self.store.select().forEach {
             object in
             probeList.forEach {
                 measure, probe in
@@ -438,12 +200,11 @@ public class SimpleEngine: Engine {
      */
     func perform(actuator:Actuator){
         // TODO: take into account Actuator.isRoot as cartesian
-        if actuator.selector.otherPredicates != nil {
-            self.performCartesian(actuator)
-        }
-        else
-        {
-            self.performSingle(actuator)
+        switch actuator.selector {
+        case let .Unary(specifier):
+            self.performUnary(specifier, modifiers: actuator.modifiers)
+        case let .Binary(this, other):
+            self.performCartesian(this, otherSpec: other, modifiers: actuator.modifiers)
         }
 
         // FIXME: this is lame, make sure the types are compatible
@@ -479,13 +240,11 @@ public class SimpleEngine: Engine {
 
     - Complexity: O(n) - performs full scan
     */
-    func performSingle(actuator:Actuator) {
-        let thisObjects = self.store.select(actuator.selector.predicates)
+    func performUnary(specifier: Specifier, modifiers: [Modifier]) {
+        let objects = self.select(specifier)
 
-        var counter = 0
-        for this in thisObjects {
-            counter += 1
-            actuator.modifiers.forEach {
+        for this in objects {
+            modifiers.forEach {
                 modifier in
                 self.applyModifier(modifier, this: this)
             }
@@ -493,36 +252,52 @@ public class SimpleEngine: Engine {
 
     }
 
+    func select(specifier:Specifier) -> ObjectSequence {
+        switch specifier {
+        case .All:
+                return self.store.select()
+        case .CompoundPredicate(let predicates):
+                return self.store.select(predicates)
+        case .Root(_):
+                // FIXME: this is not implemented!!
+                return self.store.select()
+        }
+    }
+
     /**
     - Complexity: O(n^2) - performs cartesian product on two full scans
     */
 
-    func performCartesian(actuator:Actuator) {
-        let thisObjects = self.store.select(actuator.selector.predicates)
-        let otherObjects = self.store.select(actuator.selector.otherPredicates!)
+    func performCartesian(thisSpec: Specifier, otherSpec: Specifier,
+        modifiers: [Modifier]) {
 
-        // Cartesian product: everything 'this' interacts with everything
-        // 'other'
-        for this in thisObjects {
-            for other in otherObjects{
-                actuator.modifiers.forEach {
-                    modifier in
-                    self.applyModifier(modifier, this: this, other: other)
-                }
+            let thisObjects = self.select(thisSpec)
+            let otherObjects = self.select(otherSpec)
+            var match: Bool
 
-                // Check whether 'this' still matches the predicates
-                let match = actuator.selector.predicates.all {
-                    predicate in
-                    self.store.evaluate(predicate, this.id)
-                }
+            // Cartesian product: everything 'this' interacts with everything
+            // 'other'
+            for this in thisObjects {
+                for other in otherObjects{
+                    modifiers.forEach {
+                        modifier in
+                        self.applyModifier(modifier, this: this, other: other)
+                    }
 
-                // ... predicates don't match the object, therefore we
-                // skip to the next one
-                if !match {
-                    break
+                    // Check whether 'this' still matches the predicates
+                    // FIXME: this is ugly
+                    match = thisObjects.predicates == nil ||
+                        thisObjects.predicates!.all { predicate in
+                        self.store.evaluate(predicate, this.id)
+                    }
+
+                    // ... predicates don't match the object, therefore we
+                    // skip to the next one
+                    if !match {
+                        break
+                    }
                 }
             }
-        }
 
     }
 
@@ -613,10 +388,108 @@ public class SimpleEngine: Engine {
         self.logger?.logNotification(self.stepCount, notification: symbol)
     }
 
+    // MARK: Instantiation
+
+    /**
+        Initialize the store according to the model. All existing objects will
+    be discarded.
+    */
+    public func initialize(worldName: Symbol="main") throws {
+        // FIXME: handle non-existing world
+        let world = self.model.getWorld(worldName)!
+
+        // Clean-up the objects container
+        self.store.removeAll()
+
+        if let rootConcept = world.root {
+            self.store.setRootRef(try self.instantiate(rootConcept))
+        }
+        else {
+            self.store.setRootRef(self.create())
+        }
+
+        try self.instantiateStructContents(world.contents)
+    }
+    /**
+     Creates instances of objects in the GraphDescription and returns a
+     dictionary of created named objects.
+     */
+    func instantiateStructContents(contents: StructContents) throws -> ObjectMap {
+        var map = ObjectMap()
+
+        try contents.contentObjects.forEach() { obj in
+            switch obj {
+            case let .Named(concept, name):
+                map[name] = try self.instantiate(concept)
+            case let .Many(concept, count):
+                for _ in 1...count {
+                    try self.instantiate(concept)
+                }
+            }
+        }
+
+        return map
+    }
+
+    public func instantiate(name:Symbol) throws -> ObjectRef {
+        let concept = self.model.getConcept(name)
+        return self.create(concept!)
+    }
+
+    /**
+     Create an object instance from `concept`. If concept is not provided,
+     then creates an empty object.
+     
+     - Returns: reference to the newly created object
+    */
+    public func create(concept: Concept!=nil) -> ObjectRef {
+        let obj = Object()
+
+        if concept != nil {
+            obj.tags = concept.tags
+            obj.counters = concept.counters
+            for slot in concept.slots {
+                obj.links[slot] = nil
+            }
+
+            // Concept name is one of the tags
+            obj.tags.insert(concept.name)
+        }
+
+        return self.store.addObject(obj)
+    }
+
+    /**
+        Create a structure of conceptual objects
+    */
+    public func createStruct(str:Struct) throws {
+        // var instances = [String:Object]()
+
+        // Create concept instances
+//        for (name, concept) in str.concepts {
+//            let obj = self.createObject(concept)
+//            instances[name] = obj
+//        }
+//
+//
+//        for (sourceRef, targetRef) in str.links {
+//
+//            guard let source = instances[sourceRef.owner] else {
+//                throw SimulationError.UnknownObject(name:sourceRef.owner)
+//            }
+//            guard let target = instances[targetRef] else  {
+//                throw SimulationError.UnknownObject(name:targetRef)
+//            }
+//
+//
+//            source.links[sourceRef.property] = target
+//        }
+    }
+
     public func debugDump() {
         print("ENGINE DUMP START\n")
         print("STEP \(self.stepCount)")
-        self.store.objects.forEach {
+        self.store.select().forEach {
             obj in
             print("\(obj.debugString)")
         }

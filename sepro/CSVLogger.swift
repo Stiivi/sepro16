@@ -71,7 +71,7 @@ public class CSVLogger: Logger {
         self.notificationWriter = CSVWriter(path: path)
     }
 
-    public func loggingWillStart(measures: [Measure]) {
+    public func loggingWillStart(measures: [Measure], steps: Int) {
         self.measures = measures
 
         var names = self.measures.map { measure in measure.name }
@@ -80,7 +80,7 @@ public class CSVLogger: Logger {
         self.measureWriter.writeRow(names)
     }
 
-    public func loggingDidEnd() {
+    public func loggingDidEnd(steps: Int) {
         self.measureWriter.close()
         self.notificationWriter.close()
     }

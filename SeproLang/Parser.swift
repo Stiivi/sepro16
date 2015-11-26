@@ -684,35 +684,43 @@ public class Parser {
      ```
      */
     func _selector() throws -> Selector {
-        var isRoot:Bool = false
         var predicates: [Predicate]
-        var otherPredicates: [Predicate]? = nil
+        let specifier: Specifier
+        let otherSpecifier: Specifier
 
         if self << "ALL" {
             // ALL -> only one predicate
-            predicates = []
+            specifier = .All
         }
         else {
-            isRoot = self << "ROOT"
-            // rest of the predicates
-            predicates = try self._predicates()
+            if self << "ROOT" {
+                predicates = try self._predicates()
+                specifier = .Root(predicates)
+            }
+            else {
+                predicates = try self._predicates()
+                specifier = .CompoundPredicate(predicates)
+            }
         }
 
-        // Is interactive?
+        // Is binary? (interactive)
         if self << "ON" {
             if self << "ALL" {
                 // ALL -> only one predicate
-                otherPredicates = [Predicate(.All)]
+                otherSpecifier = .All
             }
             else {
                 // rest of the predicates
-                otherPredicates = try self._predicates()
+                predicates = try self._predicates()
+                otherSpecifier = .CompoundPredicate(predicates)
             }
-        }
 
-        return Selector(predicates: predicates,
-                         otherPredicates: otherPredicates,
-                         isRoot: isRoot)
+            return Selector.Binary(specifier, otherSpecifier)
+        }
+        else {
+            // Unary
+            return Selector.Unary(specifier)
+        }
     }
 
     func _predicates() throws -> [Predicate] {

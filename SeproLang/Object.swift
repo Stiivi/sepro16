@@ -36,7 +36,7 @@ public class Object: CustomStringConvertible {
     /// References to other objects
     public var links = ObjectMap()
 
-    public init(_ id: ObjectRef) {
+    public init(_ id: ObjectRef = 0) {
         self.id = id
     }
 

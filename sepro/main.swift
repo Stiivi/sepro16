@@ -51,11 +51,13 @@ func main() {
         return
     }
 
-    engine.logger = CSVLogger(path: "/tmp/sepro")
-    engine.delegate = CLIDelegate()
+    let path = NSHomeDirectory() + "/Desktop/sepro-output"
+
+    engine.logger = CSVLogger(path: path)
+    engine.delegate = CLIDelegate(path:path)
     
     do {
-        try engine.store.initialize("main")
+        try engine.initialize("main")
     }
     catch {
         print("Error: Can't initialize engine")

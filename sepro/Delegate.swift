@@ -9,6 +9,12 @@
 import SeproLang
 
 public class CLIDelegate: EngineDelegate {
+    public let path: String
+
+    public init(path: String) {
+        self.path = path
+    }
+
     public func handleHalt(engine: Engine) {
         print("Halted!")
     }
@@ -23,15 +29,15 @@ public class CLIDelegate: EngineDelegate {
     }
 
     public func willRun(engine: Engine) {
-        writeDot("/tmp/sepro/dots/0.dot", selection: engine.store.objects)
+        writeDot(self.path + "/dots/0.dot", selection: engine.store.select())
     }
 
     public func didRun(engine: Engine) {
-        writeDot("/tmp/sepro/dots/final.dot", selection: engine.store.objects)
+        writeDot(self.path + "/dots/final.dot", selection: engine.store.select())
     }
 
-    public func willStep(engine: Engine, objects: ObjectSelection) {
-        writeDot("/tmp/sepro/dots/\(engine.stepCount).dot", selection: objects)
+    public func willStep(engine: Engine, objects: ObjectSequence) {
+        writeDot(self.path + "/dots/\(engine.stepCount).dot", selection: objects)
     }
 
     public func didStep(engine: Engine) {
