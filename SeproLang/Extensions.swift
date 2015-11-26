@@ -115,6 +115,11 @@ public struct CountedSetGenerator<T:Hashable> : GeneratorType {
     }
 }
 
+/// Return a random 32-bit integer
+func randomInt(upperBound:Int) -> Int {
+    return Int(arc4random_uniform(UInt32(upperBound)))
+}
+
 // MARK: CLib basics (no Cocoa)
 
 // Few very basic methods, since we don't want to use Cocoa here
