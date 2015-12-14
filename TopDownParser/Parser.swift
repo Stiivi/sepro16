@@ -203,22 +203,26 @@ public class Parser {
         case .Group(let items):
             var children = [AST]()
 
+            // There has to be at least one item in the group
             guard let firstItem = items.first else {
                 break rule
             }
 
             let tail = items.dropFirst()
 
-            if let head = try self.parseRuleItem(firstItem, isExpected: isExpected) {
-                children += head
-                // The rest must be expected
-                for item in tail {
-                    if let nodes = try self.parseRuleItem(item, isExpected: true) {
-                        children += nodes
-                    }
-                    else {
-                        break rule
-                    }
+            // If we don't match the head, there is no point of matching further
+            guard let head = try self.parseRuleItem(firstItem, isExpected: isExpected) else {
+                return nil
+            }
+
+            children += head
+            // The rest must be expected
+            for item in tail {
+                if let nodes = try self.parseRuleItem(item, isExpected: true) {
+                    children += nodes
+                }
+                else {
+                    break rule
                 }
             }
             return children
@@ -242,11 +246,12 @@ public class Parser {
                 return expected
             }
 
+        // Match zero or more times
         case .Repeat(let item):
             var children = [AST]()
 
             while(true){
-                if let accepted = try self.parseRuleItem(item, isExpected: isExpected) {
+                if let accepted = try self.parseRuleItem(item, isExpected: false) {
                     children += accepted
                 }
                 else {

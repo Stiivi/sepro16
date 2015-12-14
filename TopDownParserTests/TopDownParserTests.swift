@@ -108,6 +108,18 @@ class TopDownParserTests: XCTestCase {
 
     }
 
+
+    func testGroupWithRule() {
+        self.grammar["top"] = "TOP" .. ^"bottom"
+        self.grammar["bottom"] = "BOTTOM"
+
+        self.parse(["TOP", "BOTTOM"], start: "top")
+        self.assertASTNode("top", ["TOP", .ASTNode("bottom", ["BOTTOM"])])
+
+        self.parse(["TOP"], start: "top")
+        self.assertError("Expected keyword BOTTOM")
+    }
+
     func testGroup() {
         self.grammar["concept"] = "CONCEPT" .. §"name"
         self.grammar["concept_final"] = "CONCEPT" .. §"name" .. nil
@@ -127,6 +139,14 @@ class TopDownParserTests: XCTestCase {
 
         self.parse(["CONCEPT", §"x"], start: "concept_final")
         self.assertASTNode("concept_final", ["CONCEPT", "x"])
+    }
+
+    func testOptionalGroup() {
+        self.grammar["optional"] = ??("ONE" .. "TWO")
+
+        self.parse([], start: "optional")
+        self.assertASTNode("optional", [nil])
+
     }
 
     func testError() {
@@ -170,6 +190,7 @@ class TopDownParserTests: XCTestCase {
 
     func testOptional() {
         self.grammar["optional"] = ??"ALL"
+        self.grammar["optional_suffix"] = "WHERE" .. ??"ALL"
 
         self.parse([], start: "optional")
         self.assertASTNode("optional", [.ASTNil])
@@ -179,13 +200,67 @@ class TopDownParserTests: XCTestCase {
 
         self.parse(["ALL"], start: "optional")
         self.assertASTNode("optional", ["ALL"])
+
+        self.parse(["WHERE"], start: "optional_suffix")
+        self.assertASTNode("optional_suffix", ["WHERE", .ASTNil])
+
+        self.parse(["WHERE", "ALL"], start: "optional_suffix")
+        self.assertASTNode("optional_suffix", ["WHERE", "ALL"])
     }
 
     func testSimpleTree() {
-        self.grammar["concept"] = "CONCEPT" .. §"name" .. ^"member"
-        self.grammar["member"] = ("TAG" .. "name") | ("SLOT" .. "name")
+        self.grammar["concept"] = "CONCEPT" .. §"name" .. ??(^"member")
+        self.grammar["member"] = ("TAG" .. §"name") | ("SLOT" .. §"name")
+
+        self.parse(["TAG", §"t"], start: "member")
+        self.assertASTNode("member", ["TAG", "t"])
+
+        self.parse(["SLOT", §"s"], start: "member")
+        self.assertASTNode("member", ["SLOT", "s"])
 
         self.parse(["CONCEPT", §"x"], start: "concept")
-        self.assertError("xxx")
+        self.assertASTNode("concept", ["CONCEPT", "x", nil])
+        // self.assertError("xxx")
+    }
+
+    func testRepeat() {
+        self.grammar["repeat"] = +"HI"
+        self.grammar["lalala"] = "LA" .. +"LA"
+
+        self.parse([], start:"repeat")
+        self.assertASTNode("repeat", [])
+
+        self.parse(["HI"], start:"repeat")
+        self.assertASTNode("repeat", ["HI"])
+
+        self.parse(["HI", "GOODBYE"], start:"repeat")
+        self.assertASTNode("repeat", ["HI"])
+
+        self.parse(["HI", "HI", "GOODBYE"], start:"repeat")
+        self.assertASTNode("repeat", ["HI", "HI"])
+
+        self.parse(["LA"], start:"lalala")
+        self.assertASTNode("lalala", ["LA"])
+
+        self.parse(["LA", "LA"], start:"lalala")
+        self.assertASTNode("lalala", ["LA", "LA"])
+    }
+
+    func testMultipleRuleRepeats() {
+        self.grammar["concept"] = "CONCEPT" .. §"name" .. +(^"member")
+        self.grammar["member"] = ("TAG" .. §"name") | ("SLOT" .. §"name")
+
+        self.parse(["TAG", §"t"], start: "member")
+        self.assertASTNode("member", ["TAG", "t"])
+
+        self.parse(["SLOT", §"s"], start: "member")
+        self.assertASTNode("member", ["SLOT", "s"])
+
+        self.parse(["CONCEPT", §"x"], start: "concept")
+        self.assertASTNode("concept", ["CONCEPT", "x"])
+
+        self.parse(["CONCEPT", §"x", "TAG", §"y"], start: "concept")
+        self.assertASTNode("concept", ["CONCEPT", "x",
+                                            .ASTNode("member", ["TAG", "y"])])
     }
 }

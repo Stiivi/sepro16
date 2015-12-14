@@ -19,7 +19,7 @@ public enum AST: CustomStringConvertible, Equatable {
     public var description: String {
         switch(self) {
         case ASTNil: return "nil"
-        case ASTString(let val): return "\"\(val)\""
+        case ASTString(let val): return "'\(val)'"
         case ASTInteger(let val): return String(val)
         case ASTOperator(let val): return String(val)
         case ASTNode(let name, let val):
