@@ -38,7 +38,7 @@ class SequenceLexer: Lexer {
 
 class TopDownParserTests: XCTestCase {
 
-    var grammar = Grammar()
+    var rules = [String: Item]()
     var ast: AST! = nil
     var error: String! = nil
 
@@ -81,7 +81,20 @@ class TopDownParserTests: XCTestCase {
 
     func parse(tokens:[Token], start:String) {
         let lexer = SequenceLexer(tokens: tokens)
-        let parser = Parser(grammar: self.grammar)!
+        let grammar: Grammar
+        do {
+             grammar = try Grammar(rules: self.rules)
+        }
+        catch SeproError.InternalError(let message){
+            assertionFailure("Internal error: \(message)")
+            return
+        }
+        catch {
+            assertionFailure("Unknown internal error")
+            return
+        }
+
+        let parser = Parser(grammar: grammar)
 
         var ast: AST? = nil
         var error: String? = nil
@@ -104,7 +117,7 @@ class TopDownParserTests: XCTestCase {
     }
 
     func testEmpty() {
-        self.grammar["empty"] = .Empty
+        self.rules["empty"] = .Empty
 
         self.parse([], start: "empty")
         XCTAssertEqual(ast, AST.ASTNode("empty", []))
@@ -116,10 +129,10 @@ class TopDownParserTests: XCTestCase {
     }
 
     func testTerminals() {
-        self.grammar["symbol"] = §"name"
-        self.grammar["integer"] = %"value"
-        self.grammar["keyword"] = "OBJECT"
-        self.grammar["operator"] = .Terminal(.Operator("+"))
+        self.rules["symbol"] = §"name"
+        self.rules["integer"] = %"value"
+        self.rules["keyword"] = "OBJECT"
+        self.rules["operator"] = .Terminal(.Operator("+"))
 
         self.parse([], start: "symbol")
         self.assertError("Expected symbol: name")
@@ -140,8 +153,8 @@ class TopDownParserTests: XCTestCase {
 
 
     func testGroupWithRule() {
-        self.grammar["top"] = "TOP" .. ^"bottom"
-        self.grammar["bottom"] = "BOTTOM"
+        self.rules["top"] = "TOP" .. ^"bottom"
+        self.rules["bottom"] = "BOTTOM"
 
         self.parse(["TOP", "BOTTOM"], start: "top")
         self.assertASTNode("top", ["TOP", .ASTNode("bottom", ["BOTTOM"])])
@@ -151,8 +164,8 @@ class TopDownParserTests: XCTestCase {
     }
 
     func testGroup() {
-        self.grammar["concept"] = "CONCEPT" .. §"name"
-        self.grammar["concept_final"] = "CONCEPT" .. §"name" .. nil
+        self.rules["concept"] = "CONCEPT" .. §"name"
+        self.rules["concept_final"] = "CONCEPT" .. §"name" .. nil
 
         self.parse(["OBJECT"], start: "concept")
         self.assertError("Expected keyword CONCEPT")
@@ -172,7 +185,7 @@ class TopDownParserTests: XCTestCase {
     }
 
     func testOptionalGroup() {
-        self.grammar["optional"] = ??("ONE" .. "TWO")
+        self.rules["optional"] = ??("ONE" .. "TWO")
 
         self.parse([], start: "optional")
         self.assertASTNode("optional", [.ASTNil])
@@ -180,7 +193,7 @@ class TopDownParserTests: XCTestCase {
     }
 
     func testError() {
-        self.grammar["error"] = .Error("Serious error")
+        self.rules["error"] = .Error("Serious error")
 
         self.parse([], start: "error")
         self.assertError("Serious error")
@@ -191,8 +204,8 @@ class TopDownParserTests: XCTestCase {
     }
 
     func testAlternate() {
-        self.grammar["choice"] = "ONE" | "TWO" | "THREE"
-        self.grammar["side"] = "LEFT" | "RIGHT" | .Error("Expected side")
+        self.rules["choice"] = "ONE" | "TWO" | "THREE"
+        self.rules["side"] = "LEFT" | "RIGHT" | .Error("Expected side")
 
         self.parse(["INVALID"], start: "choice")
         self.assertError("got: INVALID")
@@ -211,16 +224,16 @@ class TopDownParserTests: XCTestCase {
     }
 
     func testRule() {
-        self.grammar["outer"] = ^"inner"
-        self.grammar["inner"] = "WORD"
+        self.rules["outer"] = ^"inner"
+        self.rules["inner"] = "WORD"
 
         self.parse(["WORD"], start: "outer")
         self.assertASTNode("outer", [.ASTNode("inner", ["WORD"])])
     }
 
     func testOptional() {
-        self.grammar["optional"] = ??"ALL"
-        self.grammar["optional_suffix"] = "WHERE" .. ??"ALL"
+        self.rules["optional"] = ??"ALL"
+        self.rules["optional_suffix"] = "WHERE" .. ??"ALL"
 
         self.parse([], start: "optional")
         self.assertASTNode("optional", [.ASTNil])
@@ -239,8 +252,8 @@ class TopDownParserTests: XCTestCase {
     }
 
     func testSimpleTree() {
-        self.grammar["concept"] = "CONCEPT" .. §"name" .. ??(^"member")
-        self.grammar["member"] = ("TAG" .. §"name") | ("SLOT" .. §"name")
+        self.rules["concept"] = "CONCEPT" .. §"name" .. ??(^"member")
+        self.rules["member"] = ("TAG" .. §"name") | ("SLOT" .. §"name")
 
         self.parse(["TAG", §"t"], start: "member")
         self.assertASTNode("member", ["TAG", "t"])
@@ -254,8 +267,8 @@ class TopDownParserTests: XCTestCase {
     }
 
     func testRepeat() {
-        self.grammar["repeat"] = +"HI"
-        self.grammar["lalala"] = "LA" .. +"LA"
+        self.rules["repeat"] = +"HI"
+        self.rules["lalala"] = "LA" .. +"LA"
 
         self.parse([], start:"repeat")
         self.assertASTNode("repeat", [])
@@ -277,8 +290,8 @@ class TopDownParserTests: XCTestCase {
     }
 
     func testMultipleRuleRepeats() {
-        self.grammar["concept"] = "CONCEPT" .. §"name" .. +(^"member")
-        self.grammar["member"] = ("TAG" .. §"name") | ("SLOT" .. §"name")
+        self.rules["concept"] = "CONCEPT" .. §"name" .. +(^"member")
+        self.rules["member"] = ("TAG" .. §"name") | ("SLOT" .. §"name")
 
         self.parse(["TAG", §"t"], start: "member")
         self.assertASTNode("member", ["TAG", "t"])
@@ -295,7 +308,7 @@ class TopDownParserTests: XCTestCase {
     }
 
     func testSymbolList() {
-        self.grammar["list"] = §"symbol" .. +("|" .. §"symbol")
+        self.rules["list"] = §"symbol" .. +("|" .. §"symbol")
 
         self.parse([§"a"], start: "list")
         self.assertASTNode("list", ["a"])
@@ -307,7 +320,7 @@ class TopDownParserTests: XCTestCase {
 
     func testOutput() {
         // self.grammar["list"] = §"symbol" | (§"symbol" .. "|" .. ^"list") => {
-        self.grammar["list"] = §"symbol" .. +("|" .. §"symbol") => {
+        self.rules["list"] = §"symbol" .. +("|" .. §"symbol") => {
             items in
             print("Items: \(items)")
             let filtered = items.filter {

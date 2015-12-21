@@ -9,7 +9,7 @@
 import TopDownParser
 
 
-public let Keywords = [
+public let ModelKeywords = [
     // Model Objects
     "CONCEPT", "TAG", "COUNTER", "SLOT",
     "STRUCT","OBJECT", "BIND", "OUTLET", "AS",
@@ -35,16 +35,17 @@ public let Keywords = [
     "ROOT", "THIS", "OTHER"
 ]
 
-func makeGrammar() {
-    var g = Grammar()
+public func makeSeproGrammar() -> Grammar {
+    var g = [String: Item]()
 
     g["model"]        = +^"model_object"
-    g["model_object"] = ^"concept" | ^"actuator" | ^"measure" | ^"world"
+    g["model_object"] = ^"concept" // | ^"actuator" | ^"measure" | ^"world"
     g["concept"]      = "CONCEPT" .. §"name" .. +^"concept_member"
     g["concept_member"] = ^"tag_member" | ^"slot_member"
     g["tag_member"]   = "TAG" .. ^"symbol_list"
     g["slot_member"]  = "SLOT" .. ^"symbol_list"
 
+    // --- continue here ---
     g["actuator"]     = "WHERE" .. ^"selector" ..
                           ??("ON" .. ^"selector") ..
                           "DO" .. ^"modifiers" .. ?^"control"
@@ -60,8 +61,8 @@ func makeGrammar() {
     g["modifiers"]    = ^"modifier" .. +^"modifier"
     g["modifier"]     = ??("IN" .. ^"current") .. (
                             "NOTHING"
-                            | "SET" .. ^"tag_list"
-                            | "UNSET" .. ^"tag_list"
+                            | "SET" .. ^"symbol_list"
+                            | "UNSET" .. ^"symbol_list"
                             | "BIND" .. §"source" .. "TO" .. ^"current" .. §"target"
                             | "UNBIND" .. §"slot"
                         )
@@ -74,6 +75,20 @@ func makeGrammar() {
 
     // Small
     g["symbol_list"] = §"symbol" .. +("," .. §"symbol")
+
+    var grammar: Grammar? = nil
+
+    do {
+         grammar = try Grammar(rules: g)
+    }
+    catch SeproError.InternalError(let message){
+        assertionFailure("Internal error: \(message)")
+    }
+    catch {
+        assertionFailure("Unknown internal error")
+    }
+
+    return grammar!
 }
 
 

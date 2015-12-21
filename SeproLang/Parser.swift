@@ -169,7 +169,33 @@ public indirect enum Term: CustomStringConvertible {
 
 }
 
-public typealias Grammar = [String:Item]
+/// Grammar rules container.
+/// - Note: Guarantees that all referenced rules exist. Otherwise raises an error
+/// during initialization.
+public struct Grammar {
+    public let rules: [String: Item]
+
+    init(rules: [String:Item]) throws {
+        self.rules = rules
+
+        // Validate the grammar
+        let names = rules.reduce(Set<String>()) {
+            acc, pair in
+            let (_, item) = pair
+            return acc.union(item.rules())
+        }
+        let missing = names.subtract(rules.keys).sort()
+        if !missing.isEmpty {
+            let message = "Missing grammar rules: \(missing)"
+            throw SeproError.InternalError(message)
+        }
+    }
+    subscript(name:String) -> Item {
+        get {
+            return self.rules[name]!
+        }
+    }
+}
 
 /// Top-down meta-parser. Matches tokens from provided lexer to associated
 /// grammar rules and produces abstract syntax tree (AST) structure.
@@ -179,16 +205,8 @@ public class Parser {
     let grammar: Grammar
 
     /// - Note: returns nil when grammar is missing rules.
-    public init?(grammar: Grammar) {
+    public init(grammar: Grammar) {
         self.grammar = grammar
-        let rules = self.grammar.reduce(Set<String>()) {
-            acc, pair in
-            let (_, item) = pair
-            return acc.union(item.rules())
-        }
-        if !rules.subtract(self.grammar.keys).isEmpty {
-            return nil
-        }
     }
 
     /// Parse tokens from `lexer` with starting rule `start`
@@ -212,9 +230,7 @@ public class Parser {
     /// - Returns: AST
     /// - Precondition: Grammar must contain the rule `name`
     func parseRule(name: String, isExpected: Bool=false) throws -> AST? {
-        precondition(self.grammar[name] != nil)
-        // TODO: make sure that the ruleName exists in the grammar -> need grammar validation
-        let item = self.grammar[name]!
+        let item = self.grammar[name]
         if let children = try self.parseRuleItem(item, isExpected: isExpected) {
             return .ASTNode(name, children)
         }

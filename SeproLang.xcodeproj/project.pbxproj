@@ -23,7 +23,9 @@
 		F8964E271C19678800222E18 /* Lexer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8964E261C19678800222E18 /* Lexer.swift */; };
 		F89C06171C241ADC003C0BF3 /* CharacterSets.swift in Sources */ = {isa = PBXBuildFile; fileRef = F89C06161C241ADC003C0BF3 /* CharacterSets.swift */; };
 		F89C06191C241AE9003C0BF3 /* AST.swift in Sources */ = {isa = PBXBuildFile; fileRef = F89C06181C241AE9003C0BF3 /* AST.swift */; };
+		F8B1EFF81C27DDF50098B79D /* SyntaxTestCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8B1EFF71C27DDF50098B79D /* SyntaxTestCase.swift */; };
 		F8B9112D1BE727460025C4C8 /* CSVLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8B9112C1BE727460025C4C8 /* CSVLogger.swift */; };
+		F8CA2C241C27E42D00242A0F /* Errors.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8CA2C231C27E42D00242A0F /* Errors.swift */; };
 		F8F561851BE3117D00C53170 /* SeproLang.h in Headers */ = {isa = PBXBuildFile; fileRef = F8F561841BE3117D00C53170 /* SeproLang.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		F8F5618C1BE3117D00C53170 /* SeproLang.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F8F561811BE3117D00C53170 /* SeproLang.framework */; };
 		F8F561911BE3117D00C53170 /* SeproLangTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8F561901BE3117D00C53170 /* SeproLangTests.swift */; };
@@ -84,7 +86,9 @@
 		F8964E261C19678800222E18 /* Lexer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Lexer.swift; sourceTree = "<group>"; };
 		F89C06161C241ADC003C0BF3 /* CharacterSets.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CharacterSets.swift; sourceTree = "<group>"; };
 		F89C06181C241AE9003C0BF3 /* AST.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AST.swift; sourceTree = "<group>"; };
+		F8B1EFF71C27DDF50098B79D /* SyntaxTestCase.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SyntaxTestCase.swift; sourceTree = "<group>"; };
 		F8B9112C1BE727460025C4C8 /* CSVLogger.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CSVLogger.swift; sourceTree = "<group>"; };
+		F8CA2C231C27E42D00242A0F /* Errors.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Errors.swift; sourceTree = "<group>"; };
 		F8F561811BE3117D00C53170 /* SeproLang.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = SeproLang.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		F8F561841BE3117D00C53170 /* SeproLang.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SeproLang.h; sourceTree = "<group>"; };
 		F8F561861BE3117D00C53170 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -214,6 +218,7 @@
 				F8F561B71BE3121300C53170 /* Extensions.swift */,
 				F8F561841BE3117D00C53170 /* SeproLang.h */,
 				F8F561861BE3117D00C53170 /* Info.plist */,
+				F8CA2C231C27E42D00242A0F /* Errors.swift */,
 			);
 			path = SeproLang;
 			sourceTree = "<group>";
@@ -223,6 +228,7 @@
 			children = (
 				F870872E1BEB0806004C72A9 /* ParserTestCase.swift */,
 				F8F561901BE3117D00C53170 /* SeproLangTests.swift */,
+				F8B1EFF71C27DDF50098B79D /* SyntaxTestCase.swift */,
 				F8F561921BE3117D00C53170 /* Info.plist */,
 			);
 			path = SeproLangTests;
@@ -377,6 +383,7 @@
 				F8F618F21BE572F0002A4DE3 /* Logger.swift in Sources */,
 				F8964E271C19678800222E18 /* Lexer.swift in Sources */,
 				F8F561BC1BE312E900C53170 /* Engine.swift in Sources */,
+				F8CA2C241C27E42D00242A0F /* Errors.swift in Sources */,
 				F870872D1BE9D5D3004C72A9 /* Modifier.swift in Sources */,
 				F8F561BE1BE312E900C53170 /* Parser.swift in Sources */,
 				F88A49DF1C06E9CF00FFFEA5 /* Store.swift in Sources */,
@@ -395,6 +402,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F8B1EFF81C27DDF50098B79D /* SyntaxTestCase.swift in Sources */,
 				F870872F1BEB0806004C72A9 /* ParserTestCase.swift in Sources */,
 				F8F561911BE3117D00C53170 /* SeproLangTests.swift in Sources */,
 			);
