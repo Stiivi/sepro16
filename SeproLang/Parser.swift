@@ -199,58 +199,9 @@ public class Parser {
     /// - Throws: SyntaxError
     public func parse(lexer:Lexer, start: String) throws -> AST? {
         self.lexer = lexer
+        // Advance to the the first token
+        self.lexer.nextToken()
         return try self.parseRule(start, isExpected: true)
-    }
-
-    /// Parse a terminal item.
-    /// - Parameters:
-    ///     - item: Terminal item
-    ///     - isExpected: `true` if the terminal item is expected
-    /// - Returns: AST of the item if matches current token, otherwise nil
-    /// - Throws: `SyntaxError` when item is expected and does not match current
-    ///   token
-    func parseTerminal(item: Term, isExpected: Bool) throws -> AST? {
-        var expectation: String
-        let token = self.lexer.currentToken
-
-        switch (item, token.kind) {
-        case (.Keyword(let expected), .Keyword) where token.text == expected:
-            self.lexer.nextToken()
-            return .ASTString(token.text)
-
-        case (.Keyword(let expected), _):
-            expectation = "keyword \(expected)"
-
-        case (.Symbol, .Identifier):
-            self.lexer.nextToken()
-            return .ASTString(token.text)
-
-        case (.Symbol(let expected), _):
-            expectation = "symbol: \(expected)"
-
-        case (.Integer, .IntLiteral):
-            self.lexer.nextToken()
-            // TODO: handle conversion error
-            return .ASTInteger(Int(token.text)!)
-
-        case (.Integer(let expected), _):
-            expectation = "integer: \(expected)"
-
-        case (.Operator, .Operator):
-            self.lexer.nextToken()
-            return .ASTOperator(token.text)
-
-        case (.Operator(let expected), _):
-            expectation = "operator \(expected)"
-        }
-
-        if isExpected {
-            let message = "Expected \(expectation), got: \(token)"
-            throw SyntaxError.Syntax(message: message)
-        }
-        else {
-            return nil
-        }
     }
 
 
@@ -375,6 +326,59 @@ public class Parser {
 
         return nil
     }
+
+
+    /// Parse a terminal item.
+    /// - Parameters:
+    ///     - item: Terminal item
+    ///     - isExpected: `true` if the terminal item is expected
+    /// - Returns: AST of the item if matches current token, otherwise nil
+    /// - Throws: `SyntaxError` when item is expected and does not match current
+    ///   token
+    func parseTerminal(item: Term, isExpected: Bool) throws -> AST? {
+        var expectation: String
+        let token = self.lexer.currentToken
+
+        switch (item, token.kind) {
+        case (.Keyword(let expected), .Keyword) where token.text == expected:
+            self.lexer.nextToken()
+            return .ASTString(token.text)
+
+        case (.Keyword(let expected), _):
+            expectation = "keyword \(expected)"
+
+        case (.Symbol, .Identifier):
+            self.lexer.nextToken()
+            return .ASTString(token.text)
+
+        case (.Symbol(let expected), _):
+            expectation = "symbol: \(expected)"
+
+        case (.Integer, .IntLiteral):
+            self.lexer.nextToken()
+            // TODO: handle conversion error
+            return .ASTInteger(Int(token.text)!)
+
+        case (.Integer(let expected), _):
+            expectation = "integer: \(expected)"
+
+        case (.Operator, .Operator):
+            self.lexer.nextToken()
+            return .ASTOperator(token.text)
+
+        case (.Operator(let expected), _):
+            expectation = "operator \(expected)"
+        }
+
+        if isExpected {
+            let message = "Expected \(expectation), got: \(token)"
+            throw SyntaxError.Syntax(message: message)
+        }
+        else {
+            return nil
+        }
+    }
+
 }
 
 
