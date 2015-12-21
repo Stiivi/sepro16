@@ -179,7 +179,7 @@ public class SimpleEngine: Engine {
             object in
             probeList.forEach {
                 measure, probe in
-                if measure.predicates.all({ self.store.evaluate($0, object.id) }) {
+                if self.store.predicatesMatch(measure.predicates, ref: object.id) {
                     probe.probe(object)
                 }
             }
@@ -200,14 +200,16 @@ public class SimpleEngine: Engine {
      */
     func perform(actuator:Actuator){
         // TODO: take into account Actuator.isRoot as cartesian
-        switch actuator.selector {
-        case let .Unary(specifier):
-            self.performUnary(specifier, modifiers: actuator.modifiers)
-        case let .Binary(this, other):
-            self.performCartesian(this, otherSpec: other, modifiers: actuator.modifiers)
+        if actuator.isCombined {
+            self.performCombined(actuator.selector,
+                otherSelector: actuator.combinedSelector!,
+                modifiers: actuator.modifiers)
+        }
+        else {
+            self.performUnary(actuator.selector, modifiers: actuator.modifiers)
         }
 
-        // FIXME: this is lame, make sure the types are compatible
+        // TODO: This is not good, this should be in "perform"
         if actuator.traps != nil {
             actuator.traps!.forEach {
                 trap in
@@ -240,9 +242,10 @@ public class SimpleEngine: Engine {
 
     - Complexity: O(n) - performs full scan
     */
-    func performUnary(specifier: Specifier, modifiers: [Modifier]) {
-        let objects = self.select(specifier)
+    func performUnary(selector: Selector, modifiers: [Modifier]) {
+        let objects = self.select(selector)
 
+        // FIXME: Broken!!!
         for this in objects {
             modifiers.forEach {
                 modifier in
@@ -252,15 +255,15 @@ public class SimpleEngine: Engine {
 
     }
 
-    func select(specifier:Specifier) -> ObjectSequence {
-        switch specifier {
+    func select(selector: Selector) -> ObjectSelection {
+        switch selector {
         case .All:
-                return self.store.select()
-        case .CompoundPredicate(let predicates):
-                return self.store.select(predicates)
+            return self.store.select()
+        case .Filter(let predicates):
+            return self.store.select(predicates)
         case .Root(_):
-                // FIXME: this is not implemented!!
-                return self.store.select()
+            let references = AnySequence([self.store.rootReference])
+            return self.store.select(references:references)
         }
     }
 
@@ -268,11 +271,11 @@ public class SimpleEngine: Engine {
     - Complexity: O(n^2) - performs cartesian product on two full scans
     */
 
-    func performCartesian(thisSpec: Specifier, otherSpec: Specifier,
+    func performCombined(thisSelector: Selector, otherSelector: Selector,
         modifiers: [Modifier]) {
 
-            let thisObjects = self.select(thisSpec)
-            let otherObjects = self.select(otherSpec)
+            let thisObjects = self.select(thisSelector)
+            let otherObjects = self.select(otherSelector)
             var match: Bool
 
             // Cartesian product: everything 'this' interacts with everything
@@ -286,11 +289,12 @@ public class SimpleEngine: Engine {
 
                     // Check whether 'this' still matches the predicates
                     // FIXME: this is ugly
-                    match = thisObjects.predicates == nil ||
-                        thisObjects.predicates!.all { predicate in
-                        self.store.evaluate(predicate, this.id)
-                    }
-
+                    // FIXME XXX XXX XXX XXX CONTINUE HERE
+                    // match = thisSelector == Selector.All ||
+                    //    self.store.predicatesMatch(thispredicates!,
+                    //                               ref: this.id)
+                    match = true
+                    // FIXME XXX XXX XXX XXX
                     // ... predicates don't match the object, therefore we
                     // skip to the next one
                     if !match {
@@ -322,7 +326,7 @@ public class SimpleEngine: Engine {
             }
 
             if ref.slot != nil {
-                return self.store.getObject(current.links[ref.slot!]!)
+                return self.store[current.bindings[ref.slot!]!]
             }
             else {
                 return current
@@ -368,7 +372,7 @@ public class SimpleEngine: Engine {
             let target = self.getCurrent(targetRef, this: this, other: other)
             print("   TARGET \(target) (\(targetRef))")
             if current != nil && target != nil {
-                current.links[slot] = target.id
+                current.bindings[slot] = target.id
             }
             else {
                 // TODO: isn't this an error or invalid state?
@@ -376,7 +380,7 @@ public class SimpleEngine: Engine {
 
         case .Unbind(let slot):
             if current != nil {
-                this.links[slot] = nil
+                this.bindings[slot] = nil
             }
             else {
                 // TODO: isn't this an error or invalid state?
@@ -449,7 +453,7 @@ public class SimpleEngine: Engine {
             obj.tags = concept.tags
             obj.counters = concept.counters
             for slot in concept.slots {
-                obj.links[slot] = nil
+                obj.bindings[slot] = nil
             }
 
             // Concept name is one of the tags

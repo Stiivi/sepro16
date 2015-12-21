@@ -85,10 +85,15 @@ public func ==(left: PredicateType, right: PredicateType) -> Bool {
     }
 }
 
+
 public struct Predicate: Equatable {
     public let type: PredicateType
     public let isNegated: Bool
     public let inSlot: Symbol?
+
+    public var isIndirect: Bool {
+        get { return inSlot == nil }
+    }
 
     public init(_ type: PredicateType, _ isNegated:Bool=false, inSlot:Symbol?=nil) {
         self.type = type
@@ -101,7 +106,7 @@ public struct Predicate: Equatable {
      
      - Returns: `true` if `object` matches predicate, otherwise `false`
      */
-    public func evaluate(object: Object) -> Bool {
+    public func matchesObject(object: Object) -> Bool {
         let result: Bool
 
         switch self.type {
@@ -142,7 +147,7 @@ public struct Predicate: Equatable {
             }
 
         case .IsBound(let slot):
-            result = object.links[slot] != nil
+            result = object.bindings[slot] != nil
         }
 
         // Apply the negation
@@ -155,4 +160,19 @@ public func ==(left: Predicate, right: Predicate) -> Bool {
     return left.type == right.type
             && left.isNegated == right.isNegated
             && left.inSlot == right.inSlot
+}
+
+public typealias CompoundPredicate = [Predicate]
+
+struct _CompoundPredicate {
+    let predicates: [Predicate]
+
+    init(predicates: [Predicate]) {
+        self.predicates = predicates
+    }
+
+    func matchesObject(object: Object) {
+
+    }
+
 }

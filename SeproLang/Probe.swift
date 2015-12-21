@@ -139,7 +139,7 @@ public class MinProbe: Probe {
     }
 
     public func probe(object:Object) {
-        if let value = object.links[self.counter] {
+        if let value = object.bindings[self.counter] {
             if value < current {
                 current = value
             }

@@ -123,7 +123,7 @@ public class DotWriter{
         let links: [String]
         var linkAttrs = DotAttributes()
 
-        links = obj.links.map { slot, ref in
+        links = obj.bindings.map { slot, ref in
             linkAttrs["label"] = slot
             linkAttrs["fontname"] = self.fontName
             linkAttrs["fontsize"] = 9

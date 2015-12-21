@@ -6,29 +6,35 @@
 //  Copyright © 2015 Stefan Urbanek. All rights reserved.
 //
 
-
 public enum Selector {
-    /// Selects only one set of objects
-    case Unary(Specifier)
-    /// Selects a cartesian product of two sets of objects
-    case Binary(Specifier, Specifier)
-}
-
-public enum Specifier {
     /// All objects
     case All
-    /// Objects matching all predicates
-    case CompoundPredicate([Predicate])
-    /// Root object if matches all predicates
-    case Root([Predicate])
+    /// Objects matching conjunction of predicates
+    case Filter(CompoundPredicate)
+    /// Root object if matches conjunction of predicates
+    case Root(CompoundPredicate)
+}
+
+public func ==(left: Selector, right: Selector) -> Bool {
+    switch (left, right) {
+    case (.All, .All):
+        return true
+    case (.Filter(let lpred), .Filter(let rpred)) where lpred == rpred:
+        return true
+    case (.Root(let lpred), .Filter(let rpred)) where lpred == rpred:
+        return true
+    default:
+        return false
+    }
 }
 
 /**
 Combines predicates with their respective modifiers that are executed
 when the predicate is met.
 */
-public class Actuator {
+public struct Actuator {
     public let selector: Selector
+    public let combinedSelector: Selector?
 
     /// Actions performed by the actuator in atomic way.
     public let modifiers: [Modifier]
@@ -49,9 +55,15 @@ public class Actuator {
      */
     public let notifications: [Symbol]?
 
-    public init(selector: Selector, modifiers: [Modifier],
+    /// `true` when the actuator is combined – specified by two selectors
+    public var isCombined: Bool {
+        return combinedSelector != nil
+    }
+
+    public init(selector: Selector, combinedSelector:Selector?, modifiers: [Modifier],
         traps: [Symbol]?=nil, notifications: [Symbol]?=nil, doesHalt: Bool = false) {
             self.selector = selector
+            self.combinedSelector = combinedSelector
             self.modifiers = modifiers
             self.traps = traps
             self.notifications = notifications

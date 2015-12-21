@@ -6,14 +6,18 @@
 //  Copyright © 2015 Stefan Urbanek. All rights reserved.
 //
 
+/// Abstract syntax tree
 public enum AST: CustomStringConvertible, Equatable {
-    // Named node
+    /// Named node
     case ASTNode(String, [AST])
-    
     // Leaves
+    /// Empty node
     case ASTNil
+    /// String, keyword or symbol node
     case ASTString(String)
+    /// Integer literal node
     case ASTInteger(Int)
+    /// Operator node
     case ASTOperator(String)
 
     public var description: String {
@@ -27,6 +31,8 @@ public enum AST: CustomStringConvertible, Equatable {
             return "\(name)[" + strings.joinWithSeparator(", ") + "]"
         }
     }
+
+
 }
 
 public func ==(left: AST, right: AST) -> Bool {

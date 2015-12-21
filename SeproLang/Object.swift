@@ -10,7 +10,8 @@
 /** References an object in the store. */
 public typealias ObjectRef = Int
 /** List of object references */
-public typealias ObjectList = [Int]
+public typealias ObjectRefList = [Int]
+public typealias ObjectRefSequence = AnySequence<ObjectRef>
 /** Named object references */
 public typealias ObjectMap = [Symbol:ObjectRef]
 
@@ -34,7 +35,9 @@ public class Object: CustomStringConvertible {
     /// Tags that are set
     public var tags = TagList()
     /// References to other objects
-    public var links = ObjectMap()
+    public var bindings = ObjectMap()
+
+    // TODO: isDead
 
     public init(_ id: ObjectRef = 0) {
         self.id = id
@@ -42,7 +45,7 @@ public class Object: CustomStringConvertible {
 
     public var description: String {
         get {
-            let links = self.links.map(){ (key, value) in "\(key)->\(value)" }
+            let links = self.bindings.map(){ (key, value) in "\(key)->\(value)" }
                             . joinWithSeparator(", ")
             let tagsStr = self.tags.map { String($0)} . joinWithSeparator(", ")
             return "\(id)[\(tagsStr);\(links)]"

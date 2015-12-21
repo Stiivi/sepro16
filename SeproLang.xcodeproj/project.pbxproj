@@ -11,11 +11,6 @@
 		F82463A21BE4576600641782 /* Probe.swift in Sources */ = {isa = PBXBuildFile; fileRef = F82463A11BE4576600641782 /* Probe.swift */; };
 		F84581931C0183CD00899C3D /* Actuator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F84581921C0183CD00899C3D /* Actuator.swift */; };
 		F85C0E901BEDC46100789741 /* SeproLang.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = F8F561811BE3117D00C53170 /* SeproLang.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		F85C0E981BEDC67800789741 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F85C0E971BEDC67800789741 /* AppDelegate.swift */; };
-		F85C0E9A1BEDC67800789741 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F85C0E991BEDC67800789741 /* Assets.xcassets */; };
-		F85C0E9D1BEDC67800789741 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = F85C0E9B1BEDC67800789741 /* MainMenu.xib */; };
-		F85C0EA81BEDC67800789741 /* SeprolabTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F85C0EA71BEDC67800789741 /* SeprolabTests.swift */; };
-		F85C0EB31BEDC67800789741 /* SeprolabUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F85C0EB21BEDC67800789741 /* SeprolabUITests.swift */; };
 		F85C0EBF1BEE91AD00789741 /* Delegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F85C0EBE1BEE91AD00789741 /* Delegate.swift */; };
 		F865894F1BFC3EA300A5A4EF /* Selection.swift in Sources */ = {isa = PBXBuildFile; fileRef = F865894E1BFC3EA300A5A4EF /* Selection.swift */; };
 		F870872B1BE72CEE004C72A9 /* Observer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F870872A1BE72CEE004C72A9 /* Observer.swift */; };
@@ -24,6 +19,10 @@
 		F88A49DF1C06E9CF00FFFEA5 /* Store.swift in Sources */ = {isa = PBXBuildFile; fileRef = F88A49DE1C06E9CF00FFFEA5 /* Store.swift */; };
 		F88C68081C05A2A600AE94C9 /* Dot.swift in Sources */ = {isa = PBXBuildFile; fileRef = F85C0E7E1BEB403A00789741 /* Dot.swift */; };
 		F88C680A1C06DA3400AE94C9 /* ShuffledCollection.swift in Sources */ = {isa = PBXBuildFile; fileRef = F88C68091C06DA3400AE94C9 /* ShuffledCollection.swift */; };
+		F8928C1F1C1EB72D0064788C /* Grammar.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8928C1E1C1EB72D0064788C /* Grammar.swift */; };
+		F8964E271C19678800222E18 /* Lexer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8964E261C19678800222E18 /* Lexer.swift */; };
+		F89C06171C241ADC003C0BF3 /* CharacterSets.swift in Sources */ = {isa = PBXBuildFile; fileRef = F89C06161C241ADC003C0BF3 /* CharacterSets.swift */; };
+		F89C06191C241AE9003C0BF3 /* AST.swift in Sources */ = {isa = PBXBuildFile; fileRef = F89C06181C241AE9003C0BF3 /* AST.swift */; };
 		F8B9112D1BE727460025C4C8 /* CSVLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8B9112C1BE727460025C4C8 /* CSVLogger.swift */; };
 		F8F561851BE3117D00C53170 /* SeproLang.h in Headers */ = {isa = PBXBuildFile; fileRef = F8F561841BE3117D00C53170 /* SeproLang.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		F8F5618C1BE3117D00C53170 /* SeproLang.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F8F561811BE3117D00C53170 /* SeproLang.framework */; };
@@ -39,20 +38,6 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		F85C0EA41BEDC67800789741 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = F8F561781BE3117D00C53170 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = F85C0E941BEDC67800789741;
-			remoteInfo = Seprolab;
-		};
-		F85C0EAF1BEDC67800789741 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = F8F561781BE3117D00C53170 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = F85C0E941BEDC67800789741;
-			remoteInfo = Seprolab;
-		};
 		F8F5618D1BE3117D00C53170 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = F8F561781BE3117D00C53170 /* Project object */;
@@ -88,17 +73,6 @@
 		F82463A11BE4576600641782 /* Probe.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Probe.swift; sourceTree = "<group>"; };
 		F84581921C0183CD00899C3D /* Actuator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Actuator.swift; sourceTree = "<group>"; };
 		F85C0E7E1BEB403A00789741 /* Dot.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Dot.swift; path = ../SeproLang/Dot.swift; sourceTree = "<group>"; };
-		F85C0E951BEDC67800789741 /* Seprolab.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Seprolab.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		F85C0E971BEDC67800789741 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
-		F85C0E991BEDC67800789741 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		F85C0E9C1BEDC67800789741 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/MainMenu.xib; sourceTree = "<group>"; };
-		F85C0E9E1BEDC67800789741 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		F85C0EA31BEDC67800789741 /* SeprolabTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SeprolabTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		F85C0EA71BEDC67800789741 /* SeprolabTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeprolabTests.swift; sourceTree = "<group>"; };
-		F85C0EA91BEDC67800789741 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		F85C0EAE1BEDC67800789741 /* SeprolabUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SeprolabUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		F85C0EB21BEDC67800789741 /* SeprolabUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeprolabUITests.swift; sourceTree = "<group>"; };
-		F85C0EB41BEDC67800789741 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		F85C0EBE1BEE91AD00789741 /* Delegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Delegate.swift; sourceTree = "<group>"; };
 		F865894E1BFC3EA300A5A4EF /* Selection.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Selection.swift; sourceTree = "<group>"; };
 		F870872A1BE72CEE004C72A9 /* Observer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Observer.swift; sourceTree = "<group>"; };
@@ -106,6 +80,10 @@
 		F870872E1BEB0806004C72A9 /* ParserTestCase.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ParserTestCase.swift; sourceTree = "<group>"; };
 		F88A49DE1C06E9CF00FFFEA5 /* Store.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Store.swift; sourceTree = "<group>"; };
 		F88C68091C06DA3400AE94C9 /* ShuffledCollection.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ShuffledCollection.swift; sourceTree = "<group>"; };
+		F8928C1E1C1EB72D0064788C /* Grammar.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Grammar.swift; sourceTree = "<group>"; };
+		F8964E261C19678800222E18 /* Lexer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Lexer.swift; sourceTree = "<group>"; };
+		F89C06161C241ADC003C0BF3 /* CharacterSets.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CharacterSets.swift; sourceTree = "<group>"; };
+		F89C06181C241AE9003C0BF3 /* AST.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AST.swift; sourceTree = "<group>"; };
 		F8B9112C1BE727460025C4C8 /* CSVLogger.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CSVLogger.swift; sourceTree = "<group>"; };
 		F8F561811BE3117D00C53170 /* SeproLang.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = SeproLang.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		F8F561841BE3117D00C53170 /* SeproLang.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SeproLang.h; sourceTree = "<group>"; };
@@ -125,27 +103,6 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		F85C0E921BEDC67800789741 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		F85C0EA01BEDC67800789741 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		F85C0EAB1BEDC67800789741 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		F8F5617D1BE3117D00C53170 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -172,35 +129,6 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		F85C0E961BEDC67800789741 /* Seprolab */ = {
-			isa = PBXGroup;
-			children = (
-				F85C0E971BEDC67800789741 /* AppDelegate.swift */,
-				F85C0E991BEDC67800789741 /* Assets.xcassets */,
-				F85C0E9B1BEDC67800789741 /* MainMenu.xib */,
-				F85C0E9E1BEDC67800789741 /* Info.plist */,
-			);
-			path = Seprolab;
-			sourceTree = "<group>";
-		};
-		F85C0EA61BEDC67800789741 /* SeprolabTests */ = {
-			isa = PBXGroup;
-			children = (
-				F85C0EA71BEDC67800789741 /* SeprolabTests.swift */,
-				F85C0EA91BEDC67800789741 /* Info.plist */,
-			);
-			path = SeprolabTests;
-			sourceTree = "<group>";
-		};
-		F85C0EB11BEDC67800789741 /* SeprolabUITests */ = {
-			isa = PBXGroup;
-			children = (
-				F85C0EB21BEDC67800789741 /* SeprolabUITests.swift */,
-				F85C0EB41BEDC67800789741 /* Info.plist */,
-			);
-			path = SeprolabUITests;
-			sourceTree = "<group>";
-		};
 		F865894B1BFC3E5500A5A4EF /* Engine */ = {
 			isa = PBXGroup;
 			children = (
@@ -233,6 +161,26 @@
 			name = Observer;
 			sourceTree = "<group>";
 		};
+		F8964E251C19676500222E18 /* Language */ = {
+			isa = PBXGroup;
+			children = (
+				F89C06111C2419E1003C0BF3 /* TopDownParser */,
+				F8928C1E1C1EB72D0064788C /* Grammar.swift */,
+			);
+			name = Language;
+			sourceTree = "<group>";
+		};
+		F89C06111C2419E1003C0BF3 /* TopDownParser */ = {
+			isa = PBXGroup;
+			children = (
+				F89C06181C241AE9003C0BF3 /* AST.swift */,
+				F8964E261C19678800222E18 /* Lexer.swift */,
+				F8F561BB1BE312E900C53170 /* Parser.swift */,
+				F89C06161C241ADC003C0BF3 /* CharacterSets.swift */,
+			);
+			name = TopDownParser;
+			sourceTree = "<group>";
+		};
 		F8F561771BE3117D00C53170 = {
 			isa = PBXGroup;
 			children = (
@@ -241,9 +189,6 @@
 				F8F561831BE3117D00C53170 /* SeproLang */,
 				F8F5618F1BE3117D00C53170 /* SeproLangTests */,
 				F8F561A01BE3118D00C53170 /* sepro */,
-				F85C0E961BEDC67800789741 /* Seprolab */,
-				F85C0EA61BEDC67800789741 /* SeprolabTests */,
-				F85C0EB11BEDC67800789741 /* SeprolabUITests */,
 				F8F561821BE3117D00C53170 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -254,9 +199,6 @@
 				F8F561811BE3117D00C53170 /* SeproLang.framework */,
 				F8F5618B1BE3117D00C53170 /* SeproLangTests.xctest */,
 				F8F5619F1BE3118D00C53170 /* sepro */,
-				F85C0E951BEDC67800789741 /* Seprolab.app */,
-				F85C0EA31BEDC67800789741 /* SeprolabTests.xctest */,
-				F85C0EAE1BEDC67800789741 /* SeprolabUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -267,9 +209,9 @@
 				F865894C1BFC3E6300A5A4EF /* Model */,
 				F865894B1BFC3E5500A5A4EF /* Engine */,
 				F865894D1BFC3E7800A5A4EF /* Observer */,
-				F8F561BB1BE312E900C53170 /* Parser.swift */,
-				F8F561B71BE3121300C53170 /* Extensions.swift */,
+				F8964E251C19676500222E18 /* Language */,
 				F88C68091C06DA3400AE94C9 /* ShuffledCollection.swift */,
+				F8F561B71BE3121300C53170 /* Extensions.swift */,
 				F8F561841BE3117D00C53170 /* SeproLang.h */,
 				F8F561861BE3117D00C53170 /* Info.plist */,
 			);
@@ -311,59 +253,6 @@
 /* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
-		F85C0E941BEDC67800789741 /* Seprolab */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = F85C0EB51BEDC67800789741 /* Build configuration list for PBXNativeTarget "Seprolab" */;
-			buildPhases = (
-				F85C0E911BEDC67800789741 /* Sources */,
-				F85C0E921BEDC67800789741 /* Frameworks */,
-				F85C0E931BEDC67800789741 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			name = Seprolab;
-			productName = Seprolab;
-			productReference = F85C0E951BEDC67800789741 /* Seprolab.app */;
-			productType = "com.apple.product-type.application";
-		};
-		F85C0EA21BEDC67800789741 /* SeprolabTests */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = F85C0EB81BEDC67800789741 /* Build configuration list for PBXNativeTarget "SeprolabTests" */;
-			buildPhases = (
-				F85C0E9F1BEDC67800789741 /* Sources */,
-				F85C0EA01BEDC67800789741 /* Frameworks */,
-				F85C0EA11BEDC67800789741 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				F85C0EA51BEDC67800789741 /* PBXTargetDependency */,
-			);
-			name = SeprolabTests;
-			productName = SeprolabTests;
-			productReference = F85C0EA31BEDC67800789741 /* SeprolabTests.xctest */;
-			productType = "com.apple.product-type.bundle.unit-test";
-		};
-		F85C0EAD1BEDC67800789741 /* SeprolabUITests */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = F85C0EBB1BEDC67800789741 /* Build configuration list for PBXNativeTarget "SeprolabUITests" */;
-			buildPhases = (
-				F85C0EAA1BEDC67800789741 /* Sources */,
-				F85C0EAB1BEDC67800789741 /* Frameworks */,
-				F85C0EAC1BEDC67800789741 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				F85C0EB01BEDC67800789741 /* PBXTargetDependency */,
-			);
-			name = SeprolabUITests;
-			productName = SeprolabUITests;
-			productReference = F85C0EAE1BEDC67800789741 /* SeprolabUITests.xctest */;
-			productType = "com.apple.product-type.bundle.ui-testing";
-		};
 		F8F561801BE3117D00C53170 /* SeproLang */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = F8F561951BE3117D00C53170 /* Build configuration list for PBXNativeTarget "SeproLang" */;
@@ -428,17 +317,6 @@
 				LastUpgradeCheck = 0720;
 				ORGANIZATIONNAME = "Stefan Urbanek";
 				TargetAttributes = {
-					F85C0E941BEDC67800789741 = {
-						CreatedOnToolsVersion = 7.2;
-					};
-					F85C0EA21BEDC67800789741 = {
-						CreatedOnToolsVersion = 7.2;
-						TestTargetID = F85C0E941BEDC67800789741;
-					};
-					F85C0EAD1BEDC67800789741 = {
-						CreatedOnToolsVersion = 7.2;
-						TestTargetID = F85C0E941BEDC67800789741;
-					};
 					F8F561801BE3117D00C53170 = {
 						CreatedOnToolsVersion = 7.2;
 					};
@@ -466,37 +344,11 @@
 				F8F561801BE3117D00C53170 /* SeproLang */,
 				F8F5618A1BE3117D00C53170 /* SeproLangTests */,
 				F8F5619E1BE3118D00C53170 /* sepro */,
-				F85C0E941BEDC67800789741 /* Seprolab */,
-				F85C0EA21BEDC67800789741 /* SeprolabTests */,
-				F85C0EAD1BEDC67800789741 /* SeprolabUITests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		F85C0E931BEDC67800789741 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				F85C0E9A1BEDC67800789741 /* Assets.xcassets in Resources */,
-				F85C0E9D1BEDC67800789741 /* MainMenu.xib in Resources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		F85C0EA11BEDC67800789741 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		F85C0EAC1BEDC67800789741 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		F8F5617F1BE3117D00C53170 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -514,30 +366,6 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		F85C0E911BEDC67800789741 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				F85C0E981BEDC67800789741 /* AppDelegate.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		F85C0E9F1BEDC67800789741 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				F85C0EA81BEDC67800789741 /* SeprolabTests.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		F85C0EAA1BEDC67800789741 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				F85C0EB31BEDC67800789741 /* SeprolabUITests.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		F8F5617C1BE3117D00C53170 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -545,12 +373,16 @@
 				F865894F1BFC3EA300A5A4EF /* Selection.swift in Sources */,
 				F824639B1BE31F6A00641782 /* Predicate.swift in Sources */,
 				F870872B1BE72CEE004C72A9 /* Observer.swift in Sources */,
+				F89C06191C241AE9003C0BF3 /* AST.swift in Sources */,
 				F8F618F21BE572F0002A4DE3 /* Logger.swift in Sources */,
+				F8964E271C19678800222E18 /* Lexer.swift in Sources */,
 				F8F561BC1BE312E900C53170 /* Engine.swift in Sources */,
 				F870872D1BE9D5D3004C72A9 /* Modifier.swift in Sources */,
 				F8F561BE1BE312E900C53170 /* Parser.swift in Sources */,
 				F88A49DF1C06E9CF00FFFEA5 /* Store.swift in Sources */,
 				F84581931C0183CD00899C3D /* Actuator.swift in Sources */,
+				F89C06171C241ADC003C0BF3 /* CharacterSets.swift in Sources */,
+				F8928C1F1C1EB72D0064788C /* Grammar.swift in Sources */,
 				F82463A21BE4576600641782 /* Probe.swift in Sources */,
 				F8F561B81BE3121300C53170 /* Extensions.swift in Sources */,
 				F8F618F01BE4630F002A4DE3 /* Object.swift in Sources */,
@@ -582,16 +414,6 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		F85C0EA51BEDC67800789741 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = F85C0E941BEDC67800789741 /* Seprolab */;
-			targetProxy = F85C0EA41BEDC67800789741 /* PBXContainerItemProxy */;
-		};
-		F85C0EB01BEDC67800789741 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = F85C0E941BEDC67800789741 /* Seprolab */;
-			targetProxy = F85C0EAF1BEDC67800789741 /* PBXContainerItemProxy */;
-		};
 		F8F5618E1BE3117D00C53170 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = F8F561801BE3117D00C53170 /* SeproLang */;
@@ -604,94 +426,7 @@
 		};
 /* End PBXTargetDependency section */
 
-/* Begin PBXVariantGroup section */
-		F85C0E9B1BEDC67800789741 /* MainMenu.xib */ = {
-			isa = PBXVariantGroup;
-			children = (
-				F85C0E9C1BEDC67800789741 /* Base */,
-			);
-			name = MainMenu.xib;
-			sourceTree = "<group>";
-		};
-/* End PBXVariantGroup section */
-
 /* Begin XCBuildConfiguration section */
-		F85C0EB61BEDC67800789741 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				COMBINE_HIDPI_IMAGES = YES;
-				INFOPLIST_FILE = Seprolab/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = databrewery.Seprolab;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-			};
-			name = Debug;
-		};
-		F85C0EB71BEDC67800789741 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				COMBINE_HIDPI_IMAGES = YES;
-				INFOPLIST_FILE = Seprolab/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = databrewery.Seprolab;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-			};
-			name = Release;
-		};
-		F85C0EB91BEDC67800789741 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				COMBINE_HIDPI_IMAGES = YES;
-				INFOPLIST_FILE = SeprolabTests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = databrewery.SeprolabTests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Seprolab.app/Contents/MacOS/Seprolab";
-			};
-			name = Debug;
-		};
-		F85C0EBA1BEDC67800789741 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				COMBINE_HIDPI_IMAGES = YES;
-				INFOPLIST_FILE = SeprolabTests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = databrewery.SeprolabTests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Seprolab.app/Contents/MacOS/Seprolab";
-			};
-			name = Release;
-		};
-		F85C0EBC1BEDC67800789741 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				COMBINE_HIDPI_IMAGES = YES;
-				INFOPLIST_FILE = SeprolabUITests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = databrewery.SeprolabUITests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				TEST_TARGET_NAME = Seprolab;
-				USES_XCTRUNNER = YES;
-			};
-			name = Debug;
-		};
-		F85C0EBD1BEDC67800789741 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				COMBINE_HIDPI_IMAGES = YES;
-				INFOPLIST_FILE = SeprolabUITests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = databrewery.SeprolabUITests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				TEST_TARGET_NAME = Seprolab;
-				USES_XCTRUNNER = YES;
-			};
-			name = Release;
-		};
 		F8F561931BE3117D00C53170 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -866,33 +601,6 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		F85C0EB51BEDC67800789741 /* Build configuration list for PBXNativeTarget "Seprolab" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				F85C0EB61BEDC67800789741 /* Debug */,
-				F85C0EB71BEDC67800789741 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		F85C0EB81BEDC67800789741 /* Build configuration list for PBXNativeTarget "SeprolabTests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				F85C0EB91BEDC67800789741 /* Debug */,
-				F85C0EBA1BEDC67800789741 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		F85C0EBB1BEDC67800789741 /* Build configuration list for PBXNativeTarget "SeprolabUITests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				F85C0EBC1BEDC67800789741 /* Debug */,
-				F85C0EBD1BEDC67800789741 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
 		F8F5617B1BE3117D00C53170 /* Build configuration list for PBXProject "SeproLang" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

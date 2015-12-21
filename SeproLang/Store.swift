@@ -6,10 +6,26 @@
 //  Copyright © 2015 Stefan Urbanek. All rights reserved.
 //
 
+protocol _BasicStore {
+    /** Reference of the root object. */
+    var rootReference: ObjectRef { get }
+
+    /**
+     - Returns: References to all objects in the store.
+     */
+    var allReferences: ObjectRefSequence { get }
+
+    /**
+     - Returns: Object with referenec `ref` or `nil` if such object does not
+     exist.
+     */
+    func objectByReference(ref: ObjectRef) -> Object?
+}
+
 /**
 Container representing the state of the world.
 */
-public class Store {
+public class Store: _BasicStore {
     /// The object memory
     var container: [ObjectRef:Object]
 
@@ -18,7 +34,10 @@ public class Store {
 
     /// Reference to the root object in the object memory
     // TODO: make this private
-    public var root: ObjectRef!
+    var root: ObjectRef!
+    var rootReference: ObjectRef {
+        get { return self.root }
+    }
 
     public init() {
         self.container = [ObjectRef:Object]()
@@ -29,9 +48,25 @@ public class Store {
         self.container.removeAll()
     }
 
-    public var allReferences: AnySequence<ObjectRef> {
-        return AnySequence(self.container.keys)
+    /**
+     - Returns: References to all objects in the store.
+     */
+    public var allReferences: ObjectRefSequence {
+        return ObjectRefSequence(self.container.keys)
     }
+
+    /**
+    - Returns: Object referenced by reference `ref` or `nil` if no such object
+     exists.
+    */
+    public func objectByReference(ref:ObjectRef) -> Object? {
+        return self.container[ref]
+    }
+
+    public subscript(ref: ObjectRef) -> Object? {
+        return self.objectByReference(ref)
+    }
+
 
     /**
      Adds an `object` to the store container.
@@ -62,65 +97,56 @@ public class Store {
         return self[self.root]!
     }
 
-
-    /**
-    - Returns: sequence of all object references
-    */
-    public func getObject(ref:ObjectRef) -> Object? {
-        return self.container[ref]
-    }
-
-    public subscript(ref: ObjectRef) -> Object? {
-        return self.getObject(ref)
-    }
-
-    /**
-     Iterates through all objects matching `predicates`. If no predicates are
-     provided then all objects are iterated.
-
-     - Parameters:
-        - predicates: optional list of predicates
-     - Note: Order is implementation specific and is not guaranteed
-       neigher between implementations or even between distinct calls
-       of the method even without state change of the store.
-
-     - Returns: a sequence-like object representing the selection of objects
-     */
-    public func select(predicates:[Predicate]?=nil) -> ObjectSequence {
-        return ObjectSequence(store: self, predicates: predicates)
-    }
-
     /**
         Evaluates the predicate against object.
         - Returns: `true` if the object matches the predicate
     */
-    public func evaluate(predicate:Predicate,_ ref: ObjectRef) -> Bool {
+    public func predicateMatches(predicate:Predicate, ref: ObjectRef) -> Bool {
         if let object = self.container[ref] {
-            var target: Object
-
-            // Try to get the target slot
-            //
-            if predicate.inSlot != nil {
-                if let maybeTarget = object.links[predicate.inSlot!] {
-                    target = self.container[maybeTarget]!
-                }
-                else {
-                    // TODO: is this OK if the slot is not filled and the condition is
-                    // negated?
-                    return false
-                }
-            }
-            else {
-                target = object
-            }
-            return predicate.evaluate(target)
+            return self.predicateMatches(predicate, object: object)
         }
         else {
-            // TODO: Exception?
             return false
         }
     }
+
+    public func predicateMatches(predicate:Predicate, object: Object) -> Bool {
+        var target: Object
+
+        // Try to get the target slot
+        //
+        if predicate.isIndirect {
+            if let ref = object.bindings[predicate.inSlot!] {
+                target = self.container[ref]!
+            }
+            else {
+                return false
+            }
+        }
+        else {
+            target = object
+        }
+        return predicate.matchesObject(target)
+    }
+
+    public func predicatesMatch(predicates: CompoundPredicate, ref: ObjectRef) -> Bool {
+        if let object = self.container[ref] {
+            return predicates.all {
+                predicate in
+                self.predicateMatches(predicate, object: object)
+            }
+        }
+        else {
+            return false
+        }
+    }
+
+    public func select(predicates:[Predicate]?=nil,
+        references:ObjectRefSequence?=nil) -> ObjectSelection {
+            return ObjectSelection(store: self, predicates: predicates, references: references)
+    }
 }
+
 
 public struct ObjectSequence: SequenceType {
     public let predicates: [Predicate]?
@@ -148,11 +174,8 @@ public struct ObjectSequence: SequenceType {
 
             if self.predicates != nil {
                 while(ref != nil) {
-                    let match = self.predicates!.all {
-                            predicate in
-                            self.store.evaluate(predicate, ref!)
-                        }
-
+                    let match = self.store.predicatesMatch(self.predicates!,
+                                                            ref: ref!)
                     if match {
                         break
                     }

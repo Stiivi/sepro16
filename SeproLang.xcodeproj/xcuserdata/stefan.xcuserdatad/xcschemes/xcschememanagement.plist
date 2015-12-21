@@ -9,16 +9,6 @@
 			<key>orderHint</key>
 			<integer>0</integer>
 		</dict>
-		<key>Seprolab.xcscheme</key>
-		<dict>
-			<key>orderHint</key>
-			<integer>3</integer>
-		</dict>
-		<key>libSeproLang.xcscheme</key>
-		<dict>
-			<key>orderHint</key>
-			<integer>2</integer>
-		</dict>
 		<key>sepro.xcscheme</key>
 		<dict>
 			<key>orderHint</key>
@@ -43,6 +33,21 @@
 			<true/>
 		</dict>
 		<key>F85C0EAD1BEDC67800789741</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>F8928BF01C1CDF9D0064788C</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>F8928BFE1C1CE3E00064788C</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>F8928C071C1CE3E00064788C</key>
 		<dict>
 			<key>primary</key>
 			<true/>
