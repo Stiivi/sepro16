@@ -1,13 +1,13 @@
 //
 //  AST.swift
-//  SeproLang
+//  TopDown
 //
 //  Created by Stefan Urbanek on 12/12/15.
 //  Copyright © 2015 Stefan Urbanek. All rights reserved.
 //
 
 /// Abstract syntax tree
-public enum AST: CustomStringConvertible, Equatable {
+public enum AST: CustomStringConvertible, Equatable, SequenceType {
     /// Named node
     case ASTNode(String, [AST])
     // Leaves
@@ -32,6 +32,31 @@ public enum AST: CustomStringConvertible, Equatable {
         }
     }
 
+    public var intValue: Int? {
+        switch(self) {
+        case ASTInteger(let val): return val
+        default:
+            return nil
+        }
+    }
+
+    public var stringValue: String? {
+        switch(self) {
+        case ASTString(let val): return val
+        default:
+            return nil
+        }
+    }
+
+    typealias _ASTList = [AST]
+
+    public func generate() -> _ASTList.Generator {
+        switch(self) {
+        case ASTNode(_, let items): return items.generate()
+        default:
+            return [self].generate()
+        }
+    }
 
 }
 

@@ -19,7 +19,7 @@ import Foundation
 public enum TokenKind: Equatable {
     case Empty
 
-    case Unknown
+    case Error(String)
 
     /// Identifier: first character + rest of identifier characters
     case Identifier
@@ -38,7 +38,7 @@ public enum TokenKind: Equatable {
 
     public var description: String {
         switch self {
-        case Unknown: return "unknown"
+        case Error: return "unknown"
         case Empty: return "empty"
         case Identifier: return "identifier"
         case Keyword: return "keyword"
@@ -52,7 +52,7 @@ public enum TokenKind: Equatable {
 public func ==(left:TokenKind, right:TokenKind) -> Bool {
     switch(left, right){
     case (.Empty, .Empty): return true
-    case (.Unknown, .Unknown): return true
+    case (.Error(let l), .Error(let r)) where l == r: return true
     case (.Keyword, .Keyword): return true
     case (.Identifier, .Identifier): return true
     case (.IntLiteral, .IntLiteral): return true
@@ -74,10 +74,10 @@ public struct Token: CustomStringConvertible, CustomDebugStringConvertible, Equa
 
     public var description: String {
         switch self.kind {
-        case .Empty: "(empty)"
-        case .StringLiteral: "\"\(self.text)\""
+        case .Empty: return "(empty)"
+        case .StringLiteral: return "\"\(self.text)\""
         default:
-            self.text
+            return self.text
         }
     }
 
@@ -100,17 +100,17 @@ extension Token: StringLiteralConvertible {
     public typealias UnicodeScalarLiteralType = String
 
     public init(stringLiteral value: StringLiteralType){
-        self.kind = .Unknown
+        self.kind = .Keyword
         self.text = value
     }
 
     public init(extendedGraphemeClusterLiteral value: ExtendedGraphemeClusterLiteralType){
-        self.kind = .Unknown
+        self.kind = .Keyword
         self.text = value
     }
 
     public init(unicodeScalarLiteral value: UnicodeScalarLiteralType){
-        self.kind = .Unknown
+        self.kind = .Keyword
         self.text = value
     }
 }
@@ -157,12 +157,17 @@ public struct TextPos {
     }
 }
 
+public protocol Lexer {
+    func nextToken() -> Token
+    var currentToken: Token { get }
+}
+
 /**
  Simple lexer that produces symbols, keywords, integers, operators and
  docstrings. Symbols can be quoted with a back-quote character.
  */
 
-public class Lexer {
+public class SimpleLexer: Lexer {
     let keywords: [String]
 
     let source: String
@@ -317,14 +322,14 @@ public class Lexer {
     }
 
     func tokenFrom(start: String.CharacterView.Index) -> String {
-        let end = self.index.predecessor()
-        // FIXME: this is related to how expect(tree) works, needs to be fixed there
-        if end < start {
-            return self.source.substringWithRange(end...start)
+        let end: String.CharacterView.Index
+        if self.index > self.characters.startIndex {
+            end = self.index.predecessor()
         }
         else {
-            return self.source.substringWithRange(start...end)
+            end = self.index
         }
+        return self.source.substringWithRange(start...end)
     }
 
     /**
@@ -349,7 +354,7 @@ public class Lexer {
             if SymbolStart ~= self {
                 let invalid = self.currentChar == nil ? "(nil)" : String(self.currentChar!)
                 self.error = "Invalid character \(invalid) in number"
-                tokenKind = .Empty
+                tokenKind = .Error(self.error!)
             }
             else {
                 tokenKind = .IntLiteral
@@ -376,6 +381,7 @@ public class Lexer {
         }
         else{
             var message: String
+            let value = self.tokenFrom(start)
 
             if self.currentChar != nil {
                 message = "Unexpected character '\(self.currentChar!)'"
@@ -384,8 +390,8 @@ public class Lexer {
                 message = "Unexpected end"
             }
             
-            let value = self.tokenFrom(start)
             self.error = message + " around \(value)'"
+            tokenKind = .Error(self.error!)
         }
 
         if tokenKind != .Empty {
@@ -425,7 +431,7 @@ public class Lexer {
             }
         }
         self.error = "Unexpected end of input in a string"
-        return .Empty
+        return .Error(self.error!)
 
     }
 }
@@ -433,10 +439,15 @@ public class Lexer {
 infix operator ~ { }
 
 
-public func ~=(left:CharacterSet, lexer: Lexer) -> Bool {
-    return left.matches(lexer.currentChar!)
+public func ~=(left:CharacterSet, lexer: SimpleLexer) -> Bool {
+    if let char = lexer.currentChar {
+        return left.matches(char)
+    }
+    else {
+        return false
+    }
 }
 
-public func ~=(left:Character, lexer: Lexer) -> Bool {
+public func ~=(left:Character, lexer: SimpleLexer) -> Bool {
     return lexer.accept(left)
 }

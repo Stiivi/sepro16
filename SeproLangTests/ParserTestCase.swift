@@ -10,7 +10,29 @@ import XCTest
 @testable import SeproLang
 
 prefix func §(right: String) -> Token {
-    return .Symbol(right)
+    return Token(.Identifier, right)
+}
+
+class SequenceLexer: Lexer {
+    typealias _TokenList = [Token]
+    var generator: _TokenList.Generator
+    var _currentToken: Token
+    internal var currentToken: Token { return self._currentToken }
+
+    init(tokens: [Token]) {
+        self.generator = tokens.generate()
+        self._currentToken = nil
+    }
+
+    internal func nextToken() -> Token {
+        if let token = generator.next() {
+            self._currentToken = token
+        }
+        else {
+            self._currentToken = Token(.Empty, "")
+        }
+        return self._currentToken
+    }
 }
 
 
@@ -40,7 +62,11 @@ class TopDownParserTests: XCTestCase {
     }
 
     func assertASTNode(expectName: String, _ expectChildren: [AST]) {
-        if self.ast == nil {
+        if self.error != nil {
+            XCTFail("Expected ast node \(name). Got error: \(self.error)")
+            return
+        }
+        else if self.ast == nil {
             XCTFail("Expected ast node \(name). No node exists.")
             return
         }
@@ -98,16 +124,16 @@ class TopDownParserTests: XCTestCase {
         self.parse([], start: "symbol")
         self.assertError("Expected symbol: name")
 
-        self.parse([.IntLiteral(10)], start: "symbol")
+        self.parse([Token(.IntLiteral, "10")], start: "symbol")
         self.assertError("Expected symbol: name")
 
-        self.parse([.Symbol("foo")], start: "symbol")
+        self.parse([Token(.Identifier, "foo")], start: "symbol")
         self.assertASTNode("symbol", [.ASTString("foo")])
 
-        self.parse([.Keyword("OBJECT")], start: "keyword")
+        self.parse([Token(.Keyword, "OBJECT")], start: "keyword")
         self.assertASTNode("keyword", [.ASTString("OBJECT")])
 
-        self.parse([.Operator("+")], start: "operator")
+        self.parse([Token(.Operator, "+")], start: "operator")
         self.assertASTNode("operator", [.ASTOperator("+")])
 
     }
@@ -291,7 +317,7 @@ class TopDownParserTests: XCTestCase {
         }
 
         self.parse([§"a", "|", §"b", "|", §"c"], start:"list")
-        print(self.ast)
+        // print(self.ast)
 
         // self.grammar["list"] = §"symbol" .. +("|" .. §"symbol") => {
         //    input in
@@ -313,32 +339,31 @@ class LexerTestCase: XCTestCase {
     }
 
     func lexer(source: String) -> Lexer {
-        let operators = ["->", "*", ".", ","]
         let keywords = ["OBJECT", "THIS"]
-        return SimpleLexer(source: source, keywords: keywords, operators: operators)
+        return SimpleLexer(source: source, keywords: keywords)
     }
 
     func testEmpty() {
         var lexer = self.lexer("")
         var token = lexer.nextToken()
 
-        XCTAssertEqual(token, Token.Empty)
+        XCTAssertEqual(token.kind, TokenKind.Empty)
 
         lexer = self.lexer("  ")
         token = lexer.nextToken()
 
-        XCTAssertEqual(token, Token.Empty)
+        XCTAssertEqual(token.kind, TokenKind.Empty)
     }
 
     func testNumber() {
         let lexer = self.lexer("1234")
         let token = lexer.nextToken()
 
-        XCTAssertEqual(token, Token.IntLiteral(1234))
+        XCTAssertEqual(token, Token(.IntLiteral, "1234"))
     }
 
     func assertError(token: Token, _ str: String) {
-        switch token {
+        switch token.kind {
         case .Error(let val) where val.containsString(str):
             break
         default:
@@ -357,68 +382,56 @@ class LexerTestCase: XCTestCase {
         var lexer = self.lexer("*")
 
         var token = lexer.nextToken()
-        XCTAssertEqual(token, Token.Operator("*"))
+        XCTAssertEqual(token, Token(.Operator, "*"))
 
-        lexer = self.lexer("->")
+        lexer = self.lexer("=")
         token = lexer.nextToken()
-        XCTAssertEqual(token, Token.Operator("->"))
+        XCTAssertEqual(token, Token(.Operator, "="))
     }
-    func testInvalidArrow() {
-        var lexer = self.lexer("-")
-
-        var token = lexer.nextToken()
-        self.assertError(token, "Unexpected end")
-
-        lexer = self.lexer("- ")
-
-        token = lexer.nextToken()
-        self.assertError(token, "Unexpected character ' '")
-    }
-
 
     func testKeyword() {
         let lexer = self.lexer("OBJECT")
         let token = lexer.nextToken()
 
-        XCTAssertEqual(token, Token.Keyword("OBJECT"))
+        XCTAssertEqual(token, Token(.Keyword, "OBJECT"))
     }
 
     func testKeywordCase() {
         let lexer = self.lexer("oBjEcT")
         let token = lexer.nextToken()
 
-        XCTAssertEqual(token, Token.Keyword("OBJECT"))
+        XCTAssertEqual(token, Token(.Keyword, "OBJECT"))
     }
 
     func testSymbol() {
         let lexer = self.lexer("this_is_something")
         let token = lexer.nextToken()
 
-        XCTAssertEqual(token, Token.Symbol("this_is_something"))
+        XCTAssertEqual(token, Token(.Identifier, "this_is_something"))
     }
 
     func testMultiple() {
         let lexer = self.lexer("this that 10, 20, 30 ")
         var token = lexer.nextToken()
         
-        XCTAssertEqual(token, Token.Keyword("THIS"))
+        XCTAssertEqual(token, Token(.Keyword, "THIS"))
         
         token = lexer.nextToken()
-        XCTAssertEqual(token, Token.Symbol("that"))
+        XCTAssertEqual(token, Token(.Identifier, "that"))
         
-        for val in [10, 20] {
+        for val in ["10", "20"] {
             token = lexer.nextToken()
-            XCTAssertEqual(token, Token.IntLiteral(val))
+            XCTAssertEqual(token, Token(.IntLiteral, val))
             
             token = lexer.nextToken()
-            XCTAssertEqual(token, Token.Operator(","))
+            XCTAssertEqual(token, Token(.Operator, ","))
         }
         
         token = lexer.nextToken()
-        XCTAssertEqual(token, Token.IntLiteral(30))
+        XCTAssertEqual(token, Token(.IntLiteral, "30"))
         
         token = lexer.nextToken()
-        XCTAssertEqual(token, Token.Empty)
+        XCTAssertEqual(token, Token(.Empty, ""))
         
     }
     
