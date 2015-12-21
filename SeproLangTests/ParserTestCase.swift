@@ -175,7 +175,7 @@ class TopDownParserTests: XCTestCase {
         self.grammar["optional"] = ??("ONE" .. "TWO")
 
         self.parse([], start: "optional")
-        self.assertASTNode("optional", [nil])
+        self.assertASTNode("optional", [.ASTNil])
 
     }
 
@@ -249,7 +249,7 @@ class TopDownParserTests: XCTestCase {
         self.assertASTNode("member", ["SLOT", "s"])
 
         self.parse(["CONCEPT", §"x"], start: "concept")
-        self.assertASTNode("concept", ["CONCEPT", "x", nil])
+        self.assertASTNode("concept", ["CONCEPT", "x", .ASTNil])
         // self.assertError("xxx")
     }
 

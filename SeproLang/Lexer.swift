@@ -133,8 +133,8 @@ extension Token: IntegerLiteralConvertible {
 
 
 // Character sets
-var SymbolStart = LetterCharacterSet | "_"
-var SymbolCharacters = AlphanumericCharacterSet | "_"
+var IdentifierStart = LetterCharacterSet | "_"
+var IdentifierCharacters = AlphanumericCharacterSet | "_"
 var OperatorCharacters =  CharacterSet(string: ".,*=")
 
 // Single quote: Symbol, Triple quote: Docstring
@@ -324,10 +324,10 @@ public class SimpleLexer: Lexer {
     func tokenFrom(start: String.CharacterView.Index) -> String {
         let end: String.CharacterView.Index
         if self.index > self.characters.startIndex {
-            end = self.index.predecessor()
+            end = max(self.index.predecessor(), start)
         }
         else {
-            end = self.index
+            end = max(self.index, start)
         }
         return self.source.substringWithRange(start...end)
     }
@@ -339,6 +339,7 @@ public class SimpleLexer: Lexer {
      */
     public func nextToken() -> Token {
         let tokenKind: TokenKind
+        var value: String? = nil
 
         self.skipWhitespace()
 
@@ -351,7 +352,7 @@ public class SimpleLexer: Lexer {
         if DecimalDigitCharacterSet ~= self {
             self.scanWhile(DecimalDigitCharacterSet)
 
-            if SymbolStart ~= self {
+            if IdentifierStart ~= self {
                 let invalid = self.currentChar == nil ? "(nil)" : String(self.currentChar!)
                 self.error = "Invalid character \(invalid) in number"
                 tokenKind = .Error(self.error!)
@@ -360,14 +361,16 @@ public class SimpleLexer: Lexer {
                 tokenKind = .IntLiteral
             }
         }
-        else if SymbolStart ~= self {
-            self.scanWhile(SymbolCharacters)
+        else if IdentifierStart ~= self {
+            self.scanWhile(IdentifierCharacters)
 
-            let value = self.tokenFrom(start)
-            let upvalue = value.uppercaseString
+            value = self.tokenFrom(start)
+            let upvalue = value!.uppercaseString
 
+            // Case insensitive compare
             if self.keywords.contains(upvalue) {
                 tokenKind = .Keyword
+                value = upvalue
             }
             else {
                 tokenKind = .Identifier
@@ -394,12 +397,7 @@ public class SimpleLexer: Lexer {
             tokenKind = .Error(self.error!)
         }
 
-        if tokenKind != .Empty {
-            self.currentToken = Token(tokenKind, self.tokenFrom(start))
-        }
-        else {
-            self.currentToken = nil
-        }
+        self.currentToken = Token(tokenKind, value ?? self.tokenFrom(start))
 
         return self.currentToken
     }
@@ -440,12 +438,7 @@ infix operator ~ { }
 
 
 public func ~=(left:CharacterSet, lexer: SimpleLexer) -> Bool {
-    if let char = lexer.currentChar {
-        return left.matches(char)
-    }
-    else {
-        return false
-    }
+    return lexer.accept(left)
 }
 
 public func ~=(left:Character, lexer: SimpleLexer) -> Bool {

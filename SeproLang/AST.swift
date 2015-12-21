@@ -102,8 +102,8 @@ extension AST: IntegerLiteralConvertible {
     }
 }
 
-extension AST: NilLiteralConvertible {
-    public init(nilLiteral: ()) {
-        self = .ASTNil
-    }
-}
+// extension AST: NilLiteralConvertible {
+//    public init(nilLiteral: ()) {
+//        self = .ASTNil
+//    }
+//}
