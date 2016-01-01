@@ -10,8 +10,8 @@
 applied to
 */
 
-public struct CurrentRef: CustomStringConvertible, Equatable {
-    public let type: CurrentType
+public struct ModifierTarget: CustomStringConvertible, Equatable {
+    public let type: TargetType
     public let slot: Symbol?
 
     public var description: String {
@@ -24,11 +24,11 @@ public struct CurrentRef: CustomStringConvertible, Equatable {
     }
 }
 
-public func ==(left: CurrentRef, right: CurrentRef) -> Bool {
+public func ==(left: ModifierTarget, right: ModifierTarget) -> Bool {
     return (left.type == right.type) && (left.slot == right.slot)
 }
 
-public enum CurrentType: Int, CustomStringConvertible {
+public enum TargetType: Int, CustomStringConvertible {
     case Root
     case This
     case Other
@@ -55,7 +55,7 @@ Modifiers:
 */
 
 public struct Modifier: CustomStringConvertible {
-    let currentRef:CurrentRef
+    let currentRef:ModifierTarget
     let action: ModifierAction
 
     public var description: String {
@@ -73,7 +73,7 @@ public enum ModifierAction: CustomStringConvertible, Equatable {
     case Inc(Symbol)
     case Dec(Symbol)
     case Clear(Symbol)
-    case Bind(CurrentRef, Symbol)
+    case Bind(ModifierTarget, Symbol)
     case Unbind(Symbol)
 
     public var description: String {

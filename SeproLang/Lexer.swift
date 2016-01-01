@@ -84,7 +84,10 @@ public struct Token: CustomStringConvertible, CustomDebugStringConvertible, Equa
     public var debugDescription: String {
         return "\(self.kind)(\(self.description))"
     }
+}
 
+public func ==(token: Token, kind: TokenKind) -> Bool {
+    return token.kind == kind
 }
 
 public func ==(left: Token, right: Token) -> Bool {
@@ -157,17 +160,12 @@ public struct TextPos {
     }
 }
 
-public protocol Lexer {
-    func nextToken() -> Token
-    var currentToken: Token { get }
-}
-
 /**
  Simple lexer that produces symbols, keywords, integers, operators and
  docstrings. Symbols can be quoted with a back-quote character.
  */
 
-public class SimpleLexer: Lexer {
+public class Lexer {
     let keywords: [String]
 
     let source: String
@@ -437,10 +435,10 @@ public class SimpleLexer: Lexer {
 infix operator ~ { }
 
 
-public func ~=(left:CharacterSet, lexer: SimpleLexer) -> Bool {
+public func ~=(left:CharacterSet, lexer: Lexer) -> Bool {
     return lexer.accept(left)
 }
 
-public func ~=(left:Character, lexer: SimpleLexer) -> Bool {
+public func ~=(left:Character, lexer: Lexer) -> Bool {
     return lexer.accept(left)
 }

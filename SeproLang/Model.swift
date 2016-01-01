@@ -20,8 +20,12 @@ public typealias Symbol = String
 // the discussion about UInt unsigned integers in the language
 // reference.
 public typealias CounterType = Int
-public typealias SlotList = [Symbol];
-public typealias TagList = Set<Symbol>;
+public typealias SymbolList = [Symbol]
+
+// FIXME: remove these two
+public typealias SlotList = SymbolList
+public typealias TagList = Set<Symbol>
+
 public typealias CounterDict = [Symbol:Int]
 
 /**

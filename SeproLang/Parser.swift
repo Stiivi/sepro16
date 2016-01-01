@@ -1,495 +1,711 @@
 //
 //  Parser.swift
-//  TopDown
+//  AgentFarms
 //
-//  Created by Stefan Urbanek on 12/12/15.
+//  Created by Stefan Urbanek on 10/10/15.
 //  Copyright © 2015 Stefan Urbanek. All rights reserved.
 //
 
-//===----------------------------------------------------------------------===//
-//
-// Top-down Meta Parser
-//
-// This file contains top-down meta parser, data types and operators for
-// constructing parsing rules.
-//
-// The following convenience operator are provided:
-//
-// - conversion from string to rule item
-// - § prefix for symbols (identifiers)
-// - ^ prefix for rules
-// - + prefix for repeats
-// - ?? prefix for optional item
-// - .. operator for joining rule items into a group
-// - | operator for joining rule alternatives
-//
-// Example
-// let rule: Item = "OBJECT" .. §"name" .. ??(^"object_members")
-// let size: Item = "SMALL" | "MEDIUM" | "LARGE" | .Error("Expected size")
-//
-// Note: The non-standard § operator is accessible on most of the keyboards. On
-// the US keyboard on OSX it can be typed by Alt + 6.
-//
-//===----------------------------------------------------------------------===//
+public let Keywords = [
+    // Model Objects
+    "CONCEPT", "TAG", "COUNTER", "SLOT",
+    "STRUCT","OBJECT", "BIND", "OUTLET", "AS",
+    "MEASURE",
+    "WORLD",
+
+    // predicates
+    "WHERE", "DO", "RANDOM", "ALL",
+    "BOUND",
+    "NOT", "AND",
+    "IN", "ON",
+
+    // Actions
+    "SET", "UNSET", "INC", "DEC", "ZERO",
+    // Control actions
+    "NOTHING", "TRAP", "NOTIFY",
+
+    // Probes
+    "COUNT", "AVG", "MIN", "MAX",
+
+    "BIND", "TO",
+    "UNBIND",
+    "ROOT", "THIS", "OTHER"
+]
 
 
-/// Errors raised by the parser
+// MARK: Parser
+
 public enum SyntaxError: ErrorType {
-    case Syntax(message:String)
-    // This should not happen
-    case Internal(message:String)
+    case Parser(String)
+    case Syntax(String)
 }
 
-public indirect enum Item: CustomStringConvertible, CustomDebugStringConvertible {
-    /// Matches end of input
-    case Empty
-    /// Matches a terminal
-    case Terminal(Term)
-    /// If does not match input results in nil
-    case Optional(Item)
-    /// Matches another named rule
-    case Rule(String)
-    /// Matches group of items
-    case Group([Item])
-    /// Matches one of the items
-    case Alternate([Item])
-    /// Matches zero or more repetitions of an item
-    case Repeat(Item)
-    /// When reached an error is raised.
-    case Error(String)
+infix operator <<§ { associativity left precedence 130 }
 
-    /// Process and transform AST of the item provided
-    case Transform(Item, ([AST]) -> AST)
 
-    public init(item: Term) {
-        self = .Terminal(item)
-    }
-
-    public init(rule: String) {
-        self = .Rule(rule)
-    }
-
-    public var description: String {
-        switch self {
-        case Empty:
-            return "empty"
-        case Terminal(let val):
-            return String(val)
-        case Rule(let val):
-            return "^\(val)"
-        case Group(let items):
-            let strings = items.map { item in String(item) }
-            return "(" + strings.joinWithSeparator(" .. ") + ")"
-        case Alternate(let items):
-            let strings = items.map { item in String(item) }
-            return "(" + strings.joinWithSeparator(" | ") + ")"
-        case Optional(let item):
-            return "??" + String(item)
-        case Repeat(let item):
-            return "+" + String(item)
-        case Error(let message):
-            return "Error(\(message))"
-        case Transform(let item, _):
-            return "Transform(\(item))"
-        }
-    }
-
-    public var debugDescription: String {
-        return self.description
-    }
-
-    /// Traverses the item tree and transforms every node it visits.
-    /// - Returns: Collection of transformed items.
-    public func visitMap<T>(transform: (Item) -> T) -> [T] {
-        var visited = [T]()
-        visited.append(transform(self))
-
-        switch self {
-        case Group(let items):
-            let values = items.reduce([T]()) { a, c in
-                a + c.visitMap(transform)
-            }
-            visited += values
-        case Alternate(let items):
-            let values = items.reduce([T]()) { a, c in
-                a + c.visitMap(transform)
-            }
-            visited += values
-        case Optional(let item):
-            visited.append(transform(item))
-        case Repeat(let item):
-            visited.append(transform(item))
-        default:
-            // We already did our job
-            break
-        }
-        return visited
-    }
-
-    /// - Returns: set of all rules that the item and it's potential children
-    /// reference
-    public func rules() -> Set<String> {
-        let rules:[String?] = self.visitMap {
-            item in
-            if case let .Rule(rule) = item {
-                return rule
-            }
-            else {
-                return nil
-            }
-        }
-        return Set(rules.flatMap { $0 })
-    }
-}
-
-/// Terminal items (symbols).
-///
-/// The values for `Symbol` and `Integer` are human readable labels
-/// of those terminals – displayed to the user on error, when they are expected.
-/// For example a variable name symbol is represented as
-/// `.Symbol("variable name")`
-public indirect enum Term: CustomStringConvertible {
-    /// Matches a symbol (identifier).
-    case Symbol(String)
-    /// Matches an integer
-    case Integer(String)
-    /// Matches a keyword – special symbol.
-    case Keyword(String)
-    /// Matches an operator – sequence of operator characters.
-    case Operator(String)
-
-    public var description: String {
-        switch self {
-        case Keyword(let s): return s
-        case Symbol(let s): return "§\(s)"
-        case Operator(let s): return String(s)
-        case Integer(let val): return String(val)
-        }
-    }
-
-}
-
-/// Grammar rules container.
-/// - Note: Guarantees that all referenced rules exist. Otherwise raises an error
-/// during initialization.
-public struct Grammar {
-    public let rules: [String: Item]
-
-    init(rules: [String:Item]) throws {
-        self.rules = rules
-
-        // Validate the grammar
-        let names = rules.reduce(Set<String>()) {
-            acc, pair in
-            let (_, item) = pair
-            return acc.union(item.rules())
-        }
-        let missing = names.subtract(rules.keys).sort()
-        if !missing.isEmpty {
-            let message = "Missing grammar rules: \(missing)"
-            throw SeproError.InternalError(message)
-        }
-    }
-    subscript(name:String) -> Item {
-        get {
-            return self.rules[name]!
-        }
-    }
-}
-
-/// Top-down meta-parser. Matches tokens from provided lexer to associated
-/// grammar rules and produces abstract syntax tree (AST) structure.
-///
+/**
+    Model source parser.
+*/
 public class Parser {
-    var lexer: Lexer! = nil
-    let grammar: Grammar
+    public let lexer: Lexer
+    public var error: String?
+    public var offendingToken: String?
 
-    /// - Note: returns nil when grammar is missing rules.
-    public init(grammar: Grammar) {
-        self.grammar = grammar
-    }
+    // TODO: Add the following
+    // * symbol location
+    // * symbol type
 
-    /// Parse tokens from `lexer` with starting rule `start`
-    /// - Parameters:
-    ///     - lexer: a `Lexer` object
-    ///     - start: name of a rule to be used for parsing
-    /// - Returns: parsed AST
-    /// - Throws: SyntaxError
-    public func parse(lexer:Lexer, start: String) throws -> AST? {
-        self.lexer = lexer
-        // Advance to the the first token
-        self.lexer.nextToken()
-        return try self.parseRule(start, isExpected: true)
+    /**
+        Creates a model parser from a source string.
+    */
+    public init(source:String) {
+        self.lexer = Lexer(source:source)
+        self.lexer.advance()
     }
 
 
-    /// Parse a rule with name `name`.
-    /// - Parameters:
-    ///     - name: rule name
-    ///     - isExpected: if `true` the rule must be parsed
-    /// - Returns: AST
-    /// - Precondition: Grammar must contain the rule `name`
-    func parseRule(name: String, isExpected: Bool=false) throws -> AST? {
-        let item = self.grammar[name]
-        if let children = try self.parseRuleItem(item, isExpected: isExpected) {
-            return .ASTNode(name, children)
+    // TODO: we have way too many parsing methods here. Reason is too many
+    // approaches tried over the time. Needs consolidation.
+
+    func accept(token: Token) -> Bool {
+        if token == self.lexer.currentToken {
+            self.lexer.advance()
+            return true
+        }
+        else {
+            return false
+        }
+    }
+
+    func token(tokenKind: TokenKind) -> String? {
+        if  self.lexer.currentToken.kind == tokenKind {
+            let text = self.lexer.currentToken.text
+            self.lexer.advance()
+            return text
         }
         else {
             return nil
         }
     }
 
-    /// Parse a grammar rule and return AST if the source matches the rule.
-    /// - Parameters:
-    ///     - rule: grammar rule item
-    ///     - isExpected: whether the rule is required or not
-    /// - Returns: AST representation of the source
-    func parseRuleItem(rule: Item, isExpected: Bool=false) throws -> [AST]? {
-        rule: switch rule {
-        case .Empty:
-            if case .Empty = self.lexer.currentToken.kind {
-                return []
-            }
-            else if isExpected {
-                throw SyntaxError.Syntax(message: "Expected end, got: \(self.lexer.currentToken)")
-            }
+    func acceptKeyword(keyword: String) -> Bool {
+        return self.accept(Token(.Keyword, keyword))
+    }
 
-        case .Terminal(let term):
-            if let node = try self.parseTerminal(term, isExpected: isExpected) {
-                return [node]
-            }
+    private func expectationError(expected: String) -> SyntaxError {
+        let unexpected = self.lexer.currentToken.description ?? "nothing"
 
-        case .Error(let message):
-            throw SyntaxError.Syntax(message: message)
+        let message = "Expected \(expected), got \(unexpected)"
 
-        case .Rule(let ruleName):
-            if let node = try self.parseRule(ruleName, isExpected: isExpected) {
-                return [node]
-            }
+        return SyntaxError.Syntax(message)
+    }
 
-        case .Group(let items):
-            var children = [AST]()
+    func expect(kind: TokenKind, _ expected:String) throws -> String {
+        if self.lexer.currentToken == kind {
+            let text = self.lexer.currentToken.text
+            self.lexer.advance()
+            return text
+        }
 
-            // There has to be at least one item in the group
-            guard let firstItem = items.first else {
-                break rule
-            }
+        throw self.expectationError(expected)
+    }
 
-            let tail = items.dropFirst()
+    func expect<T>(rule: () throws -> T?, _ expected: String) throws -> T {
+        if let result = try rule() {
+            return result
+        }
+        else {
+            throw expectationError(expected)
+        }
+    }
+    /**
+        Expects the next token to be a symbol. Human readable description
+        of the expected symbol can be provided as `expected` – it will be 
+        displayed to the user on compilation error.
+    */
+    func expectSymbol(expected:String?=nil) throws -> Symbol {
+        let alias = expected ?? "symbol"
+        return Symbol(try self.expect(.Identifier, alias))
+    }
 
-            // If we don't match the head, there is no point of matching further
-            guard let head = try self.parseRuleItem(firstItem, isExpected: isExpected) else {
-                return nil
-            }
+    func expectOperator(op: String) throws {
+        try self.expect(.Operator, "\(op)")
+    }
 
-            children += head
-            // The rest must be expected
-            for item in tail {
-                if let nodes = try self.parseRuleItem(item, isExpected: true) {
-                    children += nodes
-                }
-                else {
-                    break rule
-                }
-            }
-            return children
+    func expectKeyword(keyword: String) throws {
+        try self.expect(.Identifier, "keyword \(keyword)")
+    }
 
-        case .Alternate(let items):
-            guard let last = items.last else {
-                // TODO: is this ok?
-                return nil
-            }
+    func expectInteger(expected: String) throws -> Int {
+        let text = Symbol(try self.expect(.Identifier, expected))
+        if let value = Int(text) {
+            return value
+        }
+        else {
+            throw SyntaxError.Parser("Invalid integer \(text)")
+        }
+    }
 
-            let head = items.dropLast()
-
-            for item in head {
-                if let accepted = try self.parseRuleItem(item, isExpected: false) {
-                    return accepted
-                }
-            }
-
-            // The last must be expected
-            if let expected = try self.parseRuleItem(last, isExpected: isExpected) {
-                return expected
-            }
-
-            // Match zero or more times
-        case .Repeat(let item):
-            var children = [AST]()
-
-            while(true){
-                if let accepted = try self.parseRuleItem(item, isExpected: false) {
-                    children += accepted
+    /** Parse multiple occurences of `rule`
+     
+     - Returns: list of objects returned by `rule`
+     */
+    func many<T>(rule:() throws -> T?) throws -> [T] {
+            var container = [T]()
+            while true {
+                if let object = try rule() {
+                    container.append(object)
                 }
                 else {
                     break
                 }
             }
-            return children
-
-        case .Optional(let item):
-            if let accepted = try self.parseRuleItem(item, isExpected: false) {
-                return accepted
+            return container
+    }
+    /** Parse multiple occurences of `rule` separated by token `separator`
+     
+     - Returns: list of objects returned by `rule`
+     */
+    func manySeparatedBy<T>(rule:() throws -> T?, _ separator: Token) throws -> [T]? {
+        var container = [T]()
+        while true {
+            if let object = try rule() {
+                container.append(object)
             }
             else {
-                return [.ASTNil]
+                break
             }
-        case .Transform(let item, let transform):
-            if let inner = try self.parseRuleItem(item, isExpected: isExpected) {
-                return [transform(inner)]
+
+            if !self.accept(separator) {
+                break
             }
         }
-
-        return nil
+        if container.isEmpty {
+            return nil
+        }
+        else {
+            return container
+        }
     }
 
+    /** Parse list of symbols:
+    
+        symbol_list := symbol [, symbol]*
+    */
+    public func symbolList() throws -> [Symbol]? {
+        return try self.manySeparatedBy(self.symbol, Token(.Operator, ","))
+    }
 
-    /// Parse a terminal item.
-    /// - Parameters:
-    ///     - item: Terminal item
-    ///     - isExpected: `true` if the terminal item is expected
-    /// - Returns: AST of the item if matches current token, otherwise nil
-    /// - Throws: `SyntaxError` when item is expected and does not match current
-    ///   token
-    func parseTerminal(item: Term, isExpected: Bool) throws -> AST? {
-        var expectation: String
-        let token = self.lexer.currentToken
+    public func symbol() -> Symbol? {
+        return self.token(.Identifier)
+    }
 
-        switch (item, token.kind) {
-        case (.Keyword(let expected), .Keyword) where token.text == expected:
-            self.lexer.nextToken()
-            return .ASTString(token.text)
+    /**
+        Compile the source code
+    
+        - Returns: Compiled `Model`
+    */
+    public func compile() -> Model? {
+        do {
+            let model = try self._model()
+            return model
+        }
+        catch SyntaxError.Syntax(let message) {
+            // TODO: nicer error summary here
+            self.error = message
+            return nil
+        }
+        catch SyntaxError.Parser(let message) {
+            // TODO: nicer error summary here
+            self.error = message
+            return nil
+        }
+        catch {
+            self.error = "Unknown error"
+            return nil
+        }
+    }
 
-        case (.Keyword(let expected), _):
-            expectation = "keyword \(expected)"
+    func _model() throws -> Model? {
+        var concepts = [Symbol:Concept]()
+        var actuators = [Actuator]()
+        var worlds = [World]()
+        var measures = [Measure]()
 
-        case (.Symbol, .Identifier):
-            self.lexer.nextToken()
-            return .ASTString(token.text)
-
-        case (.Symbol(let expected), _):
-            expectation = "symbol: \(expected)"
-
-        case (.Integer, .IntLiteral):
-            self.lexer.nextToken()
-            // TODO: handle conversion error
-            return .ASTInteger(Int(token.text)!)
-
-        case (.Integer(let expected), _):
-            expectation = "integer: \(expected)"
-
-        case (.Operator, .Operator):
-            self.lexer.nextToken()
-            return .ASTOperator(token.text)
-
-        case (.Operator(let expected), _):
-            expectation = "operator \(expected)"
+        while(true) {
+            if let concept = try self.concept() {
+                concepts[concept.name] = concept
+            }
+            else if let actuator = try self.actuator() {
+                actuators.append(actuator)
+            }
+            else if let world = try self.world() {
+                worlds.append(world)
+            }
+            else if let measure = try self.measure() {
+                measures.append(measure)
+            }
+            else if self.lexer.currentToken == TokenKind.Empty {
+                break
+            }
+            else {
+                throw self.expectationError("model object")
+            }
         }
 
-        if isExpected {
-            let message = "Expected \(expectation), got: \(token)"
-            throw SyntaxError.Syntax(message: message)
+        let model = Model(concepts:concepts, actuators:actuators,
+            measures:measures, worlds:worlds)
+
+        return model
+    }
+
+    /**
+        Parse concept description:
+    
+            concept := CONCEPT name [TAGS tags] [SLOTS slots] [COUNTERS counters]
+    */
+    func concept() throws -> Concept? {
+        var tags = TagList()
+        var slots = SymbolList()
+
+        guard self << "CONCEPT" else {
+            return nil
+        }
+
+        let name = try self <<§ "concept name"
+
+        while(true) {
+            if self << "TAG" {
+                tags = tags.union(try self.expect(self.symbolList, "tag list"))
+            }
+            else if self << "SLOT" {
+                slots += try self.expect(self.symbolList, "slot list")
+            }
+            else {
+                break
+            }
+        }
+
+        let concept = Concept(name: name, tags: tags, slots: slots)
+        return concept
+    }
+
+    /**
+        Parser world
+     
+        world :=
+    */
+    func world() throws -> World? {
+        var root: Symbol? = nil
+        var name: Symbol
+        let graph = GraphDescription()
+
+        guard self << "WORLD" else {
+            return nil
+        }
+
+        name = try self <<§ "world name"
+
+        // [ROOT root_concept]
+        if self << "ROOT" {
+            root = try self <<§ "root concept"
+        }
+
+        while true {
+            // OBJECT instance_spec
+            if self << "OBJECT" {
+                let instances = try self.expect(instanceList, "instance list")
+                instances.forEach { instance in
+                    graph.addObject(instance)
+                }
+            }
+            else if self << "BIND" {
+                let bindings = try self.expect(bindingList, "binding specification list")
+
+                bindings.forEach {
+                    (source, sourceSlot, target) in
+                    graph.bind(source, sourceSlot: sourceSlot, target: target)
+                }
+            }
+            else {
+                break
+            }
+        }
+        return World(name:name, contents: graph, root:root)
+    }
+
+    /// Specification of a binding in a structure
+    /// binding := source "." slot "TO" target
+    func bindingSpec() throws -> (Symbol, Symbol, Symbol) {
+        let source: Symbol
+        let sourceSlot: Symbol
+        let target: Symbol
+
+        source = try self <<§ "source object"
+
+        try self.expectOperator(".")
+
+        sourceSlot = try self <<§ "source slot"
+
+        try self.expectKeyword("TO")
+
+        target = try self <<§ "target object"
+
+        return (source, sourceSlot, target)
+    }
+
+    func bindingList() throws -> [(Symbol, Symbol, Symbol)]? {
+        return try self.manySeparatedBy(self.bindingSpec, Token(.Operator, ","))
+    }
+    /** Parse instance specification
+
+    Rule: `symbol (AS
+
+    Examples:
+    
+        link AS first
+     */
+
+    func instanceSpec() throws -> ContentObject {
+        let concept: Symbol
+
+        concept = try self <<§ "concept name"
+
+        if self << "AS" {
+            let alias = try self <<§ "object alias"
+            return .Named(concept, alias)
+        }
+        else if self.accept(Token(.Operator, "*")) {
+            let count = try self.expectInteger("instance count")
+            return .Many(concept, count)
+        }
+        else {
+            return .Many(concept, 1)
+        }
+
+    }
+
+    func instanceList() throws -> [ContentObject]? {
+        return try self.manySeparatedBy(self.instanceSpec, Token(.Operator, ","))
+    }
+
+    /** Parse actuator:
+     
+    Examples:
+
+        WHERE predicates DO actions
+        WHERE predicates ON predicates DO actions
+    
+    Rule:
+
+        actuator := WHERE selector DO actions
+
+     */
+    func actuator() throws -> Actuator? {
+        var modifiers = [Modifier]()
+        let selector: Selector
+        let combined: Selector?
+        var notifications = [Symbol]()
+        var traps = [Symbol]()
+        let doesHalt: Bool
+
+        guard self << "WHERE" else {
+            return nil
+        }
+
+        selector = try self.selector()
+
+        if self << "ON" {
+            combined = try self.selector()
+        }
+        else {
+            combined = nil
+        }
+
+        try self.expectKeyword("DO")
+
+        modifiers = try self.expect(self.modifiers, "modifiers")
+
+        if self << "NOTIFY" {
+            let symbols = try self.expect(symbolList, "list of notification symbols")
+            notifications.appendContentsOf(symbols)
+        }
+
+        if self << "TRAP" {
+            let symbols = try self.expect(symbolList, "list of trap symbols")
+            traps.appendContentsOf(symbols)
+        }
+
+        if self << "HALT" {
+            doesHalt = true
+        }
+        else {
+            doesHalt = false
+        }
+
+        return Actuator(selector:selector,
+                        combinedSelector: combined,
+                        modifiers:modifiers,
+                        traps: traps,
+                        notifications: notifications,
+                        doesHalt:doesHalt)
+    }
+
+    /**
+     
+     ```
+     selector := ( ALL | [ROOT] predicates ) [ON (ALL | predicates)]
+     ```
+     */
+    func selector() throws -> Selector {
+        let selector: Selector
+        var predicates: [Predicate]
+
+        if self << "ALL" {
+            // ALL -> only one predicate
+            selector = .All
+        }
+        else {
+            if self << "ROOT" {
+                predicates = try self.expect(self.predicateList, "predicates")
+                selector = .Root(predicates)
+            }
+            else {
+                predicates = try self.expect(self.predicateList, "predicates")
+                selector = .Filter(predicates)
+            }
+        }
+
+        return selector
+    }
+
+    func predicateList() throws -> [Predicate]? {
+        return try self.manySeparatedBy(self.predicate, "AND")
+    }
+
+    /**
+     
+     predicate := [IN slot] [NOT] (SET tag_list | FREE slot | ZERO counter)
+     */
+    func predicate() throws -> Predicate {
+        let predicate: Predicate
+        var isNegated: Bool
+        let inSlot: Symbol?
+
+        // TODO: implement IN slot
+        // TODO: implement tag list, no commas so it reads: open jar
+
+        if self << "IN" {
+            inSlot = try self <<§ "slot name"
+        }
+        else {
+            inSlot = nil
+        }
+
+        isNegated = self << "NOT"
+
+        // Conditions
+        if self << "SET" {
+            let tags = try self.expect(self.symbolList, "tags to set")
+
+            predicate = Predicate(.TagSet(Set(tags)), isNegated, inSlot: inSlot)
+        }
+        else if self << "FREE" {
+            let slot = try self <<§ "slot name"
+
+            predicate = Predicate(.IsBound(slot), isNegated, inSlot: inSlot)
+        }
+        else if self << "ZERO" {
+            let counter = try self <<§ "counter name"
+
+            predicate = Predicate(.CounterZero(counter), isNegated, inSlot: inSlot)
+        }
+        else {
+            throw self.expectationError("predicate condition: SET, FREE or ZERO")
+        }
+
+        return predicate
+    }
+
+    /// modifier_list = { modifier }
+    func modifiers() throws -> [Modifier] {
+        var modifiers = [Modifier]()
+
+        while true {
+            if let modifier = try self.modifier() {
+                modifiers.append(modifier)
+            }
+            else {
+                break
+            }
+        }
+
+        if modifiers.isEmpty {
+            throw SyntaxError.Syntax("expected at least one modifier")
+        }
+
+        return modifiers
+    }
+
+    /**
+     
+     modifier := [IN current] action
+     action := NOTHING
+                | SET tags
+                | UNSET tags
+                | BIND slot TO
+                | UNBIND slot
+                | INC counter
+                | DEC counter
+                | ZERO counter
+     
+     */
+    public func modifier() throws -> Modifier? {
+        let action: ModifierAction
+        let target: ModifierTarget
+
+        if self << "IN" {
+            // FIXME: this does not look nice
+            guard let innerTarget = try self.modifierTarget() else {
+                throw self.expectationError("modifier target")
+            }
+            target = innerTarget
+        }
+        else {
+            target = ModifierTarget(type:.This, slot:nil)
+        }
+        // Object action
+
+        if self << "NOTHING" {
+            action = .Nothing
+        }
+        else if self << "SET" {
+            let tags = try self.expect(symbolList, "tags to set")
+
+            action = .SetTags(Set(tags))
+        }
+        else if self << "UNSET" {
+            let tags = try self.expect(symbolList, "tags to unset")
+
+            action = .UnsetTags(Set(tags))
+        }
+        else if self << "BIND" {
+            let bindTarget: ModifierTarget
+            let symbol: Symbol
+
+            symbol = try self <<§ "slot"
+
+            try self.expectKeyword("TO")
+
+            bindTarget = try self.bindTarget()
+
+            action = .Bind(bindTarget, symbol)
+        }
+        else if self << "UNBIND" {
+            let symbol = try self.expectSymbol()
+
+            action = .Unbind(symbol)
+        }
+        else {
+            return nil
+        }
+
+        return Modifier(currentRef:target, action:action)
+    }
+
+    /** bind_target := slot | modifier_target */
+    func bindTarget() throws -> ModifierTarget {
+        if let target = try self.modifierTarget() {
+            return target
+        }
+        else {
+            let slot = try self <<§ "modifier target or a slot in 'THIS'"
+            return ModifierTarget(type: .This, slot: slot)
+        }
+    }
+
+    /** Parse a current reference: */
+    func modifierTarget() throws -> ModifierTarget? {
+        var slot: Symbol? = nil
+
+        guard let type = try self.targetType() else {
+            return nil
+        }
+
+        if self << Token(.Operator, ".") {
+            slot = try self.expectSymbol("slot name")
+        }
+
+        return ModifierTarget(type:type, slot:slot)
+    }
+
+    func targetType() throws -> TargetType? {
+        if self << "THIS" {
+            return .This
+        }
+        else if self << "OTHER" {
+            return .Other
+        }
+        else if self << "ROOT" {
+            return .Root
         }
         else {
             return nil
         }
     }
 
-}
+    /**
+         MEASURE counter IN ROOT
+         MEASURE open_jars COUNT WHERE jar AND open
+         MEASURE closed_jars COUNT WHERE jar AND closed
+         MEASURE all_jars COUNT WHERE jar
+         MEASURE free_lids COUNT WHERE lid AND free
+         MEASURE all_lids COUNT WHERE lid OR open
+     */
+    func measure() throws -> Measure? {
+        let name: Symbol
+        let function: AggregateFunction
+        let counter: Symbol
 
+        name = try self <<§ "measure name"
 
-//===----------------------------------------------------------------------===//
-//
-// Swift syntax conveniences for grammar construction
-//
-//===----------------------------------------------------------------------===//
+        if self << "COUNT" {
+            function = AggregateFunction.Count
+        }
+        else if self << "SUM" {
+            counter = try self <<§ "counter name"
+            function = AggregateFunction.Sum(counter)
+        }
+        else if self << "MIN" {
+            counter = try self <<§ "counter name"
+            function = AggregateFunction.Min(counter)
+        }
+        else if self << "MAX" {
+            counter = try self <<§ "counter name"
+            function = AggregateFunction.Max(counter)
+        }
+        else {
+            throw self.expectationError("aggregate function")
+        }
 
-extension Item: StringLiteralConvertible {
-    public typealias ExtendedGraphemeClusterLiteralType = String
-    public typealias UnicodeScalarLiteralType = String
+        let predicates = try self.expect(predicateList, "predicate list")
 
-    public init(stringLiteral value: StringLiteralType){
-        self = .Terminal(.Keyword(value))
-    }
+        // TODO: we support only aggregate function now
+        let measure = Measure(name: name, type:.Aggregate(function, predicates))
 
-    public init(extendedGraphemeClusterLiteral value: ExtendedGraphemeClusterLiteralType){
-        self = .Terminal(.Keyword(value))
-    }
-
-    public init(unicodeScalarLiteral value: UnicodeScalarLiteralType){
-        self = .Terminal(.Keyword(value))
-    }
-}
-
-extension Item: NilLiteralConvertible {
-    public init(nilLiteral: ()) {
-        self = .Empty
-    }
-}
-
-public func |(left: Item, right: Item) -> Item{
-    switch left {
-    case .Alternate(let items):
-        return .Alternate(items + [right])
-    default:
-        return .Alternate([left, right])
-    }
-}
-
-public func ..(left: Item, right: Item) -> Item{
-    switch left {
-    case .Group(let items):
-        return .Group(items + [right])
-    default:
-        return .Group([left, right])
+        return measure
     }
 }
 
-// Operators:
-// ^"rule" §"symbol" %"integer"
-
-public prefix func ^(value: String) -> Item {
-    return .Rule(value)
+public func <<(parser: Parser, keyword: String) -> Bool {
+    return parser.acceptKeyword(keyword)
 }
 
-public prefix func §(value: String) -> Item {
-    return .Terminal(.Symbol(value))
+public func <<(parser: Parser, token: Token) -> Bool {
+    return parser.accept(token)
 }
 
-public prefix func %(value: String) -> Item {
-    return .Terminal(.Integer(value))
+func <<§(parser: Parser, label: String) throws -> String {
+    return try parser.expectSymbol(label)
 }
 
-
-public prefix func +(right: Item) -> Item{
-    return .Repeat(right)
-}
-
-public prefix func ??(right: Item) -> Item{
-    return .Optional(right)
-}
-
-public prefix func ?^(right: String) -> Item{
-    return .Optional(.Rule(right))
-}
-
-public prefix func +^(right: String) -> Item{
-    return .Repeat(.Rule(right))
-}
-
-public func =>(left: Item, right: ([AST])->AST) -> Item {
-    return .Transform(left, right)
-}
-
-// US keyboard: Alt + 6
-prefix operator § { }
-infix operator .. { associativity left }
-infix operator => { associativity left }
-
-prefix operator ^ { }
-prefix operator ?^ { }
-
-prefix operator +^ { }
-prefix operator ?? { }
-
-prefix operator % { }

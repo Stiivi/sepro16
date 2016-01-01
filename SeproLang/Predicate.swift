@@ -15,21 +15,16 @@ public enum PredicateType: CustomStringConvertible, Equatable {
      tags from the `tagList` set.
      */
     case TagSet(TagList)
-    /**
-     Condition that is satisfied when examined object has none of the
-     tags from the `tagList` set.
-     */
-    case TagUnset(TagList)
-    /**
-     Condition that is satisfied when a measure of tested object is
-     less or than a given value.
-     */
-    case CounterLess(Symbol, CounterType)
-    /**
-     Condition that is satisfied when a measure of tested object is
-     greater or than a given value.
-     */
-    case CounterGreater(Symbol, CounterType)
+//    /**
+//     Condition that is satisfied when a measure of tested object is
+//     less or than a given value.
+//     */
+//    case CounterLess(Symbol, CounterType)
+//    /**
+//     Condition that is satisfied when a measure of tested object is
+//     greater or than a given value.
+//     */
+//    case CounterGreater(Symbol, CounterType)
     /**
      Condition that is satisfied when a measure of tested object is
      zero.
@@ -46,14 +41,11 @@ public enum PredicateType: CustomStringConvertible, Equatable {
         case .TagSet(let tags):
             return "SET " + tags.joinWithSeparator(", ")
 
-        case .TagUnset(let tags):
-            return "UNSET " + tags.joinWithSeparator(", ")
-
-        case .CounterLess(let counter, let value):
-            return "\(counter) < \(value)"
-
-        case .CounterGreater(let counter, let value):
-            return "\(counter) > \(value)"
+//        case .CounterLess(let counter, let value):
+//            return "\(counter) < \(value)"
+//
+//        case .CounterGreater(let counter, let value):
+//            return "\(counter) > \(value)"
 
         case .CounterZero(let counter):
             return "ZERO \(counter)"
@@ -70,12 +62,10 @@ public func ==(left: PredicateType, right: PredicateType) -> Bool {
     case (.All, .All): return true
     case (.TagSet(let ltags), .TagSet(let rtags)) where ltags == rtags:
             return true
-    case (.TagUnset(let ltags), .TagUnset(let rtags)) where ltags == rtags:
-            return true
-    case (.CounterLess(let lcount, let lvalue), .CounterLess(let rcount, let rvalue)) where lcount == rcount && lvalue == rvalue:
-            return true
-    case (.CounterGreater(let lcount, let lvalue), .CounterGreater(let rcount, let rvalue)) where lcount == rcount && lvalue == rvalue:
-            return true
+//    case (.CounterLess(let lcount, let lvalue), .CounterLess(let rcount, let rvalue)) where lcount == rcount && lvalue == rvalue:
+//            return true
+//    case (.CounterGreater(let lcount, let lvalue), .CounterGreater(let rcount, let rvalue)) where lcount == rcount && lvalue == rvalue:
+//            return true
     case (.CounterZero(let lcount), .CounterZero(let rcount)) where lcount == rcount:
             return true
     case (.IsBound(let lslot), .IsBound(let rslot)) where lslot == rslot:
@@ -114,32 +104,34 @@ public struct Predicate: Equatable {
             result = true
 
         case .TagSet(let tags):
-            result = tags.isSubsetOf(object.tags)
-
-        case .TagUnset(let tags):
-            result = tags.isDisjointWith(object.tags)
-
-        case .CounterLess(let counter, let value):
-            if let counterValue = object.counters[counter] {
-                result = counterValue < value
+            if isNegated {
+                result = tags.isDisjointWith(object.tags)
             }
             else {
-                // TODO: Shouldn't we return false or have invalid state?
-                result = false
+                result = tags.isSubsetOf(object.tags)
             }
 
-        case .CounterGreater(let counter, let value):
-            if let counterValue = object.counters[counter] {
-                result = counterValue > value
-            }
-            else {
-                // TODO: Shouldn't we return false or have invalid state?
-                result = false
-            }
+//        case .CounterLess(let counter, let value):
+//            if let counterValue = object.counters[counter] {
+//                result = counterValue < value
+//            }
+//            else {
+//                // TODO: Shouldn't we return false or have invalid state?
+//                result = false
+//            }
+//
+//        case .CounterGreater(let counter, let value):
+//            if let counterValue = object.counters[counter] {
+//                result = counterValue > value
+//            }
+//            else {
+//                // TODO: Shouldn't we return false or have invalid state?
+//                result = false
+//            }
 
         case .CounterZero(let counter):
             if let counterValue = object.counters[counter] {
-                result = counterValue == 0
+                result = (counterValue == 0) != self.isNegated
             }
             else {
                 // TODO: Shouldn't we return false or have invalid state?
@@ -147,11 +139,10 @@ public struct Predicate: Equatable {
             }
 
         case .IsBound(let slot):
-            result = object.bindings[slot] != nil
+            result = (object.bindings[slot] != nil) != self.isNegated
         }
 
-        // Apply the negation
-        return !self.isNegated && result || self.isNegated && !result
+        return result
     }
 }
 
