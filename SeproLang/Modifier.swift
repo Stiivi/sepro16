@@ -14,6 +14,11 @@ public struct ModifierTarget: CustomStringConvertible, Equatable {
     public let type: TargetType
     public let slot: Symbol?
 
+    init(_ type: TargetType,_ slot: Symbol?=nil) {
+        self.type = type
+        self.slot = slot
+    }
+
     public var description: String {
         if slot == nil {
             return String(type)
@@ -55,11 +60,11 @@ Modifiers:
 */
 
 public struct Modifier: CustomStringConvertible {
-    let currentRef:ModifierTarget
+    let target: ModifierTarget
     let action: ModifierAction
 
     public var description: String {
-        return "IN \(currentRef) \(action)"
+        return "IN \(self.target) \(self.action)"
     }
 }
 

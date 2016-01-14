@@ -6,26 +6,6 @@
 //  Copyright © 2015 Stefan Urbanek. All rights reserved.
 //
 
-extension Dictionary {
-    init(items:[(Key, Value)]) {
-        self.init()
-
-        for (key, value) in items {
-            self[key] = value
-        }
-    }
-}
-
-
-extension Array {
-    /**
-     - Returns: `true` when all elements match `predicate`
-     */
-    public func all(predicate: (Element) -> Bool) -> Bool {
-        return self.indexOf { item in !predicate(item) } == nil
-    }
-}
-
 /** Primitive implementation of CountedSet used for counting anonymous
  instances
  */

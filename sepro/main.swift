@@ -41,18 +41,23 @@ func main() {
     }
 
     print("Compiling model...")
-    let parser = Parser(source: source)
-    if let model:Model = parser.compile() {
-        print("Model compiled: \(model.concepts.count) concepts. \(model.actuators.count) actuators")
-        engine = SimpleEngine(model:model)
+    let model: Model
+    do {
+        model = try parseModel(source)
+    } catch let SyntaxError.ParserError(e) {
+        print("Error compiling model: \(e)")
+        return
     }
-    else {
-        print("Error compiling model: \(parser.currentLine): \(parser.error!)")
+    catch {
+        print("Unknown error")
         return
     }
 
+    print("Model compiled: \(model.concepts.count) concepts. \(model.actuators.count) actuators")
+
     let path = NSHomeDirectory() + "/Desktop/sepro-output"
 
+    engine = SimpleEngine(model:model)
     engine.logger = CSVLogger(path: path)
     engine.delegate = CLIDelegate(path:path)
     
@@ -72,5 +77,3 @@ func main() {
 }
 
 main()
-
-print("HELLO")

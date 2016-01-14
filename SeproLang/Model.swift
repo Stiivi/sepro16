@@ -124,15 +124,15 @@ public class Binding {
     }
 }
 
-public enum ContentObject: CustomStringConvertible {
+public enum InstanceSpecification: CustomStringConvertible {
     case Named(Symbol, Symbol)
-    case Many(Symbol, Int)
+    case Counted(Symbol, Int)
 
     public var description: String {
         switch self {
         case let .Named(concept, name):
             return "\(concept) AS \(name)"
-        case let .Many(concept, count):
+        case let .Counted(concept, count):
             return "\(concept) * \(count)"
         }
     }
@@ -143,40 +143,42 @@ public enum ContentObject: CustomStringConvertible {
  that can be referenced by their names and collection of anonymous
  objects with multiple instances of the same concept.
 */
-public class StructContents {
+public class GraphDescription {
     /// List of all content object
-    public var contentObjects = [ContentObject]()
+    public var instances: [InstanceSpecification]
+    public var bindings: [Binding]
 
     /// Map of objects that have name. Objects with name can be used for
     /// bindings.
     public var namedObjects = [Symbol:Symbol]()
 
-    public func addObject(obj: ContentObject) {
+
+    public init(instances: [InstanceSpecification]? = nil, bindings: [Binding]?) {
+        self.instances = instances ?? [InstanceSpecification]()
+        self.bindings = bindings ?? [Binding]()
+
+        let named:[(Symbol, Symbol)] = self.instances.flatMap {
+            instance in
+            switch instance {
+            case let .Named(concept, name): return (concept, name)
+            default: return nil
+            }
+        }
+
+        self.namedObjects = [Symbol:Symbol](items: named)
+    }
+
+    /// Adds a instance specification `obj` to the graph
+    public func addObject(obj: InstanceSpecification) {
         switch obj {
         case let .Named(concept, name):
             self.namedObjects[name] = concept
-        case .Many(_, _):
+        case .Counted:
             break
         }
 
-        self.contentObjects.append(obj)
+        self.instances.append(obj)
     }
-
-    public func asString() -> String {
-        let lines = self.contentObjects.map() { obj in
-            return "    OBJECT \(obj)"
-        }
-
-        return lines.joinWithSeparator("\n")
-    }
-}
-
-/**
-    Extension of an object container that holds information about
- bindings between the named objects within the container.
-*/
-public class GraphDescription: StructContents {
-    public var bindings = [Binding]()
 
     public func bind(source: Symbol, sourceSlot: Symbol, target: Symbol) {
         let binding = Binding(source: source, sourceSlot: sourceSlot, target: target)
@@ -185,8 +187,12 @@ public class GraphDescription: StructContents {
         self.bindings.append(binding)
     }
 
-    public override func asString() -> String {
-        var out = super.asString()
+    public func asString() -> String {
+        let lines = self.instances.map() { obj in
+            return "    OBJECT \(obj)"
+        }
+
+        var out = lines.joinWithSeparator("\n")
 
         for b in self.bindings {
             out += "    BIND \(b.source).\(b.sourceSlot) TO \(b.target)\n"
@@ -201,13 +207,13 @@ public class GraphDescription: StructContents {
 public class World {
     public var name: Symbol
     /// Contents
-    public var contents: GraphDescription
+    public var graph: GraphDescription
     /// Root object – referenced to as `ROOT`.
     public var root: Symbol? = nil
 
-    public init(name: Symbol, contents: GraphDescription, root: Symbol?=nil) {
+    public init(name: Symbol, graph: GraphDescription, root: Symbol?=nil) {
         self.name = name
-        self.contents = contents
+        self.graph = graph
         self.root = root
     }
 
@@ -219,7 +225,7 @@ public class World {
             out += " ROOT \(root)"
         }
         out += "\n"
-        out += contents.asString()
+        out += graph.asString()
 
         return out
     }
@@ -261,8 +267,6 @@ public typealias LinkReferenceDict = [PropertyRef:String]
 
 public class Struct: GraphDescription {
     public var name: Symbol
-    /// Contents
-    public var contents: GraphDescription
     /// Names of outlets
     public let outlets:LinkReferenceDict
 
@@ -274,12 +278,13 @@ public class Struct: GraphDescription {
             - contents: Graph contents
             - outlets: Named objects to be exposed to the outside
     */
-    public init(name: Symbol, contents: GraphDescription,
-        outlets: LinkReferenceDict?=nil) {
+    public init(name: Symbol, instances: [InstanceSpecification]? = nil,
+           bindings: [Binding]?, outlets: LinkReferenceDict?=nil) {
             self.name = name
-            self.contents = contents
             self.outlets = outlets ?? LinkReferenceDict()
+            super.init(instances: instances, bindings:bindings)
     }
+
 }
 
 /**
@@ -288,49 +293,46 @@ public class Struct: GraphDescription {
 
 public class Model {
     /// Dictionary of concepts
-    public let concepts: [Symbol:Concept]
+    public var concepts: [Concept]
     /// Dictionary of structures
-    public var structures = [Symbol:Struct]()
+    public var structures: [Struct]
     /// Dictionary of worlds
-    public var worlds = [Symbol:World]()
+    public var worlds: [World]
     /// List of actuators
-    public var actuators = [Actuator]()
+    public var actuators: [Actuator]
 
     /// List of measures
-    public var measures = [Measure]()
+    public var measures: [Measure]
 
-    public init(concepts: [Symbol:Concept]?=nil, actuators: [Actuator]?=nil,
-        measures: [Measure]?=nil, worlds: [World]?=nil) {
-            self.concepts = concepts ?? [Symbol:Concept]()
+    public init(concepts: [Concept]?=nil, actuators: [Actuator]?=nil,
+        measures: [Measure]?=nil, worlds: [World]?=nil,
+        structures: [Struct]?=nil) {
+            self.concepts = concepts ?? [Concept]()
             self.actuators = actuators ?? [Actuator]()
             self.measures = measures ?? [Measure]()
-
-            if worlds != nil {
-                for world in worlds! {
-                    self.worlds[world.name] = world
-                }
-            }
+            self.worlds = worlds ?? [World]()
+            self.structures = structures ?? [Struct]()
     }
 
     /// Get a structure by name
     public func getStruct(name:String) -> Struct? {
-        return self.structures[name]
+        return self.structures.findFirst { $0.name == name }
     }
 
     /// Get a concept by name
     public func getConcept(name:String) -> Concept? {
-        return self.concepts[name]
+        return self.concepts.findFirst { $0.name == name }
     }
 
     /// Get a world by name
     public func getWorld(name:String) -> World? {
-        return self.worlds[name]
+        return self.worlds.findFirst { $0.name == name }
     }
 
     public func asString() -> String {
         var out: String = ""
 
-        for (_, concept) in self.concepts {
+        for (concept) in self.concepts {
             out += concept.asString()
             out += "\n"
         }
@@ -338,54 +340,12 @@ public class Model {
             out += actuator.asString()
             out += "\n"
         }
-        for (_, world) in self.worlds {
+        for (world) in self.worlds {
             out += world.asString()
             out += "\n"
         }
         return out
     }
 
-
-    // Future functions:
-    //
-    public func renameSymbol() {
-
-    }
-
 }
 
-public class ModelValidator {
-    public let model: Model
-    public var issues: [String]
-
-    public init(model: Model) {
-        self.model = model
-        self.issues = [String]()
-    }
-
-    /**
-    Validate the model.
-    
-    Returns: `true` when model is valid, `false` when model has issues.
-    */
-    public func validate() -> Bool {
-        for (name, str) in self.model.structures {
-            self.validateStruct(name, str: str)
-        }
-
-        return !self.issues.isEmpty
-    }
-    public func validateStruct(name:String, str:Struct) {
-
-//        for (sourceRef, targetRef) in str.links {
-//
-//            if str.concepts[sourceRef.owner] == nil {
-//                self.issues.append("Unknown source concept \(sourceRef.owner) in structure \(name)")
-//            }
-//            if str.concepts[targetRef] == nil {
-//                self.issues.append("Unknown target concept \(targetRef) in structure \(name)")
-//            }
-//        }
-    }
-
-}

@@ -62,6 +62,7 @@ public struct Actuator {
 
     public init(selector: Selector, combinedSelector:Selector?, modifiers: [Modifier],
         traps: [Symbol]?=nil, notifications: [Symbol]?=nil, doesHalt: Bool = false) {
+        print("MAKING ACTUATOR")
             self.selector = selector
             self.combinedSelector = combinedSelector
             self.modifiers = modifiers

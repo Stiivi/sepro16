@@ -46,7 +46,7 @@ public struct ObjectSelection: SequenceType {
     }
 
     public func generate() -> Generator {
-        return anyGenerator(self._actualSelection.generate())
+        return AnyGenerator(self._actualSelection.generate())
     }
 
 }

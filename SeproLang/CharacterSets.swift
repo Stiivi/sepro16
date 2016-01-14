@@ -70,6 +70,7 @@ public func ~=(left:CharacterSet, right: Character) -> Bool {
 
 
 let WhitespaceCharacterSet = CharacterSet(NSCharacterSet.whitespaceCharacterSet())
+                                | CharacterSet(NSCharacterSet.newlineCharacterSet())
 let NewLineCharacterSet = CharacterSet(NSCharacterSet.newlineCharacterSet())
 let DecimalDigitCharacterSet = CharacterSet(NSCharacterSet.decimalDigitCharacterSet())
 let LetterCharacterSet = CharacterSet(NSCharacterSet.letterCharacterSet())

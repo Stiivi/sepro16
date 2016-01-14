@@ -12,11 +12,9 @@
 //
 //===----------------------------------------------------------------------===//
 
-import Foundation
-
 /// Parser Token
 
-public enum TokenKind: Equatable {
+public enum TokenKind: Equatable, CustomStringConvertible {
     case Empty
 
     case Error(String)
@@ -64,26 +62,31 @@ public func ==(left:TokenKind, right:TokenKind) -> Bool {
 }
 
 public struct Token: CustomStringConvertible, CustomDebugStringConvertible, Equatable  {
+    public let pos: TextPos
     public let kind: TokenKind
     public let text: String
 
-    public init(_ kind: TokenKind, _ text: String="") {
+    public init(_ kind: TokenKind, _ text: String="", _ pos: TextPos?=nil) {
         self.kind = kind
         self.text = text
+        self.pos = pos ?? TextPos()
     }
 
     public var description: String {
+        let str: String
         switch self.kind {
-        case .Empty: return "(empty)"
-        case .StringLiteral: return "\"\(self.text)\""
+        case .Empty: str = "(empty)"
+        case .StringLiteral: str = "\"\(self.text)\""
+        case .Error(let message): str = "\(message) around '\(self.text)'"
         default:
-            return self.text
+            str = self.text
         }
+        return "\(str) (\(self.kind)) at \(self.pos)"
+    }
+    public var debugDescription: String {
+        return description
     }
 
-    public var debugDescription: String {
-        return "\(self.kind)(\(self.description))"
-    }
 }
 
 public func ==(token: Token, kind: TokenKind) -> Bool {
@@ -105,16 +108,19 @@ extension Token: StringLiteralConvertible {
     public init(stringLiteral value: StringLiteralType){
         self.kind = .Keyword
         self.text = value
+        self.pos = TextPos()
     }
 
     public init(extendedGraphemeClusterLiteral value: ExtendedGraphemeClusterLiteralType){
         self.kind = .Keyword
         self.text = value
+        self.pos = TextPos()
     }
 
     public init(unicodeScalarLiteral value: UnicodeScalarLiteralType){
         self.kind = .Keyword
         self.text = value
+        self.pos = TextPos()
     }
 }
 
@@ -122,6 +128,7 @@ extension Token: NilLiteralConvertible {
     public init(nilLiteral: ()) {
         self.kind = .Empty
         self.text = ""
+        self.pos = TextPos()
     }
 }
 
@@ -131,9 +138,9 @@ extension Token: IntegerLiteralConvertible {
     public init(integerLiteral value: IntegerLiteralType) {
         self.kind = .IntLiteral
         self.text = String(value)
+        self.pos = TextPos()
     }
 }
-
 
 // Character sets
 var IdentifierStart = LetterCharacterSet | "_"
@@ -145,9 +152,9 @@ var CommentStart: Character = "#"
 var Numbers = DecimalDigitCharacterSet
 
 
-public struct TextPos {
-    var line: Int = 0
-    var column: Int = 0
+public struct TextPos: CustomStringConvertible {
+    var line: Int = 1
+    var column: Int = 1
 
     mutating func advance(newLine:Bool=false) {
         if newLine {
@@ -157,6 +164,10 @@ public struct TextPos {
         else {
             self.column += 1
         }
+    }
+
+    public var description: String {
+        return "\(self.line):\(self.column)"
     }
 }
 
@@ -173,7 +184,7 @@ public class Lexer {
     var index: String.CharacterView.Index
     var currentChar: Character? = nil
 
-    var pos: TextPos
+    public var pos: TextPos
     var error: String? = nil
     public var currentToken: Token
 
@@ -200,6 +211,8 @@ public class Lexer {
         self.keywords = keywords ?? []
 
         self.currentToken = nil
+
+        // Move to the first token
     }
 
     public func parse() -> [Token]{
@@ -210,13 +223,11 @@ public class Lexer {
 
             tokens.append(token)
 
-            // FIXME: weird construction, but compiler does not allow more
-            // conditions on the `if` line with `case`
-            if case .Empty = token.kind {
+            switch token.kind {
+            case .Empty, .Error:
                 break loop
-            }
-            else if self.error != nil {
-                break loop
+            default:
+                break
             }
         }
 
@@ -346,6 +357,7 @@ public class Lexer {
         }
 
         let start = self.index
+        let pos = self.pos
 
         if DecimalDigitCharacterSet ~= self {
             self.scanWhile(DecimalDigitCharacterSet)
@@ -395,7 +407,7 @@ public class Lexer {
             tokenKind = .Error(self.error!)
         }
 
-        self.currentToken = Token(tokenKind, value ?? self.tokenFrom(start))
+        self.currentToken = Token(tokenKind, value ?? self.tokenFrom(start), pos)
 
         return self.currentToken
     }

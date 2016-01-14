@@ -151,7 +151,7 @@ public class DotWriter{
     }
 }
 
-public func writeDot(path: String, selection: ObjectSequence) {
+public func writeDot(path: String, selection: ObjectSelection) {
     let writer = DotWriter(path: path)
 
     // FIXME: Despite we might want some kind of sorting, this also

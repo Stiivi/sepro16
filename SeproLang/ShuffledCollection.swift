@@ -52,7 +52,7 @@ public struct ShuffledCollection<Base:CollectionType where Base.Index == Int>: C
     public func generate() -> Generator {
         var generator = self.shuffled.generate()
 
-        return anyGenerator {
+        return AnyGenerator {
             if let index = generator.next() {
                 return self.base[index]
             }

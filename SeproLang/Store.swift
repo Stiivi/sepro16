@@ -6,26 +6,10 @@
 //  Copyright © 2015 Stefan Urbanek. All rights reserved.
 //
 
-protocol _BasicStore {
-    /** Reference of the root object. */
-    var rootReference: ObjectRef { get }
-
-    /**
-     - Returns: References to all objects in the store.
-     */
-    var allReferences: ObjectRefSequence { get }
-
-    /**
-     - Returns: Object with referenec `ref` or `nil` if such object does not
-     exist.
-     */
-    func objectByReference(ref: ObjectRef) -> Object?
-}
-
 /**
 Container representing the state of the world.
 */
-public class Store: _BasicStore {
+public class Store {
     /// The object memory
     var container: [ObjectRef:Object]
 
@@ -146,55 +130,3 @@ public class Store: _BasicStore {
             return ObjectSelection(store: self, predicates: predicates, references: references)
     }
 }
-
-
-public struct ObjectSequence: SequenceType {
-    public let predicates: [Predicate]?
-    public let store: Store
-
-    public init(store: Store, predicates: [Predicate]?=nil) {
-        self.store = store
-        self.predicates = predicates
-    }
-
-    public class Generator: AnyGenerator<Object> {
-        var generator: AnyGenerator<ObjectRef>
-        let store: Store
-        let predicates: [Predicate]?
-
-        init(sequence: ObjectSequence) {
-            self.store = sequence.store
-            self.predicates = sequence.predicates
-            self.generator = AnySequence(store.container.keys).generate()
-            super.init()
-        }
-
-        public override func next() -> Object? {
-            var ref = self.generator.next()
-
-            if self.predicates != nil {
-                while(ref != nil) {
-                    let match = self.store.predicatesMatch(self.predicates!,
-                                                            ref: ref!)
-                    if match {
-                        break
-                    }
-
-                    ref = self.generator.next()
-                }
-            }
-
-            if ref != nil {
-                return self.store.container[ref!]
-            }
-            else {
-                return nil
-            }
-        }
-    }
-
-    public func generate() -> ObjectSequence.Generator {
-        return ObjectSequence.Generator(sequence: self)
-    }
-}
-

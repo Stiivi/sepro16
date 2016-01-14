@@ -309,7 +309,7 @@ public class SimpleEngine: Engine {
         Get "current" object – choose between ROOT, THIS and OTHER then
     optionally apply dereference to a slot, if specified.
     */
-    func getCurrent(ref: CurrentRef, this: Object, other: Object!) -> Object! {
+    func getCurrent(ref: ModifierTarget, this: Object, other: Object!) -> Object! {
             let current: Object!
 
             switch ref.type {
@@ -343,8 +343,8 @@ public class SimpleEngine: Engine {
         // untill the action objects are refined and their executable
         // counterparts defined, this should remain as it is.
 
-        let current = self.getCurrent(modifier.currentRef, this: this, other: other)
-        print("MODIFY \(modifier.action) IN \(modifier.currentRef)(\(current.id)) \(this)<->\(other)")
+        let current = self.getCurrent(modifier.target, this: this, other: other)
+        print("MODIFY \(modifier.action) IN \(modifier.target)(\(current.id)) \(this)<->\(other)")
 
         switch modifier.action {
         case .Nothing:
@@ -412,20 +412,20 @@ public class SimpleEngine: Engine {
             self.store.setRootRef(self.create())
         }
 
-        try self.instantiateStructContents(world.contents)
+        try self.instantiateGraph(world.graph)
     }
     /**
      Creates instances of objects in the GraphDescription and returns a
      dictionary of created named objects.
      */
-    func instantiateStructContents(contents: StructContents) throws -> ObjectMap {
+    func instantiateGraph(graph: GraphDescription) throws -> ObjectMap {
         var map = ObjectMap()
 
-        try contents.contentObjects.forEach() { obj in
+        try graph.instances.forEach() { obj in
             switch obj {
             case let .Named(concept, name):
                 map[name] = try self.instantiate(concept)
-            case let .Many(concept, count):
+            case let .Counted(concept, count):
                 for _ in 1...count {
                     try self.instantiate(concept)
                 }
