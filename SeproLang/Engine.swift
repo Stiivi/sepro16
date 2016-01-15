@@ -138,10 +138,7 @@ public class SimpleEngine: Engine {
         self.delegate?.willStep(self)
 
         // The main step...
-        // --> Start of step
-        self.model.actuators.forEach(self.perform)
-
-        // <-- End of step
+        self.model.actuators.shuffle().forEach(self.perform)
 
         self.delegate?.didStep(self)
 
@@ -203,10 +200,10 @@ public class SimpleEngine: Engine {
         if actuator.isCombined {
             self.performCombined(actuator.selector,
                 otherSelector: actuator.combinedSelector!,
-                modifiers: actuator.modifiers)
+                actuator: actuator)
         }
         else {
-            self.performUnary(actuator.selector, modifiers: actuator.modifiers)
+            self.performUnary(actuator.selector, actuator: actuator)
         }
 
         // TODO: This is not good, this should be in "perform"
@@ -242,12 +239,16 @@ public class SimpleEngine: Engine {
 
     - Complexity: O(n) - performs full scan
     */
-    func performUnary(selector: Selector, modifiers: [Modifier]) {
-        let objects = self.select(selector)
+    func performUnary(selector: Selector, actuator: Actuator) {
+        let objects = self.store.select(selector)
 
-        // FIXME: Broken!!!
         for this in objects {
-            modifiers.forEach {
+            // Check for required slots
+            if !actuator.modifiers.all({ self.canApply($0, this: this) }) {
+                continue
+            }
+
+            actuator.modifiers.forEach {
                 modifier in
                 self.applyModifier(modifier, this: this)
             }
@@ -255,53 +256,44 @@ public class SimpleEngine: Engine {
 
     }
 
-    func select(selector: Selector) -> ObjectSelection {
-        switch selector {
-        case .All:
-            return self.store.select()
-        case .Filter(let predicates):
-            return self.store.select(predicates)
-        case .Root(_):
-            let references = AnySequence([self.store.rootReference])
-            return self.store.select(references:references)
-        }
-    }
-
     /**
     - Complexity: O(n^2) - performs cartesian product on two full scans
     */
 
     func performCombined(thisSelector: Selector, otherSelector: Selector,
-        modifiers: [Modifier]) {
+        actuator: Actuator) {
 
-            let thisObjects = self.select(thisSelector)
-            let otherObjects = self.select(otherSelector)
-            var match: Bool
+        let thisObjects = self.store.select(thisSelector)
+        let otherObjects = self.store.select(otherSelector)
 
-            // Cartesian product: everything 'this' interacts with everything
-            // 'other'
-            for this in thisObjects {
-                for other in otherObjects{
-                    modifiers.forEach {
-                        modifier in
-                        self.applyModifier(modifier, this: this, other: other)
-                    }
+        var match: Bool
 
-                    // Check whether 'this' still matches the predicates
-                    // FIXME: this is ugly
-                    // FIXME XXX XXX XXX XXX CONTINUE HERE
-                    // match = thisSelector == Selector.All ||
-                    //    self.store.predicatesMatch(thispredicates!,
-                    //                               ref: this.id)
-                    match = true
-                    // FIXME XXX XXX XXX XXX
-                    // ... predicates don't match the object, therefore we
-                    // skip to the next one
-                    if !match {
-                        break
-                    }
+        // Cartesian product: everything 'this' interacts with everything
+        // 'other'
+        // Note: We can't use forEach, as there is no way to break from the loop
+        for this in thisObjects {
+            // Check for required slots
+            for other in otherObjects{
+                // Check for required slots
+                if !actuator.modifiers.all({ self.canApply($0, this: this, other: other) }) {
+                    continue
+                }
+
+                actuator.modifiers.forEach {
+                    modifier in
+                    self.applyModifier(modifier, this: this, other: other)
+                }
+
+                // Check whether 'this' still matches the predicates
+                match = thisSelector == Selector.All ||
+                        store.predicatesMatch(thisSelector.predicates, ref: this.id)
+                // ... predicates don't match the object, therefore we
+                // skip to the next one
+                if !match {
+                    break
                 }
             }
+        }
 
     }
 
@@ -309,42 +301,77 @@ public class SimpleEngine: Engine {
         Get "current" object – choose between ROOT, THIS and OTHER then
     optionally apply dereference to a slot, if specified.
     */
-    func getCurrent(ref: ModifierTarget, this: Object, other: Object!) -> Object! {
-            let current: Object!
+    func getCurrent(ref: ModifierTarget, this: Object, other: Object?=nil) -> Object? {
+        let current: Object
 
-            switch ref.type {
-            case .Root:
-                current = self.store.getRoot()
-            case .This:
-                current = this
-            case .Other:
-                current = other
+        switch ref.type {
+        case .Root:
+            // Is guaranteed to exist by specification
+            current = self.store.getRoot()
+        case .This:
+            // Is guaranteed to exist by argument
+            current = this
+        case .Other:
+            // Exists only in combined selectors
+            assert(other != nil, "Required `other` for .Other target reference")
+            current = other!
+        }
+
+        if ref.slot == nil {
+            return current
+        }
+        else {
+            assert(current.slots.contains(ref.slot!), "Target sohuld contain slot '\(ref.slot!)'")
+            if let indirect = current.bindings[ref.slot!] {
+                return self.store[indirect]!
             }
-
-            if current == nil {
+            else {
+                // Nothing bound at the slot
                 return nil
             }
 
-            if ref.slot != nil {
-                return self.store[current.bindings[ref.slot!]!]
-            }
-            else {
-                return current
-            }
+        }
     }
 
+    /// - Returns: `true` if the `modifier` can be applied, otherwise `false`
+    func canApply(modifier:Modifier, this:Object, other:Object!=nil) -> Bool {
+        let current = self.getCurrent(modifier.target, this: this, other: other)
+
+        switch modifier.action {
+        case .Inc(let counter):
+            return current?.counters.keys.contains(counter) ?? false
+
+        case .Dec(let counter):
+            return current?.counters.keys.contains(counter) ?? false
+
+        case .Clear(let counter):
+            return current?.counters.keys.contains(counter) ?? false
+
+        case .Bind(let slot, let targetRef):
+            let target = self.getCurrent(targetRef, this: this, other: other)
+
+            if current == nil || target == nil {
+                // There is nothing to bind
+                // TODO: Should be consider assigning nil as 'unbind' or as failure?
+                return false
+            }
+
+            return current?.slots.contains(slot) ?? false
+
+        case .Unbind(let slot):
+            return current?.slots.contains(slot) ?? false
+        default:
+            return true
+        }
+    }
     /**
     Execute instruction
     */
 
     func applyModifier(modifier:Modifier, this:Object, other:Object!=nil) {
-        // Note: Similar to the Predicate code, we are not using language
-        // polymorphysm here. This is not proper way of doing it, but
-        // untill the action objects are refined and their executable
-        // counterparts defined, this should remain as it is.
-
-        let current = self.getCurrent(modifier.target, this: this, other: other)
-        print("MODIFY \(modifier.action) IN \(modifier.target)(\(current.id)) \(this)<->\(other)")
+        guard let current = self.getCurrent(modifier.target, this: this, other: other) else {
+            preconditionFailure("Current object for modifier should not be nil (apllication should be guarded)")
+        }
 
         switch modifier.action {
         case .Nothing:
@@ -368,23 +395,15 @@ public class SimpleEngine: Engine {
         case .Clear(let counter):
             current.counters[counter] = 0
 
-        case .Bind(let targetRef, let slot):
-            let target = self.getCurrent(targetRef, this: this, other: other)
-            print("   TARGET \(target) (\(targetRef))")
-            if current != nil && target != nil {
-                current.bindings[slot] = target.id
-            }
-            else {
-                // TODO: isn't this an error or invalid state?
+        case .Bind(let slot, let targetRef):
+            guard let target = self.getCurrent(targetRef, this: this, other: other) else {
+                preconditionFailure("Target sohuld not be nil (application should be guarded)")
             }
 
+            current.bindings[slot] = target.id
+
         case .Unbind(let slot):
-            if current != nil {
-                this.bindings[slot] = nil
-            }
-            else {
-                // TODO: isn't this an error or invalid state?
-            }
+            this.bindings[slot] = nil
         }
     }
 
@@ -455,6 +474,7 @@ public class SimpleEngine: Engine {
             for slot in concept.slots {
                 obj.bindings[slot] = nil
             }
+            obj.slots = concept.slots
 
             // Concept name is one of the tags
             obj.tags.insert(concept.name)
@@ -495,7 +515,7 @@ public class SimpleEngine: Engine {
         print("STEP \(self.stepCount)")
         self.store.select().forEach {
             obj in
-            print("\(obj.debugString)")
+            print("\(obj.debugDescription)")
         }
         print("END OF DUMP\n")
     }

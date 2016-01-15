@@ -220,8 +220,8 @@ let concept =
 
 let predicate_type =
            §"SET"   *> tag_list         => PredicateType.TagSet
-        || §"BOUND" *> %"slot"          => PredicateType.CounterZero
-        || §"ZERO"  *> %"counter"       => PredicateType.IsBound
+        || §"BOUND" *> %"slot"          => PredicateType.IsBound
+        || §"ZERO"  *> %"counter"       => PredicateType.CounterZero
         ||             tag_list         => PredicateType.TagSet
         || fail("Expected predicate type")
 
@@ -267,7 +267,7 @@ let modifier_action =
         || §"DEC"     *> %"counter"   => ModifierAction.Dec
         || §"CLEAR"   *> %"counter"   => ModifierAction.Clear
         || §"UNBIND"  *> %"slot"      => ModifierAction.Unbind
-        || §"BIND"    *> %"slot" + (§"TO" *> bind_target) => { ast in ModifierAction.Bind(ast.1, ast.0)}
+        || §"BIND"    *> %"slot" + (§"TO" *> bind_target) => { ast in ModifierAction.Bind(ast.0, ast.1)}
         || fail("Expected modifier action")
 
 let modifier =

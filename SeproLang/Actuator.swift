@@ -6,13 +6,35 @@
 //  Copyright © 2015 Stefan Urbanek. All rights reserved.
 //
 
-public enum Selector {
+public enum Selector: CustomStringConvertible {
     /// All objects
     case All
     /// Objects matching conjunction of predicates
     case Filter(CompoundPredicate)
     /// Root object if matches conjunction of predicates
     case Root(CompoundPredicate)
+
+    public var description: String {
+        switch self {
+        case All: return "ALL"
+        case Filter(let p):
+            return p.map({ String($0) }).joinWithSeparator(" AND ")
+        case Root(let p):
+            return "ROOT " + p.map({ String($0) }).joinWithSeparator(" AND ")
+        }
+    }
+
+    public var predicates: [Predicate] {
+        switch self {
+        case All: return []
+        case Filter(let p):
+            return p
+        case Root(let p):
+            return p
+
+        }
+    }
+
 }
 
 public func ==(left: Selector, right: Selector) -> Bool {
@@ -62,17 +84,47 @@ public struct Actuator {
 
     public init(selector: Selector, combinedSelector:Selector?, modifiers: [Modifier],
         traps: [Symbol]?=nil, notifications: [Symbol]?=nil, doesHalt: Bool = false) {
-        print("MAKING ACTUATOR")
             self.selector = selector
             self.combinedSelector = combinedSelector
             self.modifiers = modifiers
             self.traps = traps
             self.notifications = notifications
             self.doesHalt = doesHalt
+        print("MAKING ACTUATOR \(self)")
     }
 
     public func asString() -> String {
         // TODO: Implement string representation of the actuator
         return "# (some actuator)"
+    }
+
+    /// - Returns: A tuple of symbols (`this`, `other`, `root`)
+    public var slotMatrix: ([Symbol], [Symbol], [Symbol]) {
+        return modifiers.reduce(([], [], [])) {
+            s, modifier in
+            let ms = modifier.slotMatrix
+            return (s.0 + ms.0, s.1 + ms.1, s.2 + ms.2)
+        }
+    }
+}
+
+extension Actuator: CustomStringConvertible {
+    public var description: String {
+        var desc = self.selector.description
+        if self.combinedSelector != nil {
+            desc += " ON " + self.combinedSelector!.description
+        }
+
+        desc += " DO " + self.modifiers.map({String($0)}).joinWithSeparator(" ")
+
+        if self.traps != nil {
+            desc += "TRAP " + self.traps!.joinWithSeparator(" ")
+        }
+
+        if self.traps != nil {
+            desc += "NOTIFY " + self.notifications!.joinWithSeparator(" ")
+        }
+
+        return desc
     }
 }

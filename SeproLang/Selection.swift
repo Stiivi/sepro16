@@ -29,7 +29,8 @@ public struct ObjectSelection: SequenceType {
 
     let _actualSelection: AnySequence<Object>
 
-    init(store: Store, predicates: CompoundPredicate?=nil, references: ObjectRefSequence?=nil) {
+    init(store: Store, predicates: CompoundPredicate?=nil,
+         references: ObjectRefSequence?=nil) {
         let actualReferences: ObjectRefSequence
 
         actualReferences = references ?? store.allReferences

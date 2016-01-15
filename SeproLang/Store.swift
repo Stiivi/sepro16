@@ -125,8 +125,16 @@ public class Store {
         }
     }
 
-    public func select(predicates:[Predicate]?=nil,
-        references:ObjectRefSequence?=nil) -> ObjectSelection {
+    /// Creates a selection representing objects described by selecetor `Selector`
+    public func select(selector: Selector=Selector.All) -> ObjectSelection {
+        switch selector {
+        case .All:
+            return ObjectSelection(store: self)
+        case .Filter(let predicates):
+            return ObjectSelection(store: self, predicates: predicates)
+        case .Root(let predicates):
+            let references = AnySequence([self.rootReference])
             return ObjectSelection(store: self, predicates: predicates, references: references)
+        }
     }
 }

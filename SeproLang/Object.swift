@@ -26,7 +26,7 @@ public typealias ObjectMap = [Symbol:ObjectRef]
 
 */
 
-public class Object: CustomStringConvertible {
+public class Object: CustomStringConvertible, CustomDebugStringConvertible {
     // TODO: Change this to Struct
     /// Object identifier
     public var id: ObjectRef = 0
@@ -36,6 +36,7 @@ public class Object: CustomStringConvertible {
     public var tags = TagList()
     /// References to other objects
     public var bindings = ObjectMap()
+    public var slots = SlotList()
 
     // TODO: isDead
 
@@ -52,7 +53,8 @@ public class Object: CustomStringConvertible {
         }
     }
 
-    public var debugString: String {
+    public var debugDescription: String {
         return self.description
     }
+
 }

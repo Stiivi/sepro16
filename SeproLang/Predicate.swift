@@ -39,7 +39,8 @@ public enum PredicateType: CustomStringConvertible, Equatable {
             return "ALL"
 
         case .TagSet(let tags):
-            return "SET " + tags.joinWithSeparator(", ")
+            // We can ommit the SET
+            return tags.joinWithSeparator(", ")
 
 //        case .CounterLess(let counter, let value):
 //            return "\(counter) < \(value)"
@@ -52,6 +53,8 @@ public enum PredicateType: CustomStringConvertible, Equatable {
 
         case .IsBound(let slot):
             return "BOUND \(slot)"
+
+        // Implicit predicates
         }
     }
 
@@ -82,7 +85,7 @@ public struct Predicate: Equatable {
     public let inSlot: Symbol?
 
     public var isIndirect: Bool {
-        get { return inSlot == nil }
+        get { return inSlot != nil }
     }
 
     public init(_ type: PredicateType, _ isNegated:Bool=false, inSlot:Symbol?=nil) {
@@ -143,6 +146,19 @@ public struct Predicate: Equatable {
         }
 
         return result
+    }
+}
+
+extension Predicate: CustomStringConvertible {
+    public var description: String {
+        var desc = ""
+        if self.isNegated {
+            desc += "NOT "
+        }
+        if self.inSlot != nil {
+            desc += "IN \(self.inSlot)"
+        }
+        return desc + self.type.description
     }
 }
 

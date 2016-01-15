@@ -177,6 +177,7 @@
 				F8F561B71BE3121300C53170 /* Extensions.swift */,
 				F890E9071C47616F0019FD4A /* ArrayExt.swift */,
 				F890E9091C47618B0019FD4A /* DictionaryExt.swift */,
+				F88C68091C06DA3400AE94C9 /* ShuffledCollection.swift */,
 			);
 			name = Extensions;
 			sourceTree = "<group>";
@@ -224,7 +225,6 @@
 				F865894D1BFC3E7800A5A4EF /* Observer */,
 				F8964E251C19676500222E18 /* Language */,
 				F890E9061C4761560019FD4A /* Extensions */,
-				F88C68091C06DA3400AE94C9 /* ShuffledCollection.swift */,
 				F8F561841BE3117D00C53170 /* SeproLang.h */,
 				F8F561861BE3117D00C53170 /* Info.plist */,
 				F8CA2C231C27E42D00242A0F /* Errors.swift */,
