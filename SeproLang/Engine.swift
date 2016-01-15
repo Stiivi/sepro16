@@ -12,6 +12,8 @@
 */
 public protocol Engine {
 
+    var model:Model { get }
+
     /**
      Run simulation for `steps` number of steps.
 

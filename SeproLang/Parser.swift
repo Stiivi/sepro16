@@ -36,7 +36,10 @@ public let Keywords = [
 
     "BIND", "TO",
     "UNBIND",
-    "ROOT", "THIS", "OTHER"
+    "ROOT", "THIS", "OTHER",
+
+    // Data
+    "DATA"
 ]
 
 public func parseModel(source: String) throws -> Model {

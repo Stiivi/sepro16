@@ -50,7 +50,7 @@ public class CSVLogger: Logger {
     var measureWriter: CSVWriter! = nil
     var notificationWriter: CSVWriter! = nil
 
-    public init(var path: String) {
+    public init(path: String) {
         self.measures = [Measure]()
         self.root = path
 
@@ -64,11 +64,11 @@ public class CSVLogger: Logger {
             exit(1)
         }
 
-        path = self.root + "/" + "measures.csv"
-        self.measureWriter = CSVWriter(path: path)
+        let mpath = self.root + "/" + "measures.csv"
+        self.measureWriter = CSVWriter(path: mpath)
 
-        path = self.root + "/" + "notifications.csv"
-        self.notificationWriter = CSVWriter(path: path)
+        let npath = self.root + "/" + "notifications.csv"
+        self.notificationWriter = CSVWriter(path: npath)
     }
 
     public func loggingWillStart(measures: [Measure], steps: Int) {

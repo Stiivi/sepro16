@@ -93,10 +93,12 @@ public class DotWriter{
 
     let file: NSFileHandle
     var line: String!
+    let model: Model
 
-    init(path: String) {
+    init(path: String, model: Model) {
         let manager = NSFileManager.defaultManager()
         self.path = path
+        self.model = model
 
         manager.createFileAtPath(path, contents:nil, attributes:nil)
 
@@ -132,6 +134,14 @@ public class DotWriter{
         }
 
         let tags = obj.tags.sort().joinWithSeparator(",")
+
+        // Fromatting from data
+        let allData = obj.tags.flatMap { tag in self.model.getData(Set([tag, "dot:attributes"])) }
+        var data = allData.joinWithSeparator(",")
+        if data != "" {
+            data = "," + data
+        }
+
         let label = "\(obj.id):\(tags)"
         var attrs = DotAttributes()
 
@@ -141,7 +151,7 @@ public class DotWriter{
         attrs["label"] = label
         attrs["fontsize"] = 11
 
-        line = "    \(obj.id) [\(attrs.stringValue)]; "
+        line = "    \(obj.id) [\(attrs.stringValue)\(data)]; "
 
         if !links.isEmpty {
             line += links.joinWithSeparator("; ") + ";"
@@ -151,8 +161,8 @@ public class DotWriter{
     }
 }
 
-public func writeDot(path: String, selection: ObjectSelection) {
-    let writer = DotWriter(path: path)
+public func writeDot(path: String, model: Model, selection: ObjectSelection) {
+    let writer = DotWriter(path: path, model: model)
 
     // FIXME: Despite we might want some kind of sorting, this also
     // serves as a hack. Without this sorting we would get a runtime error

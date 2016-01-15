@@ -144,7 +144,7 @@ extension Token: IntegerLiteralConvertible {
 
 // Character sets
 var IdentifierStart = LetterCharacterSet | "_"
-var IdentifierCharacters = AlphanumericCharacterSet | "_"
+var IdentifierCharacters = AlphanumericCharacterSet | "_:"
 var OperatorCharacters =  CharacterSet(string: ".,*=")
 
 // Single quote: Symbol, Triple quote: Docstring
@@ -330,13 +330,18 @@ public class Lexer {
         return self.currentChar == nil
     }
 
-    func tokenFrom(start: String.CharacterView.Index) -> String {
+    func tokenFrom(start: String.CharacterView.Index, to: String.CharacterView.Index?=nil) -> String {
         let end: String.CharacterView.Index
-        if self.index > self.characters.startIndex {
-            end = max(self.index.predecessor(), start)
+        if to == nil {
+            if self.index > self.characters.startIndex {
+                end = max(self.index.predecessor(), start)
+            }
+            else {
+                end = max(self.index, start)
+            }
         }
         else {
-            end = max(self.index, start)
+            end = to!
         }
         return self.source.substringWithRange(start...end)
     }
@@ -387,7 +392,9 @@ public class Lexer {
             }
         }
         else if "\"" ~= self {
-            tokenKind = self.scanString()
+            let stringToken = self.scanString()
+            tokenKind = stringToken.0
+            value = stringToken.1
         }
         else if OperatorCharacters ~= self {
             tokenKind = .Operator
@@ -412,17 +419,23 @@ public class Lexer {
         return self.currentToken
     }
 
-    func scanString() -> TokenKind {
+    func scanString() -> (TokenKind, String) {
         // Second quote
+        var start = self.index
+        var end = self.index
+
         if self.accept("\"") {
             // If not third quote, then we have empty string
             if !self.accept("\"") {
-                return .StringLiteral
+                return (.StringLiteral, self.tokenFrom(start, to: end))
             }
             else {
+                start = self.index
                 while(self.scanUntil("\"")){
+                    end = self.index.predecessor()
+                    self.advance()
                     if self.accept("\"") && self.accept("\"") {
-                        return .StringLiteral
+                        return (.StringLiteral, self.tokenFrom(start, to: end))
                     }
                 }
             }
@@ -430,16 +443,18 @@ public class Lexer {
         else {
             // Parse normal string here
             while(!self.atEnd()) {
+                end = self.index.predecessor()
                 if self.accept("\\") {
                     self.advance()
                 }
                 else if self.accept("\""){
-                    return .StringLiteral
+                    return (.StringLiteral, self.tokenFrom(start, to: end))
                 }
+                self.advance()
             }
         }
         self.error = "Unexpected end of input in a string"
-        return .Error(self.error!)
+        return (.Error(self.error!), "")
 
     }
 }

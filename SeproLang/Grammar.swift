@@ -75,6 +75,8 @@ enum ModelObject {
 
     case StructModel(Struct)
     case MeasureModel(Measure)
+
+    case DataModel(TagList, String)
 }
 
 func createModel(objects: [ModelObject]) -> Model {
@@ -113,8 +115,16 @@ func createModel(objects: [ModelObject]) -> Model {
         }
     }
 
+    let data: [(TagList, String)] = objects.flatMap {
+        switch $0 {
+        case .DataModel(let obj): return obj
+        default: return nil
+        }
+    }
+
     return Model(concepts: concepts, actuators: actuators, measures: measures,
-                           worlds: worlds, structures: structs)
+                           worlds: worlds, structures: structs,
+                                   data: data)
 }
 
 
@@ -175,6 +185,7 @@ func tokenValue(kind: TokenKind, _ value: String) -> Parser<Token, Token> {
 
 let symbol  = { name  in token(.Identifier, name)  => { t in Symbol(t.text) } }
 let number  = { label in token(.IntLiteral, label) => { t in Int(t.text)! } }
+let text    = { label in token(.StringLiteral, label) => { t in t.text } }
 let keyword = { kw    in tokenValue(.Keyword, kw)  => { t in t.text } }
 let op      = { o     in tokenValue(.Operator, o) }
 
@@ -306,12 +317,16 @@ let world =
             => { x in World(name: x.0, graph: x.1.1, root: x.1.0) }
 
 
+let data =
+        (§"DATA" *> tag_list) + text("data string")
+
 // Model
 // ========================================================================
 let model_object =
            concept  => ModelObject.ConceptModel
         || actuator => ModelObject.ActuatorModel
         || world    => ModelObject.WorldModel
+        || data     => ModelObject.DataModel
 //        || fail("Expected model object")
 
 let model =

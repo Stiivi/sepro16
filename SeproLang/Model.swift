@@ -304,14 +304,18 @@ public class Model {
     /// List of measures
     public var measures: [Measure]
 
+    /// List of measures
+    public var data: [(TagList, String)]
+
     public init(concepts: [Concept]?=nil, actuators: [Actuator]?=nil,
         measures: [Measure]?=nil, worlds: [World]?=nil,
-        structures: [Struct]?=nil) {
+        structures: [Struct]?=nil, data: [(TagList, String)]?=nil) {
             self.concepts = concepts ?? [Concept]()
             self.actuators = actuators ?? [Actuator]()
             self.measures = measures ?? [Measure]()
             self.worlds = worlds ?? [World]()
             self.structures = structures ?? [Struct]()
+            self.data = data ?? [(TagList, String)]()
     }
 
     /// Get a structure by name
@@ -327,6 +331,18 @@ public class Model {
     /// Get a world by name
     public func getWorld(name:String) -> World? {
         return self.worlds.findFirst { $0.name == name }
+    }
+
+    /// Get data that match the `tags`. If `exact` is `true` then the data
+    /// tags and `tags` must be equal sets, otherwise the `tags` is only subset
+    /// of the data tags.
+    public func getData(tags:TagList, exact: Bool=true) -> [String] {
+        if exact {
+            return self.data.filter { $0.0 == tags }.map { $0.1 }
+        }
+        else {
+            return self.data.filter { tags.isSubsetOf($0.0) }.map { $0.1 }
+        }
     }
 
     public func asString() -> String {
