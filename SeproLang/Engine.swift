@@ -61,7 +61,7 @@ public protocol EngineDelegate {
     computations of simulation steps, captures traps and observes probe values.
 */
 
-public class SimpleEngine: Engine {
+public final class SimpleEngine: Engine {
     /// Current step
     public var stepCount = 0
 
@@ -91,19 +91,15 @@ public class SimpleEngine: Engine {
     /// Simulation model
     public let model: Model
 
-    /**
-        Create an object instance from concept
-    */
-    public init(model:Model){
-        self.store = Store()
+    /// Create an object instance from concept
+    public init(model:Model, store: Store?=nil){
+        self.store = store ?? Store()
         self.model = model
 
         self.probes = [Probe]()
     }
 
-    /**
-        Runs the simulation for `steps`.
-    */
+    /// Runs the simulation for `steps`.
     public func run(steps:Int) {
         if self.logger != nil {
             self.logger!.loggingWillStart(self.model.measures, steps: steps)
@@ -139,8 +135,10 @@ public class SimpleEngine: Engine {
 
         self.delegate?.willStep(self)
 
+        // >>>
         // The main step...
         self.model.actuators.shuffle().forEach(self.perform)
+        // <<<
 
         self.delegate?.didStep(self)
 
@@ -195,7 +193,7 @@ public class SimpleEngine: Engine {
     }
 
     /**
-        Dispatch an `actuator` – reactive vs. interactive.
+        Dispatch an `actuator` – unary vs. combined
      */
     func perform(actuator:Actuator){
         // TODO: take into account Actuator.isRoot as cartesian
@@ -275,9 +273,12 @@ public class SimpleEngine: Engine {
         // Note: We can't use forEach, as there is no way to break from the loop
         for this in thisObjects {
             // Check for required slots
-            for other in otherObjects{
+            for other in otherObjects {
                 // Check for required slots
                 if !actuator.modifiers.all({ self.canApply($0, this: this, other: other) }) {
+                    continue
+                }
+                if this.id == other.id {
                     continue
                 }
 
@@ -366,11 +367,10 @@ public class SimpleEngine: Engine {
             return true
         }
     }
-    /**
-    Execute instruction
-    */
 
-    func applyModifier(modifier:Modifier, this:Object, other:Object!=nil) {
+    /// Applies `modifier` on either `this` or `other` depending on the modifier's
+    /// target
+    func applyModifier(modifier:Modifier, this:Object, other:Object?=nil) {
         guard let current = self.getCurrent(modifier.target, this: this, other: other) else {
             preconditionFailure("Current object for modifier should not be nil (apllication should be guarded)")
         }
@@ -439,7 +439,7 @@ public class SimpleEngine: Engine {
      Creates instances of objects in the GraphDescription and returns a
      dictionary of created named objects.
      */
-    func instantiateGraph(graph: GraphDescription) throws -> ObjectMap {
+    func instantiateGraph(graph: InstanceGraph) throws -> ObjectMap {
         var map = ObjectMap()
 
         try graph.instances.forEach() { obj in

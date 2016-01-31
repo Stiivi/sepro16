@@ -12,12 +12,15 @@
 		F825AD9A1C3CF526009D48C5 /* ParserCombinator.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F825AD991C3CF526009D48C5 /* ParserCombinator.framework */; };
 		F825AD9C1C3CF576009D48C5 /* Grammar.swift in Sources */ = {isa = PBXBuildFile; fileRef = F825AD9B1C3CF576009D48C5 /* Grammar.swift */; };
 		F84581931C0183CD00899C3D /* Actuator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F84581921C0183CD00899C3D /* Actuator.swift */; };
+		F857CD1C1C51DE6300813D38 /* Experiment.swift in Sources */ = {isa = PBXBuildFile; fileRef = F857CD1B1C51DE6300813D38 /* Experiment.swift */; };
 		F85C0E901BEDC46100789741 /* SeproLang.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = F8F561811BE3117D00C53170 /* SeproLang.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		F85C0EBF1BEE91AD00789741 /* Delegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F85C0EBE1BEE91AD00789741 /* Delegate.swift */; };
 		F865894F1BFC3EA300A5A4EF /* Selection.swift in Sources */ = {isa = PBXBuildFile; fileRef = F865894E1BFC3EA300A5A4EF /* Selection.swift */; };
 		F870872B1BE72CEE004C72A9 /* Observer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F870872A1BE72CEE004C72A9 /* Observer.swift */; };
 		F870872D1BE9D5D3004C72A9 /* Modifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = F870872C1BE9D5D3004C72A9 /* Modifier.swift */; };
 		F870872F1BEB0806004C72A9 /* ParserTestCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = F870872E1BEB0806004C72A9 /* ParserTestCase.swift */; };
+		F87422AA1C4E346500ECFC87 /* SyntaxStructures.swift in Sources */ = {isa = PBXBuildFile; fileRef = F87422A91C4E346500ECFC87 /* SyntaxStructures.swift */; };
+		F87422AD1C4E353300ECFC87 /* Concept.swift in Sources */ = {isa = PBXBuildFile; fileRef = F87422AC1C4E353300ECFC87 /* Concept.swift */; };
 		F88A49DF1C06E9CF00FFFEA5 /* Store.swift in Sources */ = {isa = PBXBuildFile; fileRef = F88A49DE1C06E9CF00FFFEA5 /* Store.swift */; };
 		F88C68081C05A2A600AE94C9 /* Dot.swift in Sources */ = {isa = PBXBuildFile; fileRef = F85C0E7E1BEB403A00789741 /* Dot.swift */; };
 		F88C680A1C06DA3400AE94C9 /* ShuffledCollection.swift in Sources */ = {isa = PBXBuildFile; fileRef = F88C68091C06DA3400AE94C9 /* ShuffledCollection.swift */; };
@@ -28,6 +31,7 @@
 		F89C06171C241ADC003C0BF3 /* CharacterSets.swift in Sources */ = {isa = PBXBuildFile; fileRef = F89C06161C241ADC003C0BF3 /* CharacterSets.swift */; };
 		F8B9112D1BE727460025C4C8 /* CSVLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8B9112C1BE727460025C4C8 /* CSVLogger.swift */; };
 		F8CA2C241C27E42D00242A0F /* Errors.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8CA2C231C27E42D00242A0F /* Errors.swift */; };
+		F8D8064A1C5895950058C523 /* InstanceGraph.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8D806491C5895950058C523 /* InstanceGraph.swift */; };
 		F8F561851BE3117D00C53170 /* SeproLang.h in Headers */ = {isa = PBXBuildFile; fileRef = F8F561841BE3117D00C53170 /* SeproLang.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		F8F5618C1BE3117D00C53170 /* SeproLang.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F8F561811BE3117D00C53170 /* SeproLang.framework */; };
 		F8F561911BE3117D00C53170 /* SeproLangTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8F561901BE3117D00C53170 /* SeproLangTests.swift */; };
@@ -79,12 +83,15 @@
 		F825AD9B1C3CF576009D48C5 /* Grammar.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Grammar.swift; sourceTree = "<group>"; };
 		F825AD9D1C3CF84A009D48C5 /* GrammarPlayground.playground */ = {isa = PBXFileReference; lastKnownFileType = file.playground; path = GrammarPlayground.playground; sourceTree = "<group>"; };
 		F84581921C0183CD00899C3D /* Actuator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Actuator.swift; sourceTree = "<group>"; };
+		F857CD1B1C51DE6300813D38 /* Experiment.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Experiment.swift; sourceTree = "<group>"; };
 		F85C0E7E1BEB403A00789741 /* Dot.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Dot.swift; path = ../SeproLang/Dot.swift; sourceTree = "<group>"; };
 		F85C0EBE1BEE91AD00789741 /* Delegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Delegate.swift; sourceTree = "<group>"; };
 		F865894E1BFC3EA300A5A4EF /* Selection.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Selection.swift; sourceTree = "<group>"; };
 		F870872A1BE72CEE004C72A9 /* Observer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Observer.swift; sourceTree = "<group>"; };
 		F870872C1BE9D5D3004C72A9 /* Modifier.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Modifier.swift; sourceTree = "<group>"; };
 		F870872E1BEB0806004C72A9 /* ParserTestCase.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ParserTestCase.swift; sourceTree = "<group>"; };
+		F87422A91C4E346500ECFC87 /* SyntaxStructures.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SyntaxStructures.swift; sourceTree = "<group>"; };
+		F87422AC1C4E353300ECFC87 /* Concept.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Concept.swift; sourceTree = "<group>"; };
 		F88A49DE1C06E9CF00FFFEA5 /* Store.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Store.swift; sourceTree = "<group>"; };
 		F88C68091C06DA3400AE94C9 /* ShuffledCollection.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ShuffledCollection.swift; sourceTree = "<group>"; };
 		F890E9041C475BB30019FD4A /* DictionaryView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DictionaryView.swift; sourceTree = "<group>"; };
@@ -94,6 +101,7 @@
 		F89C06161C241ADC003C0BF3 /* CharacterSets.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CharacterSets.swift; sourceTree = "<group>"; };
 		F8B9112C1BE727460025C4C8 /* CSVLogger.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CSVLogger.swift; sourceTree = "<group>"; };
 		F8CA2C231C27E42D00242A0F /* Errors.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Errors.swift; sourceTree = "<group>"; };
+		F8D806491C5895950058C523 /* InstanceGraph.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = InstanceGraph.swift; sourceTree = "<group>"; };
 		F8F561811BE3117D00C53170 /* SeproLang.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = SeproLang.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		F8F561841BE3117D00C53170 /* SeproLang.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SeproLang.h; sourceTree = "<group>"; };
 		F8F561861BE3117D00C53170 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -139,10 +147,19 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		F857CD1A1C51DE4D00813D38 /* Experiment */ = {
+			isa = PBXGroup;
+			children = (
+				F857CD1B1C51DE6300813D38 /* Experiment.swift */,
+			);
+			name = Experiment;
+			sourceTree = "<group>";
+		};
 		F865894B1BFC3E5500A5A4EF /* Engine */ = {
 			isa = PBXGroup;
 			children = (
 				F8F561B91BE312E900C53170 /* Engine.swift */,
+				F8F618EF1BE4630F002A4DE3 /* Object.swift */,
 				F865894E1BFC3EA300A5A4EF /* Selection.swift */,
 				F88A49DE1C06E9CF00FFFEA5 /* Store.swift */,
 			);
@@ -152,11 +169,12 @@
 		F865894C1BFC3E6300A5A4EF /* Model */ = {
 			isa = PBXGroup;
 			children = (
-				F8F561BA1BE312E900C53170 /* Model.swift */,
-				F824639A1BE31F6A00641782 /* Predicate.swift */,
-				F870872C1BE9D5D3004C72A9 /* Modifier.swift */,
-				F8F618EF1BE4630F002A4DE3 /* Object.swift */,
 				F84581921C0183CD00899C3D /* Actuator.swift */,
+				F87422AC1C4E353300ECFC87 /* Concept.swift */,
+				F8D806491C5895950058C523 /* InstanceGraph.swift */,
+				F8F561BA1BE312E900C53170 /* Model.swift */,
+				F870872C1BE9D5D3004C72A9 /* Modifier.swift */,
+				F824639A1BE31F6A00641782 /* Predicate.swift */,
 			);
 			name = Model;
 			sourceTree = "<group>";
@@ -164,11 +182,20 @@
 		F865894D1BFC3E7800A5A4EF /* Observer */ = {
 			isa = PBXGroup;
 			children = (
-				F82463A11BE4576600641782 /* Probe.swift */,
 				F8F618F11BE572F0002A4DE3 /* Logger.swift */,
 				F870872A1BE72CEE004C72A9 /* Observer.swift */,
+				F82463A11BE4576600641782 /* Probe.swift */,
 			);
 			name = Observer;
+			sourceTree = "<group>";
+		};
+		F87422AB1C4E34FC00ECFC87 /* Info */ = {
+			isa = PBXGroup;
+			children = (
+				F8F618F31BE6A771002A4DE3 /* TODO.md */,
+				F824639F1BE3318A00641782 /* README.md */,
+			);
+			name = Info;
 			sourceTree = "<group>";
 		};
 		F890E9061C4761560019FD4A /* Extensions */ = {
@@ -177,6 +204,7 @@
 				F8F561B71BE3121300C53170 /* Extensions.swift */,
 				F890E9071C47616F0019FD4A /* ArrayExt.swift */,
 				F890E9091C47618B0019FD4A /* DictionaryExt.swift */,
+				F890E9041C475BB30019FD4A /* DictionaryView.swift */,
 				F88C68091C06DA3400AE94C9 /* ShuffledCollection.swift */,
 			);
 			name = Extensions;
@@ -185,10 +213,11 @@
 		F8964E251C19676500222E18 /* Language */ = {
 			isa = PBXGroup;
 			children = (
-				F8964E261C19678800222E18 /* Lexer.swift */,
-				F8F561BB1BE312E900C53170 /* Parser.swift */,
 				F89C06161C241ADC003C0BF3 /* CharacterSets.swift */,
 				F825AD9B1C3CF576009D48C5 /* Grammar.swift */,
+				F8964E261C19678800222E18 /* Lexer.swift */,
+				F8F561BB1BE312E900C53170 /* Parser.swift */,
+				F87422A91C4E346500ECFC87 /* SyntaxStructures.swift */,
 			);
 			name = Language;
 			sourceTree = "<group>";
@@ -196,11 +225,10 @@
 		F8F561771BE3117D00C53170 = {
 			isa = PBXGroup;
 			children = (
+				F8F561831BE3117D00C53170 /* SeproLang */,
+				F87422AB1C4E34FC00ECFC87 /* Info */,
 				F825AD9D1C3CF84A009D48C5 /* GrammarPlayground.playground */,
 				F825AD991C3CF526009D48C5 /* ParserCombinator.framework */,
-				F8F618F31BE6A771002A4DE3 /* TODO.md */,
-				F824639F1BE3318A00641782 /* README.md */,
-				F8F561831BE3117D00C53170 /* SeproLang */,
 				F8F5618F1BE3117D00C53170 /* SeproLangTests */,
 				F8F561A01BE3118D00C53170 /* sepro */,
 				F8F561821BE3117D00C53170 /* Products */,
@@ -220,6 +248,7 @@
 		F8F561831BE3117D00C53170 /* SeproLang */ = {
 			isa = PBXGroup;
 			children = (
+				F857CD1A1C51DE4D00813D38 /* Experiment */,
 				F865894C1BFC3E6300A5A4EF /* Model */,
 				F865894B1BFC3E5500A5A4EF /* Engine */,
 				F865894D1BFC3E7800A5A4EF /* Observer */,
@@ -228,7 +257,6 @@
 				F8F561841BE3117D00C53170 /* SeproLang.h */,
 				F8F561861BE3117D00C53170 /* Info.plist */,
 				F8CA2C231C27E42D00242A0F /* Errors.swift */,
-				F890E9041C475BB30019FD4A /* DictionaryView.swift */,
 			);
 			path = SeproLang;
 			sourceTree = "<group>";
@@ -385,6 +413,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F87422AA1C4E346500ECFC87 /* SyntaxStructures.swift in Sources */,
 				F890E9051C475BB30019FD4A /* DictionaryView.swift in Sources */,
 				F890E9081C47616F0019FD4A /* ArrayExt.swift in Sources */,
 				F865894F1BFC3EA300A5A4EF /* Selection.swift in Sources */,
@@ -396,6 +425,8 @@
 				F8964E271C19678800222E18 /* Lexer.swift in Sources */,
 				F8F561BC1BE312E900C53170 /* Engine.swift in Sources */,
 				F8CA2C241C27E42D00242A0F /* Errors.swift in Sources */,
+				F857CD1C1C51DE6300813D38 /* Experiment.swift in Sources */,
+				F8D8064A1C5895950058C523 /* InstanceGraph.swift in Sources */,
 				F870872D1BE9D5D3004C72A9 /* Modifier.swift in Sources */,
 				F8F561BE1BE312E900C53170 /* Parser.swift in Sources */,
 				F88A49DF1C06E9CF00FFFEA5 /* Store.swift in Sources */,
@@ -403,6 +434,7 @@
 				F89C06171C241ADC003C0BF3 /* CharacterSets.swift in Sources */,
 				F82463A21BE4576600641782 /* Probe.swift in Sources */,
 				F8F561B81BE3121300C53170 /* Extensions.swift in Sources */,
+				F87422AD1C4E353300ECFC87 /* Concept.swift in Sources */,
 				F8F618F01BE4630F002A4DE3 /* Object.swift in Sources */,
 				F8F561BD1BE312E900C53170 /* Model.swift in Sources */,
 				F88C680A1C06DA3400AE94C9 /* ShuffledCollection.swift in Sources */,

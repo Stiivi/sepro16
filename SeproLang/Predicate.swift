@@ -170,16 +170,3 @@ public func ==(left: Predicate, right: Predicate) -> Bool {
 }
 
 public typealias CompoundPredicate = [Predicate]
-
-struct _CompoundPredicate {
-    let predicates: [Predicate]
-
-    init(predicates: [Predicate]) {
-        self.predicates = predicates
-    }
-
-    func matchesObject(object: Object) {
-
-    }
-
-}

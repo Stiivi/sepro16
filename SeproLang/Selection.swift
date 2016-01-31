@@ -103,7 +103,9 @@ public struct FilteredSelection: SequenceType {
     init(store:Store, predicates: CompoundPredicate, references: ObjectRefSequence?=nil) {
         self.store = store
         self.predicates = predicates
-        self.references = references ?? store.allReferences
+        let references = references ?? store.allReferences
+        // FIXME: this is temporary
+        self.references = AnySequence(Array(references).shuffle())
     }
 
     public func generate() -> Generator {

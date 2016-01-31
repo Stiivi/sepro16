@@ -28,18 +28,21 @@ public class CLIDelegate: EngineDelegate {
         print("Traps: \(trapstr)")
     }
 
+    public func dotFileName(set: Int) -> String {
+        let name = String(format: "%06d.dot", set)
+        return self.path + "/dots/" + name
+    }
+
     public func willRun(engine: Engine) {
-        writeDot(self.path + "/dots/0.dot", model: engine.model, selection: engine.store.select())
+        writeDot(dotFileName(engine.stepCount), model: engine.model, selection: engine.store.select())
     }
 
     public func didRun(engine: Engine) {
-        writeDot(self.path + "/dots/final.dot", model: engine.model, selection: engine.store.select())
+        writeDot(dotFileName(engine.stepCount), model: engine.model, selection: engine.store.select())
     }
 
     public func willStep(engine: Engine) {
-        writeDot(self.path + "/dots/\(engine.stepCount).dot",
-                    model: engine.model,
-                    selection: engine.store.select())
+        writeDot(dotFileName(engine.stepCount), model: engine.model, selection: engine.store.select())
     }
 
     public func didStep(engine: Engine) {

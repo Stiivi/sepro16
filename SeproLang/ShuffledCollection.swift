@@ -30,16 +30,19 @@ public struct ShuffledCollection<Base:CollectionType where Base.Index == Int>: C
 
         var j: Int
 
-        for i in 0...(base.count-1) {
-            j = Int(arc4random_uniform(UInt32(i+1)))
-            if j == i {
-                self.shuffled.append(i)
-            }
-            else {
-                self.shuffled.append(self.shuffled[j])
-                self.shuffled[j] = i
+        if !base.isEmpty {
+            for i in 0...(base.count-1) {
+                j = Int(arc4random_uniform(UInt32(i+1)))
+                if j == i {
+                    self.shuffled.append(i)
+                }
+                else {
+                    self.shuffled.append(self.shuffled[j])
+                    self.shuffled[j] = i
+                }
             }
         }
+
     }
 
     public var count: ShuffledCollection.Index.Distance {

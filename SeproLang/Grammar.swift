@@ -10,168 +10,6 @@ extension Token: EmptyCheckable {
     public var isEmpty: Bool { return self.kind == TokenKind.Empty }
 }
 
-enum SymbolType: CustomStringConvertible {
-    case Tag
-    case Slot
-    case Counter
-    case Concept
-
-    var description: String {
-        switch self {
-        case .Tag: return "tag"
-        case .Slot: return "slot"
-        case .Counter: return "counter"
-        case .Concept: return "concept"
-        }
-    }
-}
-
-// Intermediate
-// =======================================================================
-// Constructs that don't have real model representation. They are used
-// only during parsing.
-//
-
-enum ObjectMember {
-    case Tags(TagList)
-    case Slots([Symbol])
-    case Counter(Symbol, Int)
-}
-
-// TODO: There must be a nicer way...
-func makeConcept(name: String, _ members: [ObjectMember]) -> Concept {
-    let allTags: [TagList] = members.flatMap {
-        switch $0 {
-        case .Tags(let syms): return syms
-        default: return nil
-        }
-    }
-
-    let allSlots: [[Symbol]] = members.flatMap {
-        switch $0 {
-        case .Slots(let syms): return syms
-        default: return nil
-        }
-    }
-
-    let allCounters: [(String, Int)] = members.flatMap {
-        switch $0 {
-        case .Counter(let sym, let count): return (sym, count)
-        default: return nil
-        }
-    }
-
-    let tags = TagList(allTags.flatten())
-    let slots = [Symbol](allSlots.flatten())
-    let counters = CounterDict(items: allCounters)
-
-    return Concept(name: name, tags: tags, slots: slots, counters: counters)
-}
-
-enum ModelObject {
-    case ConceptModel(Concept)
-    case ActuatorModel(Actuator)
-    case WorldModel(World)
-
-    case StructModel(Struct)
-    case MeasureModel(Measure)
-
-    case DataModel(TagList, String)
-}
-
-func createModel(objects: [ModelObject]) -> Model {
-    let concepts: [Concept] = objects.flatMap {
-        switch $0 {
-        case .ConceptModel(let obj): return obj
-        default: return nil
-        }
-    }
-
-    let actuators: [Actuator] = objects.flatMap {
-        switch $0 {
-        case .ActuatorModel(let obj): return obj
-        default: return nil
-        }
-    }
-
-    let worlds: [World] = objects.flatMap {
-        switch $0 {
-        case .WorldModel(let obj): return obj
-        default: return nil
-        }
-    }
-
-    let structs: [Struct] = objects.flatMap {
-        switch $0 {
-        case .StructModel(let obj): return obj
-        default: return nil
-        }
-    }
-
-    let measures: [Measure] = objects.flatMap {
-        switch $0 {
-        case .MeasureModel(let obj): return obj
-        default: return nil
-        }
-    }
-
-    let data: [(TagList, String)] = objects.flatMap {
-        switch $0 {
-        case .DataModel(let obj): return obj
-        default: return nil
-        }
-    }
-
-    return Model(concepts: concepts, actuators: actuators, measures: measures,
-                           worlds: worlds, structures: structs,
-                                   data: data)
-}
-
-
-
-enum GraphMember {
-    case InstanceMember([InstanceSpecification])
-    case BindingMember([Binding])
-
-    func instances() -> [InstanceSpecification]? {
-        switch(self) {
-        case InstanceMember(let val): return val
-        default: return nil
-        }
-    }
-
-    func bindings() -> [Binding]? {
-        switch(self) {
-        case BindingMember(let val): return val
-        default: return nil
-        }
-    }
-}
-
-func createGraph(members: [GraphMember]) -> GraphDescription {
-    let bindings = members.flatMap { m in m.bindings() }.flatten()
-    let instances = members.flatMap { m in m.instances() }.flatten()
-
-    let graph = GraphDescription(instances: Array(instances), bindings: Array(bindings))
-
-    return graph
-}
-
-enum InstanceSpec {
-    case Count(Int)
-    case Name(Symbol)
-    case NoName
-
-    func contentObject(sym: Symbol) -> InstanceSpecification {
-        switch(self) {
-        case .Count(let val): return InstanceSpecification.Counted(sym, val)
-        case .Name(let val):  return InstanceSpecification.Named(sym, val)
-        case .NoName:         return InstanceSpecification.Named(sym, sym)
-        }
-    }
-}
-
-
 // Terminals
 // =======================================================================
 
@@ -285,12 +123,41 @@ let modifier =
         ((§"IN" *> nofail(modifier_target)) || succeed(ModifierTarget(.This) ))
             + modifier_action => { mod in Modifier(target: mod.0, action: mod.1) }
 
+let control =
+          option(§"TRAP" *> symbol_list(.Any))
+        + option(§"NOTIFY" *> symbol_list(.Any))
+        + optionFlag(§"HALT")
+        => { ast in (traps: ast.0.0, notifications: ast.0.1, doesHalt: ast.1) }
+
 // WHERE something DO something
 // WHERE something ON somethin else DO something
 // ((selector, selector?), [modifier])
 let actuator =
-    ((§"WHERE" *> selector) + option(§"ON" *> selector)) + nofail(§"DO" *> some(modifier))
-            => { ast in Actuator(selector: ast.0.0, combinedSelector:ast.0.1, modifiers:ast.1) }
+    ((§"WHERE" *> selector) + option(§"ON" *> selector))
+        + nofail(§"DO" *> (some(modifier) + control))
+    => { ast in Actuator(selector: ast.0.0,
+                         combinedSelector:ast.0.1,
+                         modifiers:ast.1.0,
+                         traps: ast.1.1.traps,
+                         notifications: ast.1.1.notifications,
+                         doesHalt: ast.1.1.doesHalt) }
+
+// Probes
+// ========================================================================
+
+// PROBE foo
+
+let counter_agg_function =
+           §"SUM"      *> succeed(AggregateFunction.Sum)
+        || §"MIN"      *> succeed(AggregateFunction.Min)
+        || §"MAX"      *> succeed(AggregateFunction.Max)
+
+let aggregate =
+           §"COUNT" *> op("(") *> option(tag_list) <* op(")")        => { tags in AggregateFunction.Count(tags ?? []) }
+        || counter_agg_function + (op("(") *> %"counter" <* op(")")) => { $0($1) }
+
+let measure = §"MEASURE" *> %"measure" + aggregate + (§"WHERE" *> (predicate ... §"AND"))
+//    => { Measure(name: $0.1, type: $0.2) }
 
 // World
 // ========================================================================
@@ -331,3 +198,10 @@ let model_object =
 
 let model =
         nofail(some(model_object)) => createModel
+
+
+// REPL
+// ========================================================================
+
+// SHOW CONCEPT x
+// SHOW ACTUATORS

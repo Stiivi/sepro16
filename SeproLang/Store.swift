@@ -6,10 +6,9 @@
 //  Copyright © 2015 Stefan Urbanek. All rights reserved.
 //
 
-/**
-Container representing the state of the world.
-*/
-public class Store {
+/// Container representing the state of the world.
+///
+public final class Store {
     /// The object memory
     var container: [ObjectRef:Object]
 
@@ -18,31 +17,31 @@ public class Store {
 
     /// Reference to the root object in the object memory
     // TODO: make this private
-    var root: ObjectRef!
-    var rootReference: ObjectRef {
-        get { return self.root }
+    var root: ObjectRef
+
+    public var rootReference: ObjectRef {
+        return self.root
     }
 
     public init() {
         self.container = [ObjectRef:Object]()
-        self.root = nil
+        self.root = 0
     }
 
+    /// Remove all objects in the store.
     public func removeAll() {
         self.container.removeAll()
     }
 
-    /**
-     - Returns: References to all objects in the store.
-     */
+    /// - Returns: References to all objects in the store.
+    ///
     public var allReferences: ObjectRefSequence {
         return ObjectRefSequence(self.container.keys)
     }
 
-    /**
-    - Returns: Object referenced by reference `ref` or `nil` if no such object
-     exists.
-    */
+    /// - Returns: Object referenced by reference `ref` or `nil` if no such object
+    ///   exists.
+    ///
     public func objectByReference(ref:ObjectRef) -> Object? {
         return self.container[ref]
     }
@@ -52,11 +51,9 @@ public class Store {
     }
 
 
-    /**
-     Adds an `object` to the store container.
-
-     - Returns: object reference of the added object
-    */
+    /// Adds an `object` to the store container.
+    /// - Returns: object reference of the added object
+    ///
     public func addObject(object:Object) -> ObjectRef {
         let ref = refSequence
 
@@ -137,4 +134,5 @@ public class Store {
             return ObjectSelection(store: self, predicates: predicates, references: references)
         }
     }
+    
 }

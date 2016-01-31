@@ -21,7 +21,7 @@ PROBE unlinked SUM counter WHERE
 */
 
 public enum AggregateFunction {
-    case Count
+    case Count(TagList)
     case Sum(Symbol)
     case Min(Symbol)
     case Max(Symbol)
@@ -45,6 +45,12 @@ public struct Measure {
             return []
         }
     }
+
+    init(name: Symbol, type: MeasureType) {
+        self.name = name
+        self.type = type
+    }
+
 }
 
 // MARK: Probes

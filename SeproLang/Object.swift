@@ -15,16 +15,13 @@ public typealias ObjectRefSequence = AnySequence<ObjectRef>
 /** Named object references */
 public typealias ObjectMap = [Symbol:ObjectRef]
 
-/**
-    Simulation object.
-
-    - Note: This structure serves only as an interface between the
-      engine and it's external environment. Since the structure might
-      not be memory or time efficient, it recommended to consider
-      different internal representation of an object or collection
-      of objects in custom engine implementation.
-
-*/
+/// Simulation object.
+///
+/// - Note: This structure serves only as an interface between the
+///   engine and it's external environment. Since the structure might
+///   not be memory or time efficient, it recommended to consider
+///   different internal representation of an object or collection
+///   of objects in custom engine implementation.
 
 public class Object: CustomStringConvertible, CustomDebugStringConvertible {
     // TODO: Change this to Struct
