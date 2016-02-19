@@ -117,7 +117,7 @@ let modifier_action =
         || §"CLEAR"   *> %"counter"   => ModifierAction.Clear
         || §"UNBIND"  *> %"slot"      => ModifierAction.Unbind
         || §"BIND"    *> %"slot" + (§"TO" *> bind_target) => { ast in ModifierAction.Bind(ast.0, ast.1)}
-        || fail("Expected modifier action")
+//        || fail("Expected modifier action")
 
 let modifier =
         ((§"IN" *> nofail(modifier_target)) || succeed(ModifierTarget(.This) ))

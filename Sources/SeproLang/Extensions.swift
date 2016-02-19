@@ -6,6 +6,8 @@
 //  Copyright © 2015 Stefan Urbanek. All rights reserved.
 //
 
+import Darwin
+
 /** Primitive implementation of CountedSet used for counting anonymous
  instances
  */

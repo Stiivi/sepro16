@@ -6,6 +6,7 @@
 //  Copyright © 2015 Stefan Urbanek. All rights reserved.
 //
 
+import Foundation
 import SeproLang
 
 public enum Shape {

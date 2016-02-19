@@ -192,11 +192,9 @@ public final class SimpleEngine: Engine {
         self.logger!.logRecord(self.stepCount, record: record)
     }
 
-    /**
-        Dispatch an `actuator` – unary vs. combined
-     */
+    /// Dispatch an `actuator` – unary vs. combined
+    ///
     func perform(actuator:Actuator){
-        // TODO: take into account Actuator.isRoot as cartesian
         if actuator.isCombined {
             self.performCombined(actuator.selector,
                 otherSelector: actuator.combinedSelector!,
@@ -206,7 +204,8 @@ public final class SimpleEngine: Engine {
             self.performUnary(actuator.selector, actuator: actuator)
         }
 
-        // TODO: This is not good, this should be in "perform"
+        // Handle traps
+        //
         if actuator.traps != nil {
             actuator.traps!.forEach {
                 trap in
@@ -226,19 +225,11 @@ public final class SimpleEngine: Engine {
         self.isHalted = actuator.doesHalt
     }
 
-    /**
-    Interactive actuator execution.
 
-    Algorithm:
-
-    1. Find objects matching conditions for `this`
-    2. Find objects matching conditions for `other`
-    3. If any of the sets is empty, don't perform anything – there is
-       no reaction
-    4. Perform reactive action on the objects.
-
-    - Complexity: O(n) - performs full scan
-    */
+    /// Unary actuator execution.
+    ///
+    /// - Complexity: O(n) - performs full scan
+    ///
     func performUnary(selector: Selector, actuator: Actuator) {
         let objects = self.store.select(selector)
 
@@ -256,10 +247,18 @@ public final class SimpleEngine: Engine {
 
     }
 
-    /**
-    - Complexity: O(n^2) - performs cartesian product on two full scans
-    */
-
+    /// Combined actuator execution.
+    ///
+    /// Algorithm:
+    ///
+    /// 1. Find objects matching conditions for `this`
+    /// 2. Find objects matching conditions for `other`
+    /// 3. If any of the sets is empty, don't perform anything – there is
+    ///    no reaction
+    /// 4. Perform reactive action on the objects.
+    ///
+    /// - Complexity: O(n^2) - performs cartesian product on two full scans
+    ///
     func performCombined(thisSelector: Selector, otherSelector: Selector,
         actuator: Actuator) {
 
@@ -300,10 +299,9 @@ public final class SimpleEngine: Engine {
 
     }
 
-    /**
-        Get "current" object – choose between ROOT, THIS and OTHER then
-    optionally apply dereference to a slot, if specified.
-    */
+    /// Get "current" object – choose between ROOT, THIS and OTHER then
+    /// optionally apply dereference to a slot, if specified.
+    ///
     func getCurrent(ref: ModifierTarget, this: Object, other: Object?=nil) -> Object? {
         let current: Object
 
@@ -345,7 +343,7 @@ public final class SimpleEngine: Engine {
             return current?.counters.keys.contains(counter) ?? false
 
         case .Dec(let counter):
-            return current?.counters.keys.contains(counter) ?? false
+            return current?.counters[counter] > 0
 
         case .Clear(let counter):
             return current?.counters.keys.contains(counter) ?? false

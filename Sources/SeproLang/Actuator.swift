@@ -34,7 +34,6 @@ public enum Selector: CustomStringConvertible {
 
         }
     }
-
 }
 
 public func ==(left: Selector, right: Selector) -> Bool {

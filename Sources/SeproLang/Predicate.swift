@@ -42,19 +42,11 @@ public enum PredicateType: CustomStringConvertible, Equatable {
             // We can ommit the SET
             return tags.joinWithSeparator(", ")
 
-//        case .CounterLess(let counter, let value):
-//            return "\(counter) < \(value)"
-//
-//        case .CounterGreater(let counter, let value):
-//            return "\(counter) > \(value)"
-
         case .CounterZero(let counter):
             return "ZERO \(counter)"
 
         case .IsBound(let slot):
             return "BOUND \(slot)"
-
-        // Implicit predicates
         }
     }
 
@@ -65,10 +57,6 @@ public func ==(left: PredicateType, right: PredicateType) -> Bool {
     case (.All, .All): return true
     case (.TagSet(let ltags), .TagSet(let rtags)) where ltags == rtags:
             return true
-//    case (.CounterLess(let lcount, let lvalue), .CounterLess(let rcount, let rvalue)) where lcount == rcount && lvalue == rvalue:
-//            return true
-//    case (.CounterGreater(let lcount, let lvalue), .CounterGreater(let rcount, let rvalue)) where lcount == rcount && lvalue == rvalue:
-//            return true
     case (.CounterZero(let lcount), .CounterZero(let rcount)) where lcount == rcount:
             return true
     case (.IsBound(let lslot), .IsBound(let rslot)) where lslot == rslot:
@@ -113,24 +101,6 @@ public struct Predicate: Equatable {
             else {
                 result = tags.isSubsetOf(object.tags)
             }
-
-//        case .CounterLess(let counter, let value):
-//            if let counterValue = object.counters[counter] {
-//                result = counterValue < value
-//            }
-//            else {
-//                // TODO: Shouldn't we return false or have invalid state?
-//                result = false
-//            }
-//
-//        case .CounterGreater(let counter, let value):
-//            if let counterValue = object.counters[counter] {
-//                result = counterValue > value
-//            }
-//            else {
-//                // TODO: Shouldn't we return false or have invalid state?
-//                result = false
-//            }
 
         case .CounterZero(let counter):
             if let counterValue = object.counters[counter] {
