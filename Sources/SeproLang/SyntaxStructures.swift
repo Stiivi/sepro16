@@ -10,25 +10,6 @@
 // only during parsing.
 //
 
-enum SymbolType: CustomStringConvertible {
-    case Any
-    case Tag
-    case Slot
-    case Counter
-    case Concept
-
-    var description: String {
-        switch self {
-        case .Any: return "any"
-        case .Tag: return "tag"
-        case .Slot: return "slot"
-        case .Counter: return "counter"
-        case .Concept: return "concept"
-        }
-    }
-}
-
-
 enum ObjectMember {
     case Tags(TagList)
     case Slots([Symbol])

@@ -55,7 +55,7 @@ func main() {
 
     print("Model compiled: \(model.concepts.count) concepts. \(model.actuators.count) actuators")
 
-    let path = NSHomeDirectory() + "/Developer/Sepro/Out"
+    let path = "./out"
 
     engine = SimpleEngine(model:model)
     engine.logger = CSVLogger(path: path)

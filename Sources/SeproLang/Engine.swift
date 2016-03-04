@@ -13,22 +13,20 @@
 public protocol Engine {
 
     var model:Model { get }
+    var container:Container { get }
 
-    /**
-     Run simulation for `steps` number of steps.
 
-     If a trap occurs during the execution the delegate will be notified
-     and the simulation run will be stopped.
-     
-     If `HALT` action was encountered, the simulation is terminated and
-     can not be resumed unless re-initialized.
-     */
+    /// Run simulation for `steps` number of steps.
+    /// 
+    /// If a trap occurs during the execution the delegate will be notified
+    /// and the simulation run will be stopped.
+    /// 
+    /// If `HALT` action was encountered, the simulation is terminated and
+    /// can not be resumed unless re-initialized.
     func run(steps:Int)
     var stepCount:Int { get }
 
-    var store:Store { get }
-
-    /** Initialize the store with `world`. If `world` is not specified then
+    /** Initialize the container with `world`. If `world` is not specified then
     `main` is used.
     */
     func initialize(world: Symbol) throws
@@ -62,11 +60,14 @@ public protocol EngineDelegate {
 */
 
 public final class SimpleEngine: Engine {
-    /// Current step
-    public var stepCount = 0
+    /// Simulation model
+    public let model: Model
 
     /// Simulation state instance
-    public var store: Store
+    public var container: Container
+
+    /// Current step
+    public var stepCount = 0
 
     /// Traps caught in the last step
     public var traps = CountedSet<Symbol>()
@@ -88,12 +89,9 @@ public final class SimpleEngine: Engine {
     public var delegate: EngineDelegate? = nil
 
 
-    /// Simulation model
-    public let model: Model
-
     /// Create an object instance from concept
-    public init(model:Model, store: Store?=nil){
-        self.store = store ?? Store()
+    public init(model:Model, container: Container?=nil){
+        self.container = container ?? Container()
         self.model = model
 
         self.probes = [Probe]()
@@ -172,11 +170,11 @@ public final class SimpleEngine: Engine {
         }
 
         // TODO: too complex
-        self.store.select().forEach {
+        self.container.select().forEach {
             object in
             probeList.forEach {
                 measure, probe in
-                if self.store.predicatesMatch(measure.predicates, ref: object.id) {
+                if self.container.predicatesMatch(measure.predicates, ref: object.id) {
                     probe.probe(object)
                 }
             }
@@ -231,7 +229,7 @@ public final class SimpleEngine: Engine {
     /// - Complexity: O(n) - performs full scan
     ///
     func performUnary(selector: Selector, actuator: Actuator) {
-        let objects = self.store.select(selector)
+        let objects = self.container.select(selector)
 
         for this in objects {
             // Check for required slots
@@ -262,8 +260,8 @@ public final class SimpleEngine: Engine {
     func performCombined(thisSelector: Selector, otherSelector: Selector,
         actuator: Actuator) {
 
-        let thisObjects = self.store.select(thisSelector)
-        let otherObjects = self.store.select(otherSelector)
+        let thisObjects = self.container.select(thisSelector)
+        let otherObjects = self.container.select(otherSelector)
 
         var match: Bool
 
@@ -288,7 +286,7 @@ public final class SimpleEngine: Engine {
 
                 // Check whether 'this' still matches the predicates
                 match = thisSelector == Selector.All ||
-                        store.predicatesMatch(thisSelector.predicates, ref: this.id)
+                        container.predicatesMatch(thisSelector.predicates, ref: this.id)
                 // ... predicates don't match the object, therefore we
                 // skip to the next one
                 if !match {
@@ -308,7 +306,7 @@ public final class SimpleEngine: Engine {
         switch ref.type {
         case .Root:
             // Is guaranteed to exist by specification
-            current = self.store.getRoot()
+            current = self.container.getRoot()
         case .This:
             // Is guaranteed to exist by argument
             current = this
@@ -324,7 +322,7 @@ public final class SimpleEngine: Engine {
         else {
             assert(current.slots.contains(ref.slot!), "Target sohuld contain slot '\(ref.slot!)'")
             if let indirect = current.bindings[ref.slot!] {
-                return self.store[indirect]!
+                return self.container[indirect]!
             }
             else {
                 // Nothing bound at the slot
@@ -413,30 +411,26 @@ public final class SimpleEngine: Engine {
 
     // MARK: Instantiation
 
-    /**
-        Initialize the store according to the model. All existing objects will
-    be discarded.
-    */
+    /// Initialize the container according to the model. All existing objects will
+    /// be discarded.
     public func initialize(worldName: Symbol="main") throws {
         // FIXME: handle non-existing world
         let world = self.model.getWorld(worldName)!
 
         // Clean-up the objects container
-        self.store.removeAll()
+        self.container.removeAll()
 
         if let rootConcept = world.root {
-            self.store.setRootRef(try self.instantiate(rootConcept))
+            self.container.setRootRef(try self.instantiate(rootConcept))
         }
         else {
-            self.store.setRootRef(self.create())
+            self.container.setRootRef(self.create())
         }
 
         try self.instantiateGraph(world.graph)
     }
-    /**
-     Creates instances of objects in the GraphDescription and returns a
-     dictionary of created named objects.
-     */
+	/// Creates instances of objects in the GraphDescription and returns a
+	/// dictionary of created named objects.
     func instantiateGraph(graph: InstanceGraph) throws -> ObjectMap {
         var map = ObjectMap()
 
@@ -459,12 +453,10 @@ public final class SimpleEngine: Engine {
         return self.create(concept!)
     }
 
-    /**
-     Create an object instance from `concept`. If concept is not provided,
-     then creates an empty object.
-     
-     - Returns: reference to the newly created object
-    */
+    /// Create an object instance from `concept`. If concept is not provided,
+    /// then creates an empty object.
+    /// 
+    /// - Returns: reference to the newly created object
     public func create(concept: Concept!=nil) -> ObjectRef {
         let obj = Object()
 
@@ -480,12 +472,10 @@ public final class SimpleEngine: Engine {
             obj.tags.insert(concept.name)
         }
 
-        return self.store.addObject(obj)
+        return self.container.addObject(obj)
     }
 
-    /**
-        Create a structure of conceptual objects
-    */
+    /// Create a structure of conceptual objects
     public func createStruct(str:Struct) throws {
         // var instances = [String:Object]()
 
@@ -513,7 +503,7 @@ public final class SimpleEngine: Engine {
     public func debugDump() {
         print("ENGINE DUMP START\n")
         print("STEP \(self.stepCount)")
-        self.store.select().forEach {
+        self.container.select().forEach {
             obj in
             print("\(obj.debugDescription)")
         }
