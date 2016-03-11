@@ -144,8 +144,8 @@ extension Token: IntegerLiteralConvertible {
 
 // Character sets
 var IdentifierStart = LetterCharacterSet | "_"
-var IdentifierCharacters = AlphanumericCharacterSet | "_:"
-var OperatorCharacters =  CharacterSet(string: ".,*=")
+var IdentifierCharacters = AlphanumericCharacterSet | "_"
+var OperatorCharacters =  CharacterSet(string: ".,*=():")
 
 // Single quote: Symbol, Triple quote: Docstring
 var CommentStart: Character = "#"

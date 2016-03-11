@@ -106,6 +106,7 @@ public class DotWriter{
 		}
 
 		let tags = obj.tags.sort().joinWithSeparator(",")
+		let counters = obj.counters.map {k, v in return "\(k)=\(v)"}
 
 		// Fromatting from data
 		let allData = obj.tags.flatMap { tag in self.model.getData(Set([tag, "dot:attributes"])) }
@@ -120,7 +121,13 @@ public class DotWriter{
 		attrs["fontname"] = fontName
 		attrs["shape"] = "box"
 		attrs["style"] = "rounded"
-		attrs["label"] = label
+		if counters.count == 0 {
+			attrs["label"] = label
+		}
+		else {
+			attrs["label"] = label + ";" + counters.joinWithSeparator(",") 
+		}
+
 		attrs["fontsize"] = 11
 
 		line = "    \(obj.id) [\(attrs.stringValue)\(data)]; "

@@ -51,18 +51,22 @@ public final class Container {
 	}
 
 
-	/// Adds an `object` to the container contents.
-	/// - Returns: object reference of the added object
+	/// Creates an object in the container.
+	/// - Returns: object reference of the new object
 	///
-	public func addObject(object:Object) -> ObjectRef {
-		let ref = refSequence
+    public func createObject(tags: TagList=[], counters: CounterDict=[:],
+			slots: SlotList=[]) -> ObjectRef {
+		let obj = Object(refSequence)
 
-		let internalized = object
-		internalized.id = ref
-		self.contents[ref] = internalized
-		self.refSequence += 1
+		obj.tags = tags
+		obj.counters = counters
+		obj.slots = slots
 
-		return ref
+		self.contents[obj.id] = obj
+
+		refSequence += 1
+
+		return obj.id
 	}
 
 	/// Set the root object reference to `ref`
@@ -72,6 +76,7 @@ public final class Container {
 
 	/**
 	- Returns: instance of the root object.
+	TODO: Remove
 	*/
 	public func getRoot() -> Object {
 		// Note: this must be fullfilled
@@ -91,6 +96,7 @@ public final class Container {
 		}
 	}
 
+	// TODO: remove, all Object methods
 	public func predicateMatches(predicate:Predicate, object: Object) -> Bool {
 		var target: Object
 

@@ -37,7 +37,7 @@ func main() {
         source = try String(contentsOfFile: modelFile, encoding:NSUTF8StringEncoding)
     } catch {
         print("Error: Unable to read model.")
-        return
+		exit(1)
     }
 
     print("Compiling model...")
@@ -46,11 +46,11 @@ func main() {
         model = try parseModel(source)
     } catch let SyntaxError.ParserError(e) {
         print("Error compiling model: \(e)")
-        return
+		exit(1)
     }
     catch {
         print("Unknown error")
-        return
+		exit(1)
     }
 
     print("Model compiled: \(model.concepts.count) concepts. \(model.actuators.count) actuators")
@@ -66,7 +66,7 @@ func main() {
     }
     catch {
         print("Error: Can't initialize engine")
-        return
+		exit(1)
     }
 
 

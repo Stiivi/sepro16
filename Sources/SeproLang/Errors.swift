@@ -11,4 +11,5 @@ import Foundation
 enum SeproError: ErrorType {
     case InternalError(String)
     case NotImplementedError
+    case ModelError(String)
 }

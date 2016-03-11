@@ -1,5 +1,5 @@
 //
-//  SyntaxStructures.swift
+//  AST.swift
 //  SeproLang
 //
 //  Created by Stefan Urbanek on 19/01/16.
@@ -109,10 +109,10 @@ func createModel(objects: [ModelObject]) -> Model {
 
 
 enum GraphMember {
-    case InstanceMember([InstanceSpecification])
+    case InstanceMember([Instance])
     case BindingMember([Binding])
 
-    func instances() -> [InstanceSpecification]? {
+    func instances() -> [Instance]? {
         switch(self) {
         case InstanceMember(let val): return val
         default: return nil
@@ -136,17 +136,25 @@ func createGraph(members: [GraphMember]) -> InstanceGraph {
     return graph
 }
 
-enum InstanceSpec {
-    case Count(Int)
-    case Name(Symbol)
-    case NoName
+enum ASTInstanceType {
+    case Counted(Int)
+    case Named(Symbol)
+    case Default
+}
 
-    func contentObject(sym: Symbol) -> InstanceSpecification {
-        switch(self) {
-        case .Count(let val): return InstanceSpecification.Counted(sym, val)
-        case .Name(let val):  return InstanceSpecification.Named(sym, val)
-        case .NoName:         return InstanceSpecification.Named(sym, sym)
-        }
-    }
+func createInstance(symbol: Symbol, initializers:[Initializer]?, type:
+	ASTInstanceType) -> Instance { 
+
+	let translatedType: InstanceType
+
+	switch type {
+	case .Counted(let count): translatedType = InstanceType.Counted(count)
+	case .Named(let name):    translatedType = InstanceType.Named(name)
+	case .Default:        translatedType = InstanceType.Named(symbol)
+	}
+
+	return Instance(concept: symbol, initializers: initializers ?? [],
+					type: translatedType)
+
 }
 

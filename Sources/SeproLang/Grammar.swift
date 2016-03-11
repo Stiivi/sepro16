@@ -59,7 +59,7 @@ public func ...<T, A, B>(p: Parser<T,A>, sep:Parser<T,B>) -> Parser<T,[A]> {
 let concept_member  =
            §"TAG"     *> tag_list           => ObjectMember.Tags
         || §"SLOT"    *> symbol_list(.Slot) => ObjectMember.Slots
-        || §"COUNTER" *> %"counter" + ((§"=" *> number("initial count")) || succeed(0))
+        || §"COUNTER" *> %"counter" + ((op("=") *> number("initial count")) || succeed(0))
                              => { (sym, count) in return ObjectMember.Counter(sym, count)}
 
 
@@ -159,25 +159,38 @@ let aggregate =
 let measure = §"MEASURE" *> %"measure" + aggregate + (§"WHERE" *> (predicate ... §"AND"))
 //    => { Measure(name: $0.1, type: $0.2) }
 
+
 // World
 // ========================================================================
 
+let initializer =
+	   %"symbol" + (op(":") *> number("counter value")) => Initializer.Counter
+	|| %"symbol"                                        => Initializer.Tag 
+
+
+let initializers =
+	op("(") *> (initializer ... op(",")) <* op(")") 
+
+
 let instance =
-    (%"symbol" +
+    ((%"symbol" + option(initializers)) +
     (
-           op("*")  *> number("instance count") => InstanceSpec.Count
-        || §"AS"    *> %"name"                  => InstanceSpec.Name
-        ||                                         succeed(InstanceSpec.NoName)
+           op("*")  *> number("instance count") => ASTInstanceType.Counted
+        || §"AS"    *> %"name"                  => ASTInstanceType.Named
+        ||                                         succeed(ASTInstanceType.Default)
     ))
-    => { spec in spec.1.contentObject(spec.0) }
+    => { i in createInstance(i.0.0, initializers: i.0.1, type: i.1) }
+
 
 let binding =
     %"obj" + (op(".") *> %"slot") + (§"TO" *> %"target")
         => { spec in Binding(source:spec.0.0, sourceSlot:spec.0.1, target:spec.1)}
 
+
 let graph_member =
            §"OBJECT" *> (instance ... op(",")) => GraphMember.InstanceMember
         || §"BIND"   *> (binding ... op(","))  => GraphMember.BindingMember
+
 
 let world =
         (§"WORLD" *> %"name") + (option(§"ROOT" *> %"symbol") + (many(graph_member) => createGraph))
@@ -187,17 +200,23 @@ let world =
 let data =
         (§"DATA" *> tag_list) + text("data string")
 
+
 // Model
 // ========================================================================
+
 let model_object =
            concept  => ModelObject.ConceptModel
         || actuator => ModelObject.ActuatorModel
         || world    => ModelObject.WorldModel
         || data     => ModelObject.DataModel
-//        || fail("Expected model object")
+        || fail("Expected model object")
+
+let _model =
+		   token(.Empty, "end (no model)") => { _ in createModel([]) }
+		|| many(model_object) <* token(.Empty, "end") => createModel
 
 let model =
-        nofail(some(model_object)) => createModel
+		many(model_object) => createModel
 
 
 // REPL

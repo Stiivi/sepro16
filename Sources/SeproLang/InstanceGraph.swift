@@ -25,22 +25,56 @@ public struct Binding {
     }
 }
 
+
+public struct InstanceInitialization: CustomStringConvertible {
+	let tags: TagList
+	let counters: [Symbol:Int]
+
+	init(tags: TagList, counters: [Symbol:Int]) {
+		self.tags = tags
+		self.counters = counters
+	}
+
+	public var description: String {
+		return "()"
+	}
+}
+
+
 /// Specification of an object instance in instance graph.
-public enum InstanceSpecification: CustomStringConvertible {
+public enum InstanceType: CustomStringConvertible {
     /// Single instance that can be referred to by name
-    case Named(Symbol, Symbol)
+    case Named(Symbol)
     /// Multiple instances, but can't be referenced
-    case Counted(Symbol, Int)
+    case Counted(Int)
 
     public var description: String {
         switch self {
-        case let .Named(concept, name):
-            return "\(concept) AS \(name)"
-        case let .Counted(concept, count):
-            return "\(concept) * \(count)"
+        case let .Named(name):    return "AS \(name)"
+        case let .Counted(count): return "* \(count)"
         }
     }
 }
+
+/// Initial value of an instance
+public enum Initializer {
+	case Tag(Symbol)
+	case Counter(Symbol, Int)
+}
+
+
+public struct Instance {
+	public let concept: Symbol
+	public let initializers: [Initializer]
+	public let type: InstanceType
+
+	init(concept: Symbol, initializers: [Initializer], type: InstanceType) {
+		self.concept = concept
+		self.initializers = initializers
+		self.type = type
+	}
+}
+
 
 /// Reference for a concept's property
 public struct PropertyReference:Hashable {
@@ -76,7 +110,7 @@ public func ==(left: PropertyReference, right:PropertyReference) -> Bool {
 public struct InstanceGraph {
 
     /// List of all content object
-    public var instances: [InstanceSpecification]
+    public var instances: [Instance]
     public var bindings: [Binding]
 
     /// Map of objects that have name. Objects with name can be used for
@@ -84,14 +118,14 @@ public struct InstanceGraph {
     public var namedObjects = [Symbol:Symbol]()
 
 
-    public init(instances: [InstanceSpecification]? = nil, bindings: [Binding]?) {
-        self.instances = instances ?? [InstanceSpecification]()
+    public init(instances: [Instance]? = nil, bindings: [Binding]?) {
+        self.instances = instances ?? [Instance]()
         self.bindings = bindings ?? [Binding]()
 
         let named:[(Symbol, Symbol)] = self.instances.flatMap {
             instance in
-            switch instance {
-            case let .Named(concept, name): return (concept, name)
+            switch instance.type {
+            case let .Named(name): return (name, instance.concept)
             default: return nil
             }
         }
@@ -100,10 +134,10 @@ public struct InstanceGraph {
     }
 
     /// Adds a instance specification `obj` to the graph
-    mutating public func addObject(obj: InstanceSpecification) {
-        switch obj {
-        case let .Named(concept, name):
-            self.namedObjects[name] = concept
+    mutating public func addInstance(obj: Instance) {
+        switch obj.type {
+        case let .Named(name):
+            self.namedObjects[name] = obj.concept
         case .Counted:
             break
         }
