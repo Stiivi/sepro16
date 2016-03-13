@@ -17,11 +17,7 @@ public final class Container {
 
 	/// Reference to the root object in the object memory
 	// TODO: make this private
-	var root: ObjectRef
-
-	public var rootReference: ObjectRef {
-		return self.root
-	}
+	public var root: ObjectRef
 
 	public init() {
 		self.contents = [ObjectRef:Object]()
@@ -42,12 +38,12 @@ public final class Container {
 	/// - Returns: Object referenced by reference `ref` or `nil` if no such object
 	///   exists.
 	///
-	public func objectByReference(ref:ObjectRef) -> Object? {
+	public func getObject(ref:ObjectRef) -> Object? {
 		return self.contents[ref]
 	}
 
 	public subscript(ref: ObjectRef) -> Object? {
-		return self.objectByReference(ref)
+		return self.getObject(ref)
 	}
 
 
@@ -69,24 +65,9 @@ public final class Container {
 		return obj.id
 	}
 
-	/// Set the root object reference to `ref`
-	public func setRootRef(ref:ObjectRef) {
-		self.root = ref
-	}
-
-	/**
-	- Returns: instance of the root object.
-	TODO: Remove
-	*/
-	public func getRoot() -> Object {
-		// Note: this must be fullfilled
-		return self[self.root]!
-	}
-
-	/**
-		Evaluates the predicate against object.
-		- Returns: `true` if the object matches the predicate
-	*/
+	/// Evaluates the predicate against object.
+	/// - Returns: `true` if the object matches the predicate
+	///
 	public func predicateMatches(predicate:Predicate, ref: ObjectRef) -> Bool {
 		if let object = self.contents[ref] {
 			return self.predicateMatches(predicate, object: object)
@@ -136,7 +117,7 @@ public final class Container {
 		case .Filter(let predicates):
 			return ObjectSelection(container: self, predicates: predicates)
 		case .Root(let predicates):
-			let references = AnySequence([self.rootReference])
+			let references = AnySequence([self.root])
 			return ObjectSelection(container: self, predicates: predicates, references: references)
 		}
 	}

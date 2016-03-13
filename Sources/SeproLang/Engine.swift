@@ -304,7 +304,7 @@ public final class SimpleEngine: Engine {
 		switch ref.type {
 		case .Root:
 			// Is guaranteed to exist by specification
-			current = self.container.getRoot()
+			current = self.container.getObject(self.container.root)!
 		case .This:
 			// Is guaranteed to exist by argument
 			current = this
@@ -419,10 +419,10 @@ public final class SimpleEngine: Engine {
 		self.container.removeAll()
 
 		if let rootConcept = world.root {
-			self.container.setRootRef(try self.instantiate(rootConcept))
+			self.container.root = try self.instantiate(rootConcept)
 		}
 		else {
-			self.container.setRootRef(self.container.createObject())
+			self.container.root = self.container.createObject()
 		}
 
 		try self.instantiateGraph(world.graph)
@@ -450,12 +450,14 @@ public final class SimpleEngine: Engine {
 
 
 	/// Instantiate a concept `concept` with optional initializers for tags
-	/// and concepts `initializers`.
+	/// and concepts `initializers`. Created instance will have additional tag
+	/// set – the concept name symbol. 
 	/// 
 	/// - Returns: reference to the newly created object
 	public func instantiate(name:Symbol, initializers: [Initializer]=[]) throws -> ObjectRef {
 		if let concept = self.model.getConcept(name) {
-			var tags = concept.tags
+			let implicitTags = TagList([name])
+			var tags = concept.tags.union(implicitTags)
 			var counters = concept.counters
 
 			let initTags = TagList(initializers.flatMap {
