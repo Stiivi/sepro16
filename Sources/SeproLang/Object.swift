@@ -44,8 +44,8 @@ public class Object: CustomStringConvertible, CustomDebugStringConvertible {
     public var description: String {
         get {
             let links = self.bindings.map(){ (key, value) in "\(key)->\(value)" }
-                            . joinWithSeparator(", ")
-            let tagsStr = self.tags.map { String($0)} . joinWithSeparator(", ")
+                            .joined(separator:", ")
+            let tagsStr = self.tags.map { String($0)}.joined(separator:", ")
             return "\(id)[\(tagsStr);\(links)]"
         }
     }

@@ -157,7 +157,7 @@ public struct InstanceGraph {
             return "    OBJECT \(obj)"
         }
 
-        var out = lines.joinWithSeparator("\n")
+        var out = lines.joined(separator:"\n")
 
         for b in self.bindings {
             out += "    BIND \(b.source).\(b.sourceSlot) TO \(b.target)\n"

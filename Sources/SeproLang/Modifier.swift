@@ -130,10 +130,10 @@ public enum ModifierAction: CustomStringConvertible, Equatable {
         switch self {
         case .Nothing: return "NOTHING"
         case .SetTags(let symbols):
-                    let str = symbols.joinWithSeparator(", ")
+                    let str = symbols.joined(separator:", ")
                     return "SET \(str)"
         case .UnsetTags(let symbols):
-                    let str = symbols.joinWithSeparator(", ")
+                    let str = symbols.joined(separator:", ")
                     return "UNSET \(str)"
         case .Inc(let symbol): return "INC \(symbol)"
         case .Dec(let symbol): return "DEC \(symbol)"

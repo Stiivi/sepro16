@@ -11,13 +11,13 @@ extension Array {
      - Returns: `true` when all elements match `predicate`
      */
     public func all(predicate: (Element) -> Bool) -> Bool {
-        return self.indexOf { item in !predicate(item) } == nil
+        return self.index { item in !predicate(item) } == nil
     }
 }
 
 extension Array {
     public func findFirst(predicate: (Element) -> Bool) -> Element? {
-        if let index = self.indexOf(predicate) {
+        if let index = self.index(where: predicate) {
             return self[index]
         }
         else {

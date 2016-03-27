@@ -17,8 +17,8 @@ Wraps an array and presents it in a shuffled way.
 - Complexity: requires O(n) memory and time to store and generate shuffled index
 */
 
-public struct ShuffledCollection<Base:CollectionType where Base.Index == Int>: CollectionType {
-    public typealias Generator = AnyGenerator<Base.Generator.Element>
+public struct ShuffledCollection<Base:Collection where Base.Index == Int>: Collection {
+    public typealias Iterator = AnyIterator<Base.Iterator.Element>
     public typealias Index = Int
 
     let base: Base
@@ -52,11 +52,11 @@ public struct ShuffledCollection<Base:CollectionType where Base.Index == Int>: C
     public var startIndex : Int { return base.startIndex }
     public var endIndex : Int { return base.endIndex }
 
-    public func generate() -> Generator {
-        var generator = self.shuffled.generate()
+    public func makeIterator() -> Iterator {
+        var iterator = self.shuffled.makeIterator()
 
-        return AnyGenerator {
-            if let index = generator.next() {
+        return AnyIterator {
+            if let index = iterator.next() {
                 return self.base[index]
             }
             else {
@@ -65,7 +65,7 @@ public struct ShuffledCollection<Base:CollectionType where Base.Index == Int>: C
         }
     }
 
-    public subscript(index: Int) -> Base.Generator.Element {
+    public subscript(index: Int) -> Base.Iterator.Element {
         get {
             return self.base[shuffled[index]]
         }

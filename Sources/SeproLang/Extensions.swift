@@ -11,7 +11,7 @@ import Darwin
 /** Primitive implementation of CountedSet used for counting anonymous
  instances
  */
-public class CountedSet<T: Hashable>: SequenceType {
+public class CountedSet<T: Hashable>: Sequence {
     public typealias Index = DictionaryIndex<T, Int>
     public typealias _Element = T
 
@@ -54,7 +54,7 @@ public class CountedSet<T: Hashable>: SequenceType {
             if (count > 1) {
                 objects[item] = count - 1
             } else {
-                objects.removeValueForKey(item)
+                objects.removeValue(forKey:item)
             }
         }
     }
@@ -77,25 +77,11 @@ public class CountedSet<T: Hashable>: SequenceType {
         }
     }
 
-    public func generate() -> CountedSetGenerator<T> {
-        return CountedSetGenerator(self.objects)
+    public func makeIterator() -> DictionaryIterator<T, Int> {
+        return objects.makeIterator()
     }
 }
 
-
-public struct CountedSetGenerator<T:Hashable> : GeneratorType {
-    var dictGenerator : DictionaryGenerator<T, Int>
-
-    init(_ dictGenerator : Dictionary<T, Int>) {
-        self.dictGenerator = dictGenerator.generate()
-    }
-
-    public typealias Element = (T, Int)
-
-    mutating public func next() -> Element? {
-        return dictGenerator.next()
-    }
-}
 
 /// Return a random 32-bit integer
 func randomInt(upperBound:Int) -> Int {

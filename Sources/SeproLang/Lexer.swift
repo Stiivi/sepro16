@@ -343,7 +343,7 @@ public class Lexer {
         else {
             end = to!
         }
-        return self.source.substringWithRange(start...end)
+        return self.source.substring(with:start...end)
     }
 
     /**
@@ -380,7 +380,7 @@ public class Lexer {
             self.scanWhile(IdentifierCharacters)
 
             value = self.tokenFrom(start)
-            let upvalue = value!.uppercaseString
+            let upvalue = value!.uppercased()
 
             // Case insensitive compare
             if self.keywords.contains(upvalue) {

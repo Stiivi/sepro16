@@ -8,7 +8,7 @@
 
 import Foundation
 
-enum SeproError: ErrorType {
+enum SeproError: ErrorProtocol {
     case InternalError(String)
     case NotImplementedError
     case ModelError(String)

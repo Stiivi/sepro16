@@ -23,7 +23,7 @@ public class CSVWriter {
 
 		self.path = path
 
-		manager.createFileAtPath(path, contents:nil, attributes:nil)
+		manager.createFile(atPath:path, contents:nil, attributes:nil)
 		self.file = NSFileHandle.init(forWritingAtPath: self.path)!
 	}
 
@@ -31,8 +31,8 @@ public class CSVWriter {
 		let strings = values.map() { value in
 			value == nil ? "" : String(value)
 		}
-		let line = strings.joinWithSeparator(self.recordSeparator) + self.lineSeparator
-		self.file.writeData(line.dataUsingEncoding(NSUTF8StringEncoding)!)
+		let line = strings.joined(separator:self.recordSeparator) + self.lineSeparator
+		self.file.write(line.data(usingEncoding:NSUTF8StringEncoding)!)
 	}
 
 	public func close() {
@@ -57,7 +57,7 @@ public class CSVLogger: Logger {
 		let manager = NSFileManager.defaultManager()
 
 		do {
-			try manager.createDirectoryAtPath(self.root, withIntermediateDirectories: true, attributes: nil)
+			try manager.createDirectory(atPath: self.root, withIntermediateDirectories: true, attributes: nil)
 		}
 		catch let error as NSError {
 			print("Unable to create directory: \(error)")
@@ -75,7 +75,7 @@ public class CSVLogger: Logger {
 		self.measures = measures
 
 		var names = self.measures.map { measure in measure.name }
-		names.insert("step", atIndex: 0)
+		names.insert("step", at: 0)
 
 		self.measureWriter.writeRow(names)
 	}
@@ -98,7 +98,7 @@ public class CSVLogger: Logger {
 			}
 		}
 
-		row.insert(String(step), atIndex: 0)
+		row.insert(String(step), at: 0)
 		self.measureWriter.writeRow(row)
 	}
 

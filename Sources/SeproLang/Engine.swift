@@ -457,7 +457,7 @@ public final class SimpleEngine: Engine {
 	public func instantiate(name:Symbol, initializers: [Initializer]=[]) throws -> ObjectRef {
 		if let concept = self.model.getConcept(name) {
 			let implicitTags = TagList([name])
-			var tags = concept.tags.union(implicitTags)
+			let tags = concept.tags.union(implicitTags)
 			var counters = concept.counters
 
 			let initTags = TagList(initializers.flatMap {

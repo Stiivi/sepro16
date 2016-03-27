@@ -55,7 +55,7 @@ public class PrintingLogger: Logger {
         self.measures = measures
 
         let names = self.measures.map { measure in measure.name }
-        let header = names.joinWithSeparator(",")
+        let header = names.joined(separator:",")
         print(header)
     }
 
@@ -76,8 +76,8 @@ public class PrintingLogger: Logger {
             }
         }
 
-        stringValues.insert("\(step)", atIndex: 0)
-        let line = stringValues.joinWithSeparator(",")
+        stringValues.insert("\(step)", at: 0)
+        let line = stringValues.joined(separator:",")
 
         print(line)
     }

@@ -6,7 +6,7 @@
 //  Copyright © 2015 Stefan Urbanek. All rights reserved.
 //
 
-public enum SyntaxError: ErrorType {
+public enum SyntaxError: ErrorProtocol {
     case ParserError(String)
 }
 

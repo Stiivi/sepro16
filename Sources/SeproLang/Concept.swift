@@ -63,11 +63,11 @@ public class Concept: CustomStringConvertible {
             }
         }
         if !self.tags.isEmpty {
-            let list = tags.joinWithSeparator(", ")
+            let list = tags.joined(separator:", ")
             desc += "    TAG \(list)\n"
         }
         if !self.slots.isEmpty {
-            let list = slots.joinWithSeparator(", ")
+            let list = slots.joined(separator:", ")
             desc += "    SLOT \(list)\n"
         }
         return desc

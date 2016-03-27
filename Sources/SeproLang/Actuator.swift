@@ -18,9 +18,9 @@ public enum Selector: CustomStringConvertible {
         switch self {
         case All: return "ALL"
         case Filter(let p):
-            return p.map({ String($0) }).joinWithSeparator(" AND ")
+            return p.map({ String($0) }).joined(separator:" AND ")
         case Root(let p):
-            return "ROOT " + p.map({ String($0) }).joinWithSeparator(" AND ")
+            return "ROOT " + p.map({ String($0) }).joined(separator:" AND ")
         }
     }
 
@@ -114,14 +114,14 @@ extension Actuator: CustomStringConvertible {
             desc += " ON " + self.combinedSelector!.description
         }
 
-        desc += " DO " + self.modifiers.map({String($0)}).joinWithSeparator(" ")
+        desc += " DO " + self.modifiers.map({String($0)}).joined(separator:" ")
 
         if self.traps != nil {
-            desc += "TRAP " + self.traps!.joinWithSeparator(" ")
+            desc += "TRAP " + self.traps!.joined(separator:" ")
         }
 
         if self.traps != nil {
-            desc += "NOTIFY " + self.notifications!.joinWithSeparator(" ")
+            desc += "NOTIFY " + self.notifications!.joined(separator:" ")
         }
 
         return desc

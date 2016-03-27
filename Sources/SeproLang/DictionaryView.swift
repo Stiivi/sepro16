@@ -7,7 +7,7 @@
 //
 
 extension Array {
-    typealias Value = Generator.Element
+    typealias Value = Iterator.Element
 
     func dictionaryView<K: Hashable>(keyGetter: (Value) -> K) -> [K:Value] {
         let items = self.map {

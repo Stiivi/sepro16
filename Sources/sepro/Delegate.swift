@@ -22,7 +22,7 @@ public class CLIDelegate: EngineDelegate {
 		let trapstr = traps.map {
 			trap, count in
 			"\(trap):\(count)"
-		}.joinWithSeparator(" ")
+		}.joined(separator:" ")
 
 		print("Traps: \(trapstr)")
 	}

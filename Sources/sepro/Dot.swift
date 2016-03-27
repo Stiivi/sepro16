@@ -40,7 +40,7 @@ public struct DotAttributes {
 			let quotedValue: String
 			let quotedKeys = ["label"]
 
-			if quotedKeys.contains(key) || value.containsString(" ") {
+			if quotedKeys.contains(key) || value.contains(" ") {
 				// Quote the value
 				quotedValue = "\"\(value)\""
 			}
@@ -48,7 +48,7 @@ public struct DotAttributes {
 				quotedValue = value
 			}
 			return "\(key)=\(quotedValue)"
-		}.joinWithSeparator(",")
+		}.joined(separator:",")
 
 		return retval
 
@@ -73,7 +73,7 @@ public class DotWriter{
 		self.path = path
 		self.model = model
 
-		manager.createFileAtPath(path, contents:nil, attributes:nil)
+		manager.createFile(atPath: path, contents:nil, attributes:nil)
 
 		self.file = NSFileHandle.init(forWritingAtPath: path)!
 		self.writeLine(header)
@@ -85,8 +85,8 @@ public class DotWriter{
 
 	func writeLine(str: String) {
 		let line = str + "\n"
-		if let data = line.dataUsingEncoding(NSUTF8StringEncoding) {
-			file.writeData(data)
+		if let data = line.data(usingEncoding: NSUTF8StringEncoding) {
+			file.write(data)
 		}
 	}
 
@@ -105,12 +105,13 @@ public class DotWriter{
 			return "\(obj.id) -> \(ref) [\(linkAttrs.stringValue)]"
 		}
 
-		let tags = obj.tags.sort().joinWithSeparator(",")
+		let tags = obj.tags.sorted().joined(separator:",")
 		let counters = obj.counters.map {k, v in return "\(k)=\(v)"}
 
 		// Fromatting from data
-		let allData = obj.tags.flatMap { tag in self.model.getData(Set([tag, "dot:attributes"])) }
-		var data = allData.joinWithSeparator(",")
+		let allData = obj.tags.flatMap { tag in self.model.getData(Set([tag, "dot_attributes"])) }
+
+		var data = allData.joined(separator:",")
 		if data != "" {
 			data = "," + data
 		}
@@ -125,7 +126,7 @@ public class DotWriter{
 			attrs["label"] = label
 		}
 		else {
-			attrs["label"] = label + ";" + counters.joinWithSeparator(",") 
+			attrs["label"] = label + ";" + counters.joined(separator:",") 
 		}
 
 		attrs["fontsize"] = 11
@@ -133,7 +134,7 @@ public class DotWriter{
 		line = "    \(obj.id) [\(attrs.stringValue)\(data)]; "
 
 		if !links.isEmpty {
-			line += links.joinWithSeparator("; ") + ";"
+			line += links.joined(separator:"; ") + ";"
 		}
 
 		self.writeLine(line)
@@ -145,7 +146,7 @@ public func writeDot(path: String, model: Model, selection: ObjectSelection) {
 
 	// FIXME: Despite we might want some kind of sorting, this also
 	// serves as a hack. Without this sorting we would get a runtime error
-	let sorted = selection.sort { left, right in left.id < right.id }
+	let sorted = selection.sorted { left, right in left.id < right.id }
 
 	sorted.forEach {
 		obj in

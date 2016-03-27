@@ -24,8 +24,8 @@ public enum Ordering {
 public typealias _ObjectSequence = AnySequence<Object>
 public typealias _RefSequence = AnySequence<ObjectRef>
 
-public struct ObjectSelection: SequenceType {
-	public typealias Generator = AnyGenerator<Object>
+public struct ObjectSelection: Sequence {
+	public typealias Iterator = AnyIterator<Object>
 
 	let _actualSelection: AnySequence<Object>
 
@@ -46,15 +46,15 @@ public struct ObjectSelection: SequenceType {
 		}
 	}
 
-	public func generate() -> Generator {
-		return AnyGenerator(self._actualSelection.generate())
+	public func makeIterator() -> Iterator {
+		return AnyIterator(self._actualSelection.makeIterator())
 	}
 
 }
 
 /** Selection of concrete or all objects */
-public class ConcreteSelection: SequenceType {
-	public typealias Generator = ConcreteSelectionGenerator
+public class ConcreteSelection: Sequence {
+	public typealias Iterator = ConcreteSelectionIterator
 
 	let container: Container
 	let references: ObjectRefSequence
@@ -64,24 +64,24 @@ public class ConcreteSelection: SequenceType {
 		self.references = references
 	}
 
-	public func generate() -> Generator {
-		return Generator(container: self.container, generator: references.generate())
+	public func makeIterator() -> Iterator {
+		return ConcreteSelectionIterator(container: self.container, iterator: references.makeIterator())
 	}
 }
 
-public class ConcreteSelectionGenerator: GeneratorType {
+public class ConcreteSelectionIterator: IteratorProtocol {
 	public typealias Element = Object
 
 	private let container: Container
-	private var generator: ObjectRefSequence.Generator
+	private var iterator: ObjectRefSequence.Iterator
 
-	public init(container: Container, generator: ObjectRefSequence.Generator) {
+	public init(container: Container, iterator: ObjectRefSequence.Iterator) {
 		self.container = container
-		self.generator = generator
+		self.iterator = iterator
 	}
 	
 	public func next() -> Element? {
-		while let ref = self.generator.next() {
+		while let ref = self.iterator.next() {
 			// See description of selection why we ignore dead
 			// references
 			if let object = self.container[ref]{
@@ -93,8 +93,8 @@ public class ConcreteSelectionGenerator: GeneratorType {
 }
 
 /** Selection of all objects in the container */
-public struct FilteredSelection: SequenceType {
-	public typealias Generator = FilteredSelectionGenerator
+public struct FilteredSelection: Sequence {
+	public typealias Iterator = FilteredSelectionIterator
 
 	public let container: Container
 	public let predicates: CompoundPredicate
@@ -108,30 +108,30 @@ public struct FilteredSelection: SequenceType {
 		self.references = AnySequence(Array(references).shuffle())
 	}
 
-	public func generate() -> Generator {
-		return FilteredSelectionGenerator(container: self.container,
-			generator: self.references.generate(),
+	public func makeIterator() -> Iterator {
+		return FilteredSelectionIterator(container: self.container,
+			iterator: self.references.makeIterator(),
 			predicates: self.predicates)
 	}
 }
 
-public class FilteredSelectionGenerator: GeneratorType {
+public class FilteredSelectionIterator: IteratorProtocol {
 	public typealias Element = Object
 
 	private let container: Container
-	private var generator: ObjectRefSequence.Generator
+	private var iterator: ObjectRefSequence.Iterator
 	private let predicates: CompoundPredicate
 
-	public init(container: Container, generator: ObjectRefSequence.Generator,
+	public init(container: Container, iterator: ObjectRefSequence.Iterator,
 		predicates: CompoundPredicate) {
 			self.container = container
-			self.generator = generator
+			self.iterator = iterator
 			self.predicates = predicates
 	}
 	
 	public func next() -> Element? {
 		// TODO: we resolve ref but then we pass ref to resolve it again
-		while let ref = self.generator.next() {
+		while let ref = self.iterator.next() {
 			if let object = self.container[ref]
 				where self.container.predicatesMatch(self.predicates, ref: ref){
 					return object
@@ -139,7 +139,6 @@ public class FilteredSelectionGenerator: GeneratorType {
 		}
 		return nil
 	}
-
 }
 
 

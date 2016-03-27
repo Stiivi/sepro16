@@ -82,6 +82,7 @@ let predicate_type =
 // ------------------------------------------------------------------------
 
 // §"NOT" *> succeed(true) || succeed(false)
+// TODO: Swap NOT with context IN
 let predicate =
         (optionFlag(§"NOT") + option(§"IN" *> %"slot") + predicate_type)
                 => { (ctx, type) in return Predicate(type, ctx.0, inSlot: ctx.1) }

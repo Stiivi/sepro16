@@ -40,7 +40,7 @@ public enum PredicateType: CustomStringConvertible, Equatable {
 
         case .TagSet(let tags):
             // We can ommit the SET
-            return tags.joinWithSeparator(", ")
+            return tags.joined(separator:", ")
 
         case .CounterZero(let counter):
             return "ZERO \(counter)"
