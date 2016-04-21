@@ -523,3 +523,41 @@ public final class SimpleEngine: Engine {
 		print("END OF DUMP\n")
 	}
 }
+
+extension Predicate {
+    /**
+     Evaluate predicate on `object`.
+     
+     - Returns: `true` if `object` matches predicate, otherwise `false`
+     */
+    public func matchesObject(object: Object) -> Bool {
+        let result: Bool
+
+        switch self.type {
+        case .All:
+            result = true
+
+        case .TagSet(let tags):
+            if isNegated {
+                result = tags.isDisjointWith(object.tags)
+            }
+            else {
+                result = tags.isSubsetOf(object.tags)
+            }
+
+        case .CounterZero(let counter):
+            if let counterValue = object.counters[counter] {
+                result = (counterValue == 0) != self.isNegated
+            }
+            else {
+                // TODO: Shouldn't we return false or have invalid state?
+                result = false
+            }
+
+        case .IsBound(let slot):
+            result = (object.bindings[slot] != nil) != self.isNegated
+        }
+
+        return result
+    }
+}

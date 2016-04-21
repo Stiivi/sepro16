@@ -7,7 +7,7 @@
 //
 
 import Foundation
-import SeproLang
+import Sepro
 
 let processInfo = NSProcessInfo.processInfo()
 

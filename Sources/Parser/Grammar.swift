@@ -4,6 +4,7 @@
 // to maintain consistency with common practice in BNF
 
 import ParserCombinator
+import Model
 
 extension Token: EmptyCheckable {
     public static let EmptyValue = Token(.Empty, "")
@@ -39,19 +40,6 @@ func typeDesc(type: SymbolType) -> String {
 let symbol_list = { type in separated(symbol(typeDesc(type)), op(",")) }
 let tag_list = symbol_list(.Tag) => { ast in TagList(ast) }
 
-// String comparable
-public prefix func §(value: String) -> Parser<Token, String>{
-    return keyword(value)
-}
-
-public prefix func %(value: String) -> Parser<Token, Symbol>{
-    return symbol(value)
-}
-
-infix operator ... { associativity left precedence 130 }
-public func ...<T, A, B>(p: Parser<T,A>, sep:Parser<T,B>) -> Parser<T,[A]> {
-    return separated(p, sep)
-}
 
 // Concept
 // =======================================================================
@@ -105,7 +93,7 @@ let target_type =
 
 let modifier_target =
         target_type + option(op(".") *> %"slot") => { target in ModifierTarget(target.0, target.1) }
-        || %"slot"                               => { symbol in ModifierTarget(TargetType.This, symbol)}
+		|| %"slot"                               => { symbol in ModifierTarget(TargetType.This, symbol)}
 
 let bind_target = modifier_target
 

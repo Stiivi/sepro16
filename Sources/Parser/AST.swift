@@ -10,6 +10,9 @@
 // only during parsing.
 //
 
+import Model
+import Utility
+
 enum ObjectMember {
     case Tags(TagList)
     case Slots([Symbol])
@@ -56,54 +59,6 @@ enum ModelObject {
     case MeasureModel(Measure)
 
     case DataModel(TagList, String)
-}
-
-func createModel(objects: [ModelObject]) -> Model {
-    let concepts: [Concept] = objects.flatMap {
-        switch $0 {
-        case .ConceptModel(let obj): return obj
-        default: return nil
-        }
-    }
-
-    let actuators: [Actuator] = objects.flatMap {
-        switch $0 {
-        case .ActuatorModel(let obj): return obj
-        default: return nil
-        }
-    }
-
-    let worlds: [World] = objects.flatMap {
-        switch $0 {
-        case .WorldModel(let obj): return obj
-        default: return nil
-        }
-    }
-
-    let structs: [Struct] = objects.flatMap {
-        switch $0 {
-        case .StructModel(let obj): return obj
-        default: return nil
-        }
-    }
-
-    let measures: [Measure] = objects.flatMap {
-        switch $0 {
-        case .MeasureModel(let obj): return obj
-        default: return nil
-        }
-    }
-
-    let data: [(TagList, String)] = objects.flatMap {
-        switch $0 {
-        case .DataModel(let obj): return obj
-        default: return nil
-        }
-    }
-
-    return Model(concepts: concepts, actuators: actuators, measures: measures,
-                           worlds: worlds, structures: structs,
-                                   data: data)
 }
 
 
@@ -157,4 +112,54 @@ func createInstance(symbol: Symbol, initializers:[Initializer]?, type:
 					type: translatedType)
 
 }
+
+
+func createModel(objects: [ModelObject]) -> Model {
+    let concepts: [Concept] = objects.flatMap {
+        switch $0 {
+        case .ConceptModel(let obj): return obj
+        default: return nil
+        }
+    }
+
+    let actuators: [Actuator] = objects.flatMap {
+        switch $0 {
+        case .ActuatorModel(let obj): return obj
+        default: return nil
+        }
+    }
+
+    let worlds: [World] = objects.flatMap {
+        switch $0 {
+        case .WorldModel(let obj): return obj
+        default: return nil
+        }
+    }
+
+    let structs: [Struct] = objects.flatMap {
+        switch $0 {
+        case .StructModel(let obj): return obj
+        default: return nil
+        }
+    }
+
+    let measures: [Measure] = objects.flatMap {
+        switch $0 {
+        case .MeasureModel(let obj): return obj
+        default: return nil
+        }
+    }
+
+    let data: [(TagList, String)] = objects.flatMap {
+        switch $0 {
+        case .DataModel(let obj): return obj
+        default: return nil
+        }
+    }
+
+    return Model(concepts: concepts, actuators: actuators, measures: measures,
+                           worlds: worlds, structures: structs,
+                                   data: data)
+}
+
 

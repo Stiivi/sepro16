@@ -8,6 +8,9 @@
 
 /// Model container – holds all model entities needed for execution.
 ///
+
+import Utility
+
 public struct Model {
     // Core elements
     //
@@ -25,7 +28,6 @@ public struct Model {
     /// List of measures
     public var measures: [Measure]
 
-
     public init(concepts: [Concept]?=nil, actuators: [Actuator]?=nil,
         measures: [Measure]?=nil, worlds: [World]?=nil,
         structures: [Struct]?=nil, data: [(TagList, String)]?=nil) {
@@ -39,17 +41,17 @@ public struct Model {
 
     /// Get a structure by name
     public func getStruct(name:String) -> Struct? {
-        return self.structures.findFirst { $0.name == name }
+        return self.structures.pick { $0.name == name }
     }
 
     /// Get a concept by name
     public func getConcept(name:String) -> Concept? {
-        return self.concepts.findFirst { $0.name == name }
+        return self.concepts.pick { $0.name == name }
     }
 
     /// Get a world by name
     public func getWorld(name:String) -> World? {
-        return self.worlds.findFirst { $0.name == name }
+        return self.worlds.pick { $0.name == name }
     }
 
     /// Get data that match the `tags`. If `exact` is `true` then the data

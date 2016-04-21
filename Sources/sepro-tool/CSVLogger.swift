@@ -6,7 +6,7 @@
 //	Copyright © 2015 Stefan Urbanek. All rights reserved.
 //
 
-import SeproLang
+import Sepro
 import Foundation
 
 /**

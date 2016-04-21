@@ -68,7 +68,7 @@ public struct Instance {
 	public let initializers: [Initializer]
 	public let type: InstanceType
 
-	init(concept: Symbol, initializers: [Initializer], type: InstanceType) {
+	public init(concept: Symbol, initializers: [Initializer], type: InstanceType) {
 		self.concept = concept
 		self.initializers = initializers
 		self.type = type

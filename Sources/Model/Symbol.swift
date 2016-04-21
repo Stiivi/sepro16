@@ -5,7 +5,7 @@
 public typealias Symbol = String
 public typealias SymbolList = [Symbol]
 
-enum SymbolType: CustomStringConvertible {
+public enum SymbolType: CustomStringConvertible {
     case Any
     case Tag
     case Slot
@@ -16,7 +16,7 @@ enum SymbolType: CustomStringConvertible {
     case Notification
     case Trap
 
-    var description: String {
+    public var description: String {
         switch self {
         case .Any: return "any"
         case .Tag: return "tag"

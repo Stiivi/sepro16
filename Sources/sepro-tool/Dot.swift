@@ -7,7 +7,7 @@
 //
 
 import Foundation
-import SeproLang
+import Sepro
 
 public struct DotAttributes {
 	var attributes = [String:String]()

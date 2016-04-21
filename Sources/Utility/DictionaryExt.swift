@@ -7,7 +7,7 @@
 //
 
 extension Dictionary {
-    init(items:[(Key, Value)]) {
+    public init(items:[(Key, Value)]) {
         self.init()
 
         for (key, value) in items {
@@ -16,8 +16,8 @@ extension Dictionary {
     }
 
 	/// Update elements of the receiver with elements
-	mutating func update(other: Dictionary) {
-		for (key, value) in other { 
+	mutating func update(from: Dictionary) {
+		for (key, value) in from { 
 			self.updateValue(value, forKey: key) 
 		} 
 	}
