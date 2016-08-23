@@ -21,7 +21,7 @@ enum ObjectMember {
 
 
 // TODO: There must be a nicer way...
-func makeConcept(name: String, _ members: [ObjectMember]) -> Concept {
+func makeConcept(_ name: String, _ members: [ObjectMember]) -> Concept {
     let allTags: [TagList] = members.flatMap {
         switch $0 {
         case .Tags(let syms): return syms
@@ -43,11 +43,11 @@ func makeConcept(name: String, _ members: [ObjectMember]) -> Concept {
         }
     }
 
-    let tags = TagList(allTags.flatten())
-    let slots = [Symbol](allSlots.flatten())
+    let tags = TagList(allTags.joined())
+    let slots = [Symbol](allSlots.joined())
     let counters = CounterDict(items: allCounters)
 
-    return Concept(name: name, tags: tags, slots: slots, counters: counters)
+    return Concept(name: name, counters: counters, slots: slots,  tags: tags)
 }
 
 enum ModelObject {
@@ -69,22 +69,22 @@ enum GraphMember {
 
     func instances() -> [Instance]? {
         switch(self) {
-        case InstanceMember(let val): return val
+        case .InstanceMember(let val): return val
         default: return nil
         }
     }
 
     func bindings() -> [Binding]? {
         switch(self) {
-        case BindingMember(let val): return val
+        case .BindingMember(let val): return val
         default: return nil
         }
     }
 }
 
-func createGraph(members: [GraphMember]) -> InstanceGraph {
-    let bindings = members.flatMap { m in m.bindings() }.flatten()
-    let instances = members.flatMap { m in m.instances() }.flatten()
+func createGraph(_ members: [GraphMember]) -> InstanceGraph {
+    let bindings = members.flatMap { m in m.bindings() }.joined()
+    let instances = members.flatMap { m in m.instances() }.joined()
 
     let graph = InstanceGraph(instances: Array(instances), bindings: Array(bindings))
 
@@ -97,7 +97,7 @@ enum ASTInstanceType {
     case Default
 }
 
-func createInstance(symbol: Symbol, initializers:[Initializer]?, type:
+func createInstance(_ symbol: Symbol, initializers:[Initializer]?, type:
 	ASTInstanceType) -> Instance { 
 
 	let translatedType: InstanceType
@@ -114,7 +114,7 @@ func createInstance(symbol: Symbol, initializers:[Initializer]?, type:
 }
 
 
-func createModel(objects: [ModelObject]) -> Model {
+func createModel(_ objects: [ModelObject]) -> Model {
     let concepts: [Concept] = objects.flatMap {
         switch $0 {
         case .ConceptModel(let obj): return obj

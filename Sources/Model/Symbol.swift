@@ -6,7 +6,7 @@ public typealias Symbol = String
 public typealias SymbolList = [Symbol]
 
 public enum SymbolType: CustomStringConvertible {
-    case Any
+    case `Any`
     case Tag
     case Slot
     case Counter

@@ -14,6 +14,8 @@
 
 /// Parser Token
 
+import Foundation
+
 public enum TokenKind: Equatable, CustomStringConvertible {
     case Empty
 
@@ -36,13 +38,13 @@ public enum TokenKind: Equatable, CustomStringConvertible {
 
     public var description: String {
         switch self {
-        case Error: return "unknown"
-        case Empty: return "empty"
-        case Identifier: return "identifier"
-        case Keyword: return "keyword"
-        case IntLiteral: return "int"
-        case StringLiteral: return "string"
-        case Operator: return "operator"
+        case .Error: return "unknown"
+        case .Empty: return "empty"
+        case .Identifier: return "identifier"
+        case .Keyword: return "keyword"
+        case .IntLiteral: return "int"
+        case .StringLiteral: return "string"
+		case .Operator: return "operator"
         }
     }
 }
@@ -101,7 +103,7 @@ public func ==(left: Token, right: String) -> Bool {
     return left.text == right
 }
 
-extension Token: StringLiteralConvertible {
+extension Token: ExpressibleByStringLiteral {
     public typealias ExtendedGraphemeClusterLiteralType = String
     public typealias UnicodeScalarLiteralType = String
 
@@ -124,7 +126,7 @@ extension Token: StringLiteralConvertible {
     }
 }
 
-extension Token: NilLiteralConvertible {
+extension Token: ExpressibleByNilLiteral {
     public init(nilLiteral: ()) {
         self.kind = .Empty
         self.text = ""
@@ -132,7 +134,7 @@ extension Token: NilLiteralConvertible {
     }
 }
 
-extension Token: IntegerLiteralConvertible {
+extension Token: ExpressibleByIntegerLiteral {
     public typealias IntegerLiteralType = Int
 
     public init(integerLiteral value: IntegerLiteralType) {
@@ -145,10 +147,10 @@ extension Token: IntegerLiteralConvertible {
 // Character sets
 var IdentifierStart = LetterCharacterSet | "_"
 var IdentifierCharacters = AlphanumericCharacterSet | "_"
-var OperatorCharacters =  CharacterSet(string: ".,*=():")
+var OperatorCharacters =  CharacterSet(charactersIn: ".,*=():")
 
 // Single quote: Symbol, Triple quote: Docstring
-var CommentStart: Character = "#"
+var CommentStart: UnicodeScalar = "#"
 var Numbers = DecimalDigitCharacterSet
 
 
@@ -156,7 +158,7 @@ public struct TextPos: CustomStringConvertible {
     var line: Int = 1
     var column: Int = 1
 
-    mutating func advance(newLine:Bool=false) {
+    mutating func advance(_ newLine:Bool=false) {
         if newLine {
             self.column = 1
             self.line += 1
@@ -180,9 +182,9 @@ public class Lexer {
     let keywords: [String]
 
     let source: String
-    let characters: String.CharacterView
-    var index: String.CharacterView.Index
-    var currentChar: Character? = nil
+    let characters: String.UnicodeScalarView
+    var index: String.UnicodeScalarView.Index
+    var currentChar: UnicodeScalar? = nil
 
     public var pos: TextPos
     var error: String? = nil
@@ -198,7 +200,7 @@ public class Lexer {
      */
     public init(source:String, keywords: [String]?=nil) {
         self.source = source
-        self.characters = source.characters
+        self.characters = source.unicodeScalars
         self.index = self.characters.startIndex
         if source.isEmpty {
             self.currentChar = nil
@@ -237,9 +239,10 @@ public class Lexer {
     /**
      Advance to the next character and set current character.
      */
-    func advance() -> Character! {
+	@discardableResult
+    func advance() -> UnicodeScalar! {
         if self.index < self.characters.endIndex {
-            self.index = self.index.successor()
+            self.index = self.characters.index(after: self.index)
 
             if self.index >= self.characters.endIndex {
                 self.currentChar = nil
@@ -258,7 +261,7 @@ public class Lexer {
     }
 
     /** Accept characters that are equal to the `char` character */
-    private func accept(c: Character) -> Bool {
+    fileprivate func accept(_ c: UnicodeScalar) -> Bool {
         if self.currentChar == c {
             self.advance()
             return true
@@ -269,7 +272,7 @@ public class Lexer {
     }
 
     /// Accept characters from a character set `set`
-    private func accept(set: CharacterSet) -> Bool {
+    fileprivate func accept(_ set: CharacterSet) -> Bool {
         if self.currentChar != nil && set ~= self.currentChar! {
             self.advance()
             return true
@@ -279,7 +282,7 @@ public class Lexer {
         }
     }
 
-    private func scanWhile(set: CharacterSet) {
+    private func scanWhile(_ set: CharacterSet) {
         while(self.currentChar != nil) {
             if !(set ~= self.currentChar!) {
                 break
@@ -288,7 +291,8 @@ public class Lexer {
         }
     }
 
-    private func scanUntil(set: CharacterSet) -> Bool {
+	@discardableResult
+    private func scanUntil(_ set: CharacterSet) -> Bool {
         while(self.currentChar != nil) {
             if set ~= self.currentChar! {
                 return true
@@ -298,7 +302,7 @@ public class Lexer {
         return false
     }
 
-    private func scanUntil(char: Character, allowNewline: Bool=true) -> Bool {
+    private func scanUntil(_ char: UnicodeScalar, allowNewline: Bool=true) -> Bool {
         while(self.currentChar != nil) {
             if self.currentChar! == char {
                 return true
@@ -330,11 +334,12 @@ public class Lexer {
         return self.currentChar == nil
     }
 
-    func tokenFrom(start: String.CharacterView.Index, to: String.CharacterView.Index?=nil) -> String {
-        let end: String.CharacterView.Index
+    func tokenFrom(_ start: String.UnicodeScalarView.Index,
+			to: String.UnicodeScalarView.Index?=nil) -> String {
+        let end: String.UnicodeScalarView.Index
         if to == nil {
             if self.index > self.characters.startIndex {
-                end = max(self.index.predecessor(), start)
+                end = max(self.characters.index(before: index), start)
             }
             else {
                 end = max(self.index, start)
@@ -343,7 +348,7 @@ public class Lexer {
         else {
             end = to!
         }
-        return self.source.substring(with:start...end)
+        return String(self.source.unicodeScalars[start..<end])
     }
 
     /**
@@ -432,7 +437,7 @@ public class Lexer {
             else {
                 start = self.index
                 while(self.scanUntil("\"")){
-                    end = self.index.predecessor()
+                end = self.characters.index(before:index)
                     self.advance()
                     if self.accept("\"") && self.accept("\"") {
                         return (.StringLiteral, self.tokenFrom(start, to: end))
@@ -443,7 +448,7 @@ public class Lexer {
         else {
             // Parse normal string here
             while(!self.atEnd()) {
-                end = self.index.predecessor()
+                end = self.characters.index(before:index)
                 if self.accept("\\") {
                     self.advance()
                 }
@@ -459,13 +464,12 @@ public class Lexer {
     }
 }
 
-infix operator ~ { }
-
+infix operator ~
 
 public func ~=(left:CharacterSet, lexer: Lexer) -> Bool {
     return lexer.accept(left)
 }
 
-public func ~=(left:Character, lexer: Lexer) -> Bool {
+public func ~=(left:UnicodeScalar, lexer: Lexer) -> Bool {
     return lexer.accept(left)
 }

@@ -1,6 +1,7 @@
 import PackageDescription
 
 let package = Package(
+    name: "Sepro",
     targets: [
         Target(name: "Utility"),
         Target(name: "Model",
@@ -20,5 +21,3 @@ let package = Package(
         .Package(url: "../ParserCombinator", majorVersion:0)
     ]
 )
-
-

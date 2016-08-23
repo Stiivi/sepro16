@@ -8,7 +8,7 @@
 
 import Model
 
-public enum SyntaxError: ErrorProtocol {
+public enum SyntaxError: Error {
     case ParserError(String)
 }
 

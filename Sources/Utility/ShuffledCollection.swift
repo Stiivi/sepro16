@@ -17,7 +17,8 @@ Wraps an array and presents it in a shuffled way.
 - Complexity: requires O(n) memory and time to store and generate shuffled index
 */
 
-public struct ShuffledCollection<Base:Collection where Base.Index == Int>: Collection {
+public struct ShuffledCollection
+		<Base:Collection where Base.IndexDistance == Int, Base.Index == Int>: Collection {
     public typealias Iterator = AnyIterator<Base.Iterator.Element>
     public typealias Index = Int
 
@@ -45,10 +46,13 @@ public struct ShuffledCollection<Base:Collection where Base.Index == Int>: Colle
 
     }
 
-    public var count: ShuffledCollection.Index.Distance {
+    public var count: ShuffledCollection.IndexDistance {
         return self.base.count
     }
 
+	public func index(after i: Int) -> Int {
+		return self.base.index(after: i)
+	}
     public var startIndex : Int { return base.startIndex }
     public var endIndex : Int { return base.endIndex }
 

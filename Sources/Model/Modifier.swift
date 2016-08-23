@@ -49,7 +49,7 @@ public struct ModifierTarget: CustomStringConvertible, Equatable {
 
     public var description: String {
         if slot == nil {
-            return String(type)
+            return String(describing:type)
         }
         else {
             switch self.type {

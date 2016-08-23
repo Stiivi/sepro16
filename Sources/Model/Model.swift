@@ -62,7 +62,7 @@ public struct Model {
             return self.data.filter { $0.0 == tags }.map { $0.1 }
         }
         else {
-            return self.data.filter { tags.isSubsetOf($0.0) }.map { $0.1 }
+            return self.data.filter { tags.isSubset(of:$0.0) }.map { $0.1 }
         }
     }
 

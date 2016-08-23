@@ -16,20 +16,20 @@ public enum Selector: CustomStringConvertible {
 
     public var description: String {
         switch self {
-        case All: return "ALL"
-        case Filter(let p):
-            return p.map({ String($0) }).joined(separator:" AND ")
-        case Root(let p):
-            return "ROOT " + p.map({ String($0) }).joined(separator:" AND ")
+        case .All: return "ALL"
+        case .Filter(let p):
+            return p.map({ String(describing:$0) }).joined(separator:" AND ")
+        case .Root(let p):
+            return "ROOT " + p.map({ String(describing:$0) }).joined(separator:" AND ")
         }
     }
 
     public var predicates: [Predicate] {
         switch self {
-        case All: return []
-        case Filter(let p):
+        case .All: return []
+        case .Filter(let p):
             return p
-        case Root(let p):
+        case .Root(let p):
             return p
 
         }
@@ -114,7 +114,7 @@ extension Actuator: CustomStringConvertible {
             desc += " ON " + self.combinedSelector!.description
         }
 
-        desc += " DO " + self.modifiers.map({String($0)}).joined(separator:" ")
+        desc += " DO " + self.modifiers.map({String(describing:$0)}).joined(separator:" ")
 
         if self.traps != nil {
             desc += "TRAP " + self.traps!.joined(separator:" ")

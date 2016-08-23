@@ -14,15 +14,15 @@ extension Token: EmptyCheckable {
 // Terminals
 // =======================================================================
 
-func token(kind: TokenKind, _ expected: String) -> Parser<Token, Token> {
+func token(_ kind: TokenKind, _ expected: String) -> Parser<Token, Token> {
     return satisfy(expected) { token in token == kind }
 }
 
-func tokenValue(kind: TokenKind, _ value: String) -> Parser<Token, Token> {
+func tokenValue(_ kind: TokenKind, _ value: String) -> Parser<Token, Token> {
     return satisfy(value) { token in token == Token(kind, value) }
 }
 
-let symbol  = { name  in token(.Identifier, name)  => { t in Symbol(t.text) } }
+let symbol  = { name  in token(.Identifier, name)  => { t in Symbol(describing:t.text) } }
 let number  = { label in token(.IntLiteral, label) => { t in Int(t.text)! } }
 let text    = { label in token(.StringLiteral, label) => { t in t.text } }
 let keyword = { kw    in tokenValue(.Keyword, kw)  => { t in t.text } }
@@ -30,7 +30,7 @@ let op      = { o     in tokenValue(.Operator, o) }
 
 // TODO: This is just to type-hint the following rule. Otherwise Swift does not
 // know that the `type` is of `SymbolType`
-func typeDesc(type: SymbolType) -> String {
+func typeDesc(_ type: SymbolType) -> String {
     return type.description
 }
 
@@ -52,7 +52,7 @@ let concept_member  =
 
 
 let concept =
-        §"CONCEPT" *> %"name" + many(concept_member) => { (name, members) in makeConcept(name, members) }
+        §"CONCEPT" *> (%"name" + many(concept_member)) => { makeConcept($0.0, $0.1) }
 
 
 let predicate_type =
@@ -86,12 +86,12 @@ let selector =
 // Modifier
 // ------------------------------------------------------------------------
 
-let target_type =
+let target_type: Parser<Token, TargetType> =
            §"THIS"  *> succeed(TargetType.This)
         || §"OTHER" *> succeed(TargetType.Other)
         || §"ROOT"  *> succeed(TargetType.Root)
 
-let modifier_target =
+let modifier_target: Parser<Token, ModifierTarget> =
         target_type + option(op(".") *> %"slot") => { target in ModifierTarget(target.0, target.1) }
 		|| %"slot"                               => { symbol in ModifierTarget(TargetType.This, symbol)}
 
@@ -108,7 +108,7 @@ let modifier_action =
         || §"BIND"    *> %"slot" + (§"TO" *> bind_target) => { ast in ModifierAction.Bind(ast.0, ast.1)}
 //        || fail("Expected modifier action")
 
-let modifier =
+let modifier: Parser<Token, Modifier> =
         ((§"IN" *> nofail(modifier_target)) || succeed(ModifierTarget(.This) ))
             + modifier_action => { mod in Modifier(target: mod.0, action: mod.1) }
 

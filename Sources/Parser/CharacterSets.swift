@@ -8,83 +8,26 @@
 
 import Foundation
 
-public struct CharacterSet: Hashable {
-    let characterSet: NSCharacterSet
-
-    public init(_ sets: NSCharacterSet...) {
-        let combined = NSMutableCharacterSet()
-        for set in sets {
-            combined.formUnion(with:set)
-        }
-        self.characterSet = combined
-    }
-
-    public init(string: String) {
-        self.init(NSCharacterSet(charactersIn: string))
-    }
-
-    public func matches(c: Character) -> Bool {
-        let utf = String(c).utf16
-        return self.characterSet.characterIsMember(utf.first!)
-    }
-
-    public func union(set: CharacterSet) -> CharacterSet {
-        return CharacterSet(self.characterSet, set.characterSet)
-    }
-
-    /// Form an union with characters from string `str`
-    public func union(str: String) -> CharacterSet {
-        return CharacterSet(self.characterSet, NSCharacterSet(charactersIn: str))
-    }
-
-    /// - Returns: `true` if the other character set has common characters with
-    /// the receiver
-    public func intersectsWith(other: CharacterSet) -> Bool {
-        let set = NSMutableCharacterSet()
-        set.formUnion(with:self.characterSet)
-        set.formIntersection(with:other.characterSet)
-        return !set.isEqual(NSCharacterSet())
-    }
-
-    /// - Returns: a set with characters as the receiver minus characters in the
-    /// string `str`
-    public func subtract(str: String) -> CharacterSet {
-        let set = NSMutableCharacterSet(charactersIn: str)
-        set.removeCharacters(in:str)
-        return CharacterSet(set)
-    }
-
-    public var hashValue: Int {
-        return self.characterSet.hashValue
-    }
-
-}
-
-public func ==(left: CharacterSet, right:CharacterSet) -> Bool {
-    return left.characterSet.isEqual(right.characterSet)
-}
-
-public func ~=(left:CharacterSet, right: Character) -> Bool {
-    return left.matches(right)
+public func ~=(left:CharacterSet, right: UnicodeScalar) -> Bool {
+    return left.contains(right)
 }
 
 
-let WhitespaceCharacterSet = CharacterSet(NSCharacterSet.whitespace())
-                                | CharacterSet(NSCharacterSet.newline())
-let NewLineCharacterSet = CharacterSet(NSCharacterSet.newline())
-let DecimalDigitCharacterSet = CharacterSet(NSCharacterSet.decimalDigit())
-let LetterCharacterSet = CharacterSet(NSCharacterSet.letter())
-let SymbolCharacterSet = CharacterSet(NSCharacterSet.symbol())
-let AlphanumericCharacterSet = CharacterSet(NSCharacterSet.alphanumeric())
+let WhitespaceCharacterSet = CharacterSet.whitespaces | CharacterSet.newlines
+let NewLineCharacterSet = CharacterSet.newlines
+let DecimalDigitCharacterSet = CharacterSet.decimalDigits
+let LetterCharacterSet = CharacterSet.letters
+let SymbolCharacterSet = CharacterSet.symbols
+let AlphanumericCharacterSet = CharacterSet.alphanumerics
 
 func |(left: CharacterSet, right: CharacterSet) -> CharacterSet {
     return left.union(right)
 }
 
 func |(left: CharacterSet, right: String) -> CharacterSet {
-    return left.union(right)
+    return left.union(CharacterSet(charactersIn:right))
 }
 
 func -(left: CharacterSet, right: String) -> CharacterSet {
-    return left.subtract(right)
+    return left.subtracting(CharacterSet(charactersIn: right))
 }
