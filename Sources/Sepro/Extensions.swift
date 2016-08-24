@@ -39,7 +39,7 @@ public class CountedSet<T: Hashable>: Sequence {
         self.objects.removeAll()
     }
 
-    public func add(item: T)
+    public func add(_ item: T)
     {
         if let count = objects[item] {
             objects[item] = count + 1
@@ -48,7 +48,7 @@ public class CountedSet<T: Hashable>: Sequence {
         }
     }
 
-    public func remove(item: T) {
+    public func remove(_ item: T) {
         if let count = objects[item]
         {
             if (count > 1) {
@@ -86,44 +86,5 @@ public class CountedSet<T: Hashable>: Sequence {
 /// Return a random 32-bit integer
 func randomInt(upperBound:Int) -> Int {
     return Int(arc4random_uniform(UInt32(upperBound)))
-}
-
-// MARK: CLib basics (no Cocoa)
-
-// Few very basic methods, since we don't want to use Cocoa here
-
-public func isspace(char:Character?) -> Bool{
-    if char == nil {
-        return false
-    }
-    else {
-        return " \t\n\r".characters.contains(char!)
-    }
-}
-public func isnumber(char:Character?) -> Bool{
-    let numbers = Character("0")...Character("9")
-    if char == nil {
-        return false
-    }
-    else {
-        return numbers.contains(char!)
-    }
-}
-public func isalpha(char:Character?) -> Bool{
-    let lower = Character("A")...Character("Z")
-    let upper = Character("a")...Character("z")
-    if char == nil {
-        return false
-    }
-    else {
-        return lower.contains(char!) || upper.contains(char!)
-    }
-}
-public func isalnum(char:Character?) -> Bool{
-    return isnumber(char) || isalpha(char)
-}
-
-public func isidentifier(char:Character?) -> Bool{
-    return isnumber(char) || isalpha(char) || char == "_"
 }
 

@@ -6,6 +6,7 @@
 //  Copyright © 2015 Stefan Urbanek. All rights reserved.
 //
 
+import Model
 
 /** References an object in the store. */
 public typealias ObjectRef = Int

@@ -6,6 +6,8 @@
 //  Copyright © 2015 Stefan Urbanek. All rights reserved.
 //
 
+import Model
+
 public typealias ProbeRecord = [Symbol:Int]
 
 public protocol Logger {

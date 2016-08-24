@@ -6,6 +6,8 @@
 //	Copyright © 2015 Stefan Urbanek. All rights reserved.
 //
 
+import Model
+
 public enum Ordering {
 	/// As containerd in the container, might differ between requests
 	case Natural
@@ -132,9 +134,9 @@ public class FilteredSelectionIterator: IteratorProtocol {
 	public func next() -> Element? {
 		// TODO: we resolve ref but then we pass ref to resolve it again
 		while let ref = self.iterator.next() {
-			if let object = self.container[ref]
-				where self.container.predicatesMatch(self.predicates, ref: ref){
-					return object
+			if let object = self.container[ref],
+				self.container.predicatesMatch(predicates:self.predicates, ref: ref){
+				return object
 			}
 		}
 		return nil

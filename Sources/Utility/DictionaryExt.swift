@@ -16,7 +16,7 @@ extension Dictionary {
     }
 
 	/// Update elements of the receiver with elements
-	mutating func update(from: Dictionary) {
+	public mutating func update(from: Dictionary) {
 		for (key, value) in from { 
 			self.updateValue(value, forKey: key) 
 		} 

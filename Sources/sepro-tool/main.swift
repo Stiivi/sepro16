@@ -8,8 +8,10 @@
 
 import Foundation
 import Sepro
+import Model
+import Parser
 
-let processInfo = NSProcessInfo.processInfo()
+let processInfo = ProcessInfo.processInfo
 
 func usage() {
     print("Usage: \(processInfo.processName) MODEL STEPS")
@@ -34,7 +36,7 @@ func main() {
     print("Loading model from \(modelFile)...")
 
     do {
-        source = try String(contentsOfFile: modelFile, encoding:NSUTF8StringEncoding)
+        source = try String(contentsOfFile: modelFile, encoding:String.Encoding.utf8)
     } catch {
         print("Error: Unable to read model.")
 		exit(1)
@@ -43,7 +45,7 @@ func main() {
     print("Compiling model...")
     let model: Model
     do {
-        model = try parseModel(source)
+        model = try parseModel(source: source)
     } catch let SyntaxError.ParserError(e) {
         print("Error compiling model: \(e)")
 		exit(1)
@@ -62,7 +64,7 @@ func main() {
     engine.delegate = CLIDelegate(path:path)
     
     do {
-        try engine.initialize("main")
+        try engine.initialize(worldName: "main")
     }
     catch {
         print("Error: Can't initialize engine")
@@ -71,7 +73,7 @@ func main() {
 
 
     engine.debugDump()
-    engine.run(stepCount)
+    engine.run(steps: stepCount)
     engine.debugDump()
 
 }

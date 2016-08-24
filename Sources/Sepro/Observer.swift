@@ -6,6 +6,8 @@
 //  Copyright © 2015 Stefan Urbanek. All rights reserved.
 //
 
+import Model
+
 public protocol Observer {
     // TODO: we should not receive whole engine, just limited access
     func observeNotification(notification: Symbol)

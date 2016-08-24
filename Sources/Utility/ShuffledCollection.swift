@@ -17,8 +17,9 @@ Wraps an array and presents it in a shuffled way.
 - Complexity: requires O(n) memory and time to store and generate shuffled index
 */
 
-public struct ShuffledCollection
-		<Base:Collection where Base.IndexDistance == Int, Base.Index == Int>: Collection {
+public struct ShuffledCollection <Base:Collection>: Collection
+	where Base.IndexDistance == Int, Base.Index == Int
+{
     public typealias Iterator = AnyIterator<Base.Iterator.Element>
     public typealias Index = Int
 

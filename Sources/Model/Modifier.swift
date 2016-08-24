@@ -28,7 +28,7 @@ public struct ModifierTarget: CustomStringConvertible, Equatable {
     public let type: TargetType
     public let slot: Symbol?
 
-    init(_ type: TargetType,_ slot: Symbol?=nil) {
+    public init(_ type: TargetType,_ slot: Symbol?=nil) {
         self.type = type
         self.slot = slot
     }
@@ -77,8 +77,13 @@ Modifiers:
 */
 
 public struct Modifier: CustomStringConvertible {
-    let target: ModifierTarget
-    let action: ModifierAction
+    public let target: ModifierTarget
+    public let action: ModifierAction
+
+	public init(target: ModifierTarget, action: ModifierAction) {
+		self.target = target
+		self.action = action
+	}
 
     public var description: String {
         if self.target.type == TargetType.This && self.target.slot == nil {

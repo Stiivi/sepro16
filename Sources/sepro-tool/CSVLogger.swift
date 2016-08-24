@@ -7,6 +7,7 @@
 //
 
 import Sepro
+import Model
 import Foundation
 
 /**
@@ -14,25 +15,22 @@ Simple CSV writer. Does not do quoting.
 */
 public class CSVWriter {
 	let path:String
-	let file: NSFileHandle
+	let file: FileHandle
 	var recordSeparator = ","
 	var lineSeparator = "\n"
 
 	public init(path: String) {
-		let manager = NSFileManager.defaultManager()
+		let manager = FileManager.default
 
 		self.path = path
 
 		manager.createFile(atPath:path, contents:nil, attributes:nil)
-		self.file = NSFileHandle.init(forWritingAtPath: self.path)!
+		self.file = FileHandle.init(forWritingAtPath: self.path)!
 	}
 
 	public func writeRow(values: [String]) {
-		let strings = values.map() { value in
-			value == nil ? "" : String(value)
-		}
-		let line = strings.joined(separator:self.recordSeparator) + self.lineSeparator
-		self.file.write(line.data(usingEncoding:NSUTF8StringEncoding)!)
+		let line = values.joined(separator:self.recordSeparator) + self.lineSeparator
+		self.file.write(line.data(using:String.Encoding.utf8)!)
 	}
 
 	public func close() {
@@ -54,7 +52,7 @@ public class CSVLogger: Logger {
 		self.measures = [Measure]()
 		self.root = path
 
-		let manager = NSFileManager.defaultManager()
+		let manager = FileManager.default
 
 		do {
 			try manager.createDirectory(atPath: self.root, withIntermediateDirectories: true, attributes: nil)
@@ -77,7 +75,7 @@ public class CSVLogger: Logger {
 		var names = self.measures.map { measure in measure.name }
 		names.insert("step", at: 0)
 
-		self.measureWriter.writeRow(names)
+		self.measureWriter.writeRow(values:names)
 	}
 
 	public func loggingDidEnd(steps: Int) {
@@ -99,11 +97,11 @@ public class CSVLogger: Logger {
 		}
 
 		row.insert(String(step), at: 0)
-		self.measureWriter.writeRow(row)
+		self.measureWriter.writeRow(values:row)
 	}
 
 	public func logNotification(step: Int, notification: Symbol) {
-		let row = [String(step), String(notification)]
-		self.notificationWriter.writeRow(row)
+		let row = [String(describing:step), String(describing:notification)]
+		self.notificationWriter.writeRow(values:row)
 	}
 }

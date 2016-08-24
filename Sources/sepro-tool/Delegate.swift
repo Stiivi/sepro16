@@ -6,6 +6,7 @@
 //	Copyright © 2015 Stefan Urbanek. All rights reserved.
 //
 import Sepro
+import Model
 
 public class CLIDelegate: EngineDelegate {
 	public let path: String
@@ -33,15 +34,15 @@ public class CLIDelegate: EngineDelegate {
 	}
 
 	public func willRun(engine: Engine) {
-		writeDot(dotFileName(engine.stepCount), model: engine.model, selection: engine.container.select())
+		writeDot(path: dotFileName(set: engine.stepCount), model: engine.model, selection: engine.container.select())
 	}
 
 	public func didRun(engine: Engine) {
-		writeDot(dotFileName(engine.stepCount), model: engine.model, selection: engine.container.select())
+		writeDot(path: dotFileName(set: engine.stepCount), model: engine.model, selection: engine.container.select())
 	}
 
 	public func willStep(engine: Engine) {
-		writeDot(dotFileName(engine.stepCount), model: engine.model, selection: engine.container.select())
+		writeDot(path: dotFileName(set: engine.stepCount), model: engine.model, selection: engine.container.select())
 	}
 
 	public func didStep(engine: Engine) {

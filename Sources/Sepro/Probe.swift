@@ -6,6 +6,8 @@
 //  Copyright © 2015 Stefan Urbanek. All rights reserved.
 //
 
+import Model
+
 public protocol Probe {
     var value: Int { get }
     func probe(object:Object)

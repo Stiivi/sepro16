@@ -8,6 +8,7 @@
 
 import Foundation
 import Sepro
+import Model
 
 public struct DotAttributes {
 	var attributes = [String:String]()
@@ -64,18 +65,18 @@ public class DotWriter{
 	public var footer = "}"
 	public var fontName = "Helvetica"
 
-	let file: NSFileHandle
+	let file: FileHandle
 	var line: String!
 	let model: Model
 
 	init(path: String, model: Model) {
-		let manager = NSFileManager.defaultManager()
+		let manager = FileManager.default
 		self.path = path
 		self.model = model
 
 		manager.createFile(atPath: path, contents:nil, attributes:nil)
 
-		self.file = NSFileHandle.init(forWritingAtPath: path)!
+		self.file = FileHandle.init(forWritingAtPath: path)!
 		self.writeLine(header)
 	}
 
@@ -83,16 +84,16 @@ public class DotWriter{
 		self.writeLine(footer)
 	}
 
-	func writeLine(str: String) {
+	func writeLine(_ str: String) {
 		let line = str + "\n"
-		if let data = line.data(usingEncoding: NSUTF8StringEncoding) {
+		if let data = line.data(using: String.Encoding.utf8) {
 			file.write(data)
 		}
 	}
 
 	/// Write object node and it's relationships from slots. Nodes
 	/// are labelled with object ids.
-	func writeObject(obj: Object) {
+	func writeObject(_ obj: Object) {
 		var line: String
 		let links: [String]
 		var linkAttrs = DotAttributes()
@@ -109,7 +110,7 @@ public class DotWriter{
 		let counters = obj.counters.map {k, v in return "\(k)=\(v)"}
 
 		// Fromatting from data
-		let allData = obj.tags.flatMap { tag in self.model.getData(Set([tag, "dot_attributes"])) }
+		let allData = obj.tags.flatMap { tag in self.model.getData(tags: Set([tag, "dot_attributes"])) }
 
 		var data = allData.joined(separator:",")
 		if data != "" {

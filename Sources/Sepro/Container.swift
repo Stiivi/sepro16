@@ -6,6 +6,8 @@
 //	Copyright © 2015 Stefan Urbanek. All rights reserved.
 //
 
+import Model
+
 /// Container representing the state of the world.
 ///
 public final class Container {
@@ -38,7 +40,7 @@ public final class Container {
 	/// - Returns: Object referenced by reference `ref` or `nil` if no such object
 	///   exists.
 	///
-	public func getObject(ref:ObjectRef) -> Object? {
+	public func getObject(_ ref:ObjectRef) -> Object? {
 		return self.contents[ref]
 	}
 
@@ -70,7 +72,7 @@ public final class Container {
 	///
 	public func predicateMatches(predicate:Predicate, ref: ObjectRef) -> Bool {
 		if let object = self.contents[ref] {
-			return self.predicateMatches(predicate, object: object)
+			return self.predicateMatches(predicate: predicate, object: object)
 		}
 		else {
 			return false
@@ -94,14 +96,15 @@ public final class Container {
 		else {
 			target = object
 		}
-		return predicate.matchesObject(target)
+		return predicate.matchesObject(object: target)
 	}
 
+	// TODO: weird name
 	public func predicatesMatch(predicates: CompoundPredicate, ref: ObjectRef) -> Bool {
 		if let object = self.contents[ref] {
 			return predicates.all {
 				predicate in
-				self.predicateMatches(predicate, object: object)
+				self.predicateMatches(predicate: predicate, object: object)
 			}
 		}
 		else {
@@ -110,7 +113,7 @@ public final class Container {
 	}
 
 	/// Creates a selection representing objects described by selecetor `Selector`
-	public func select(selector: Selector=Selector.All) -> ObjectSelection {
+	public func select(_ selector: Selector=Selector.All) -> ObjectSelection {
 		switch selector {
 		case .All:
 			return ObjectSelection(container: self)

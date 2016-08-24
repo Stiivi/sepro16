@@ -41,17 +41,17 @@ public struct Model {
 
     /// Get a structure by name
     public func getStruct(name:String) -> Struct? {
-        return self.structures.pick { $0.name == name }
+        return self.structures.first { $0.name == name }
     }
 
     /// Get a concept by name
     public func getConcept(name:String) -> Concept? {
-        return self.concepts.pick { $0.name == name }
+        return self.concepts.first { $0.name == name }
     }
 
     /// Get a world by name
     public func getWorld(name:String) -> World? {
-        return self.worlds.pick { $0.name == name }
+        return self.worlds.first { $0.name == name }
     }
 
     /// Get data that match the `tags`. If `exact` is `true` then the data
