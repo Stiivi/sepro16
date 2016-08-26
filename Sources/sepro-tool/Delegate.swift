@@ -5,7 +5,7 @@
 //	Created by Stefan Urbanek on 07/11/15.
 //	Copyright © 2015 Stefan Urbanek. All rights reserved.
 //
-import Sepro
+import Engine
 import Model
 
 public class CLIDelegate: EngineDelegate {

@@ -13,13 +13,6 @@ public func ~=(left:CharacterSet, right: UnicodeScalar) -> Bool {
 }
 
 
-let WhitespaceCharacterSet = CharacterSet.whitespaces | CharacterSet.newlines
-let NewLineCharacterSet = CharacterSet.newlines
-let DecimalDigitCharacterSet = CharacterSet.decimalDigits
-let LetterCharacterSet = CharacterSet.letters
-let SymbolCharacterSet = CharacterSet.symbols
-let AlphanumericCharacterSet = CharacterSet.alphanumerics
-
 func |(left: CharacterSet, right: CharacterSet) -> CharacterSet {
     return left.union(right)
 }

@@ -64,21 +64,21 @@ public func ==(left:TokenKind, right:TokenKind) -> Bool {
 }
 
 public struct Token: CustomStringConvertible, CustomDebugStringConvertible, Equatable  {
-    public let pos: TextPos
+    public let pos: TextPosition
     public let kind: TokenKind
     public let text: String
 
-    public init(_ kind: TokenKind, _ text: String="", _ pos: TextPos?=nil) {
+    public init(_ kind: TokenKind, _ text: String="", _ pos: TextPosition?=nil) {
         self.kind = kind
         self.text = text
-        self.pos = pos ?? TextPos()
+        self.pos = pos ?? TextPosition()
     }
 
     public var description: String {
         let str: String
         switch self.kind {
         case .Empty: str = "(empty)"
-        case .StringLiteral: str = "\"\(self.text)\""
+        case .StringLiteral: str = "'\(self.text)'"
         case .Error(let message): str = "\(message) around '\(self.text)'"
         default:
             str = self.text
@@ -110,19 +110,19 @@ extension Token: ExpressibleByStringLiteral {
     public init(stringLiteral value: StringLiteralType){
         self.kind = .Keyword
         self.text = value
-        self.pos = TextPos()
+        self.pos = TextPosition()
     }
 
     public init(extendedGraphemeClusterLiteral value: ExtendedGraphemeClusterLiteralType){
         self.kind = .Keyword
         self.text = value
-        self.pos = TextPos()
+        self.pos = TextPosition()
     }
 
     public init(unicodeScalarLiteral value: UnicodeScalarLiteralType){
         self.kind = .Keyword
         self.text = value
-        self.pos = TextPos()
+        self.pos = TextPosition()
     }
 }
 
@@ -130,7 +130,7 @@ extension Token: ExpressibleByNilLiteral {
     public init(nilLiteral: ()) {
         self.kind = .Empty
         self.text = ""
-        self.pos = TextPos()
+        self.pos = TextPosition()
     }
 }
 
@@ -140,11 +140,18 @@ extension Token: ExpressibleByIntegerLiteral {
     public init(integerLiteral value: IntegerLiteralType) {
         self.kind = .IntLiteral
         self.text = String(value)
-        self.pos = TextPos()
+        self.pos = TextPosition()
     }
 }
 
 // Character sets
+let WhitespaceCharacterSet = CharacterSet.whitespaces | CharacterSet.newlines
+let NewLineCharacterSet = CharacterSet.newlines
+let DecimalDigitCharacterSet = CharacterSet.decimalDigits
+let LetterCharacterSet = CharacterSet.letters
+let SymbolCharacterSet = CharacterSet.symbols
+let AlphanumericCharacterSet = CharacterSet.alphanumerics
+
 var IdentifierStart = LetterCharacterSet | "_"
 var IdentifierCharacters = AlphanumericCharacterSet | "_"
 var OperatorCharacters =  CharacterSet(charactersIn: ".,*=():")
@@ -154,18 +161,22 @@ var CommentStart: UnicodeScalar = "#"
 var Numbers = DecimalDigitCharacterSet
 
 
-public struct TextPos: CustomStringConvertible {
+
+/// Line and column text position. Starts at line 1 and column 1.
+public struct TextPosition: CustomStringConvertible {
     var line: Int = 1
     var column: Int = 1
 
-    mutating func advance(_ newLine:Bool=false) {
-        if newLine {
-            self.column = 1
-            self.line += 1
-        }
-        else {
+	/// Advances the text position. If the character is a new line character,
+	/// then line position is increased and column position is reset to 1. 
+    mutating func advance(_ char: UnicodeScalar?) {
+		if let char = char {
+			if NewLineCharacterSet.contains(char) {
+				self.column = 1
+				self.line += 1
+			}
             self.column += 1
-        }
+		}
     }
 
     public var description: String {
@@ -179,14 +190,16 @@ public struct TextPos: CustomStringConvertible {
  */
 
 public class Lexer {
+	typealias Index = String.UnicodeScalarView.Index
+
     let keywords: [String]
 
     let source: String
     let characters: String.UnicodeScalarView
-    var index: String.UnicodeScalarView.Index
+    var index: Index
     var currentChar: UnicodeScalar? = nil
 
-    public var pos: TextPos
+    public var position: TextPosition
     var error: String? = nil
     public var currentToken: Token
 
@@ -200,21 +213,21 @@ public class Lexer {
      */
     public init(source:String, keywords: [String]?=nil) {
         self.source = source
-        self.characters = source.unicodeScalars
-        self.index = self.characters.startIndex
+
+        characters = source.unicodeScalars
+        index = characters.startIndex
+
         if source.isEmpty {
-            self.currentChar = nil
+            currentChar = nil
         }
         else {
-            self.currentChar = self.characters[self.index]
+            currentChar = characters[index]
         }
 
-        self.pos = TextPos()
+        position = TextPosition()
         self.keywords = keywords ?? []
 
-        self.currentToken = nil
-
-        // Move to the first token
+        currentToken = nil
     }
 
     public func parse() -> [Token]{
@@ -240,24 +253,24 @@ public class Lexer {
      Advance to the next character and set current character.
      */
 	@discardableResult
-    func advance() -> UnicodeScalar! {
-        if self.index < self.characters.endIndex {
-            self.index = self.characters.index(after: self.index)
+    func advance() {
+		// "abcd"
+		//     ^---
 
-            if self.index >= self.characters.endIndex {
-                self.currentChar = nil
-            }
-            else {
-                self.currentChar = self.characters[self.index]
+		index = characters.index(index, offsetBy: 1)
+		if index < characters.endIndex {
+			currentChar = characters[index]
+			position.advance(currentChar)
+		}
+		else {
+			currentChar = nil
+		}
+    }
 
-                self.pos.advance(NewLineCharacterSet ~= self.currentChar!)
-            }
-        }
-        else {
-            self.currentChar = nil
-        }
+    func tokenFrom(_ start: Index, to: Index?=nil) -> String {
+        let end = to ?? index
 
-        return self.currentChar
+        return String(self.source.unicodeScalars[start..<end])
     }
 
     /** Accept characters that are equal to the `char` character */
@@ -334,23 +347,6 @@ public class Lexer {
         return self.currentChar == nil
     }
 
-    func tokenFrom(_ start: String.UnicodeScalarView.Index,
-			to: String.UnicodeScalarView.Index?=nil) -> String {
-        let end: String.UnicodeScalarView.Index
-        if to == nil {
-            if self.index > self.characters.startIndex {
-                end = max(self.characters.index(before: index), start)
-            }
-            else {
-                end = max(self.index, start)
-            }
-        }
-        else {
-            end = to!
-        }
-        return String(self.source.unicodeScalars[start..<end])
-    }
-
     /**
      Parse next token.
 
@@ -367,7 +363,7 @@ public class Lexer {
         }
 
         let start = self.index
-        let pos = self.pos
+        let pos = self.position
 
         if DecimalDigitCharacterSet ~= self {
             self.scanWhile(DecimalDigitCharacterSet)
@@ -425,28 +421,36 @@ public class Lexer {
     }
 
     func scanString() -> (TokenKind, String) {
-        // Second quote
-        var start = self.index
-        var end = self.index
+        let start: Index
+        var end: Index
 
+		// Second quote
         if self.accept("\"") {
-            // If not third quote, then we have empty string
-            if !self.accept("\"") {
-                return (.StringLiteral, self.tokenFrom(start, to: end))
-            }
-            else {
-                start = self.index
-                while(self.scanUntil("\"")){
-                end = self.characters.index(before:index)
+            if self.accept("\"") {
+                start = index
+                while(self.scanUntil(CharacterSet(charactersIn:"\\\""))){
+					if currentChar == "\\" {
+						self.advance()
+						self.advance()
+						continue
+					}
+					// end = characters.index(index, offsetBy: 1)
+					end = index
+					assert(end >= start)
                     self.advance()
                     if self.accept("\"") && self.accept("\"") {
                         return (.StringLiteral, self.tokenFrom(start, to: end))
                     }
                 }
             }
+            else {
+				// If not third quote, then we have empty string
+                return (.StringLiteral, "")
+            }
         }
         else {
             // Parse normal string here
+			start = index
             while(!self.atEnd()) {
                 end = self.characters.index(before:index)
                 if self.accept("\\") {

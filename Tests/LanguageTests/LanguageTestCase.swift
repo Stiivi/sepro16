@@ -7,41 +7,7 @@
 //
 
 import XCTest
-@testable import SeproLang
-
-class ParserTestCase: XCTestCase {
-
-    override func setUp() {
-        super.setUp()
-        // Put setup code here. This method is called before the invocation of each test method in the class.
-    }
-
-    override func tearDown() {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
-        super.tearDown()
-    }
-
-    func testEmpty() {
-        let parser = Parser("")
-        if let model = try? parser.model() {
-            XCTAssertEqual(model!.concepts.count, 0)
-        }
-    }
-
-    func testConcept() {
-        var parser = Parser("CONCEPT x")
-        if let concept = try? parser.concept() {
-            XCTAssertEqual(concept!.name, "x")
-        }
-
-        parser = Parser("CONCEPT y TAG a, b, c")
-        if let concept = try? parser.concept() {
-            XCTAssertEqual(concept!.name, "y")
-            XCTAssertEqual(concept!.tags, ["a", "b", "c"])
-        }
-    }
-}
-
+@testable import Language
 
 class LexerTestCase: XCTestCase {
     override func setUp() {
@@ -54,7 +20,7 @@ class LexerTestCase: XCTestCase {
         super.tearDown()
     }
 
-    func lexer(source: String) -> Lexer {
+    func lexer(_ source: String) -> Lexer {
         let keywords = ["OBJECT", "THIS"]
         return Lexer(source: source, keywords: keywords)
     }
@@ -78,9 +44,9 @@ class LexerTestCase: XCTestCase {
         XCTAssertEqual(token, Token(.IntLiteral, "1234"))
     }
 
-    func assertError(token: Token, _ str: String) {
+    func assertError(_ token: Token, _ str: String) {
         switch token.kind {
-        case .Error(let val) where val.containsString(str):
+		case .Error(let val) where val.contains(str):
             break
         default:
             XCTFail("Token \(token) is not an error containing '\(str)'")
@@ -148,8 +114,56 @@ class LexerTestCase: XCTestCase {
         
         token = lexer.nextToken()
         XCTAssertEqual(token, Token(.Empty, ""))
-        
     }
+
+	func testString() {
+		var lexer = self.lexer("\"")
+		var token = lexer.nextToken()
+
+		assertError(token, "Unexpected end of input in a string")	
+
+		lexer = self.lexer("\"\"")
+		token = lexer.nextToken()
+		XCTAssertEqual(token, Token(.StringLiteral, ""))
+
+		lexer = self.lexer("\"\\")
+		token = lexer.nextToken()
+		assertError(token, "Unexpected end of input in a string")	
+
+		lexer = self.lexer("\"\\\"")
+		token = lexer.nextToken()
+		assertError(token, "Unexpected end of input in a string")	
+	}
+
+	func testDocstring() {
+		var lexer = self.lexer("\"\"\"")
+		var token = lexer.nextToken()
+
+		assertError(token, "Unexpected end of input in a string")	
+
+		lexer = self.lexer("\"\"\"\"")
+		token = lexer.nextToken()
+		assertError(token, "Unexpected end of input in a string")	
+
+
+		lexer = self.lexer("\"\"\"\"\"")
+		token = lexer.nextToken()
+
+		assertError(token, "Unexpected end of input in a string")	
+
+		lexer = self.lexer("\"\"\"\"\"\"")
+		token = lexer.nextToken()
+		XCTAssertEqual(token, Token(.StringLiteral, ""))
+
+
+		lexer = self.lexer("\"\"\"hello\"\"\"")
+		token = lexer.nextToken()
+		XCTAssertEqual(token, Token(.StringLiteral, "hello"))
+
+		lexer = self.lexer("\"\"\"\"hello\\\"\"\"\"")
+		token = lexer.nextToken()
+		XCTAssertEqual(token, Token(.StringLiteral, "\"hello\\\""))
+	}
     
 }
 

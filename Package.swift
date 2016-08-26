@@ -7,14 +7,14 @@ let package = Package(
         Target(name: "Model",
 			dependencies: [.Target(name:"Utility")]
 		),
-        Target(name: "Parser",
+        Target(name: "Language",
 			dependencies: [.Target(name:"Model")]
 		),
-        Target(name: "Sepro",
-			dependencies: [.Target(name:"Parser")]
+        Target(name: "Engine",
+			dependencies: [.Target(name:"Language")]
 		),
         Target(name: "sepro-tool",
-            dependencies: [.Target(name:"Sepro")]
+            dependencies: [.Target(name:"Engine")]
         )
     ],
     dependencies: [
