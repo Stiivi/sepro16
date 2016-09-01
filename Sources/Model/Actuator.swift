@@ -53,7 +53,7 @@ public func ==(left: Selector, right: Selector) -> Bool {
 Combines predicates with their respective modifiers that are executed
 when the predicate is met.
 */
-public struct Actuator {
+public class Actuator {
     public let selector: Selector
     public let combinedSelector: Selector?
 
@@ -89,7 +89,6 @@ public struct Actuator {
             self.traps = traps
             self.notifications = notifications
             self.doesHalt = doesHalt
-        print("MAKING ACTUATOR \(self)")
     }
 
     public func asString() -> String {
@@ -97,14 +96,6 @@ public struct Actuator {
         return "# (some actuator)"
     }
 
-    /// - Returns: A tuple of symbols (`this`, `other`, `root`)
-    public var slotMatrix: ([Symbol], [Symbol], [Symbol]) {
-        return modifiers.reduce(([], [], [])) {
-            s, modifier in
-            let ms = modifier.slotMatrix
-            return (s.0 + ms.0, s.1 + ms.1, s.2 + ms.2)
-        }
-    }
 }
 
 extension Actuator: CustomStringConvertible {

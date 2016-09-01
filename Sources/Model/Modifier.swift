@@ -33,20 +33,6 @@ public struct ModifierTarget: CustomStringConvertible, Equatable {
         self.slot = slot
     }
 
-    /// - Returns: A tuple of symbols (`this`, `other`, `root`)
-    public var slotMatrix: ([Symbol], [Symbol], [Symbol]) {
-        switch (self.type, self.slot) {
-        case (_, nil):
-            return ([], [], [])
-        case (.This, let targetSlot):
-            return ([targetSlot!], [], [])
-        case (.Other, let targetSlot):
-            return ([], [targetSlot!], [])
-        case (.Root, let targetSlot):
-            return ([], [], [targetSlot!])
-        }
-    }
-
     public var description: String {
         if slot == nil {
             return String(describing:type)
@@ -91,29 +77,6 @@ public struct Modifier: CustomStringConvertible {
         }
         else {
             return "IN \(self.target) \(self.action)"
-        }
-    }
-
-
-    /// - Returns: A tuple of symbols (`this`, `other`, `root`)
-    public var slotMatrix: ([Symbol], [Symbol], [Symbol]) {
-        let ts = target.slotMatrix
-
-        switch self.action {
-        case .Bind(let slot, let bindTarget):
-            let bs = bindTarget.slotMatrix
-            switch target.type {
-            case .This:  return (ts.0 + bs.0 + [slot], ts.1 + bs.1, ts.2 + bs.2)
-            case .Other: return (ts.0 + bs.0, ts.1 + bs.1 + [slot], ts.2 + bs.2)
-            case .Root:  return (ts.0 + bs.0, ts.1 + bs.1, ts.2 + bs.2 + [slot])
-            }
-        case .Unbind(let slot):
-            switch target.type {
-            case .This:  return (ts.0 + [slot], ts.1, ts.2)
-            case .Other: return (ts.0, ts.1 + [slot], ts.2)
-            case .Root:  return (ts.0, ts.1, ts.2 + [slot])
-            }
-        default: return ([], [], [])
         }
     }
 }
