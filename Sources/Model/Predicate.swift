@@ -9,12 +9,12 @@
 
 public enum PredicateType: CustomStringConvertible, Equatable {
     /// Triggers every time the engine encounters it
-    case All
+    case all
     /**
      Condition that is satisfied when examined object has all of the
      tags from the `tagList` set.
      */
-    case TagSet(TagList)
+    case tagSet(TagList)
 //    /**
 //     Condition that is satisfied when a measure of tested object is
 //     less or than a given value.
@@ -29,23 +29,23 @@ public enum PredicateType: CustomStringConvertible, Equatable {
      Condition that is satisfied when a measure of tested object is
      zero.
      */
-    case CounterZero(Symbol)
+    case counterZero(Symbol)
     /// Checks whether a slot is bound
-    case IsBound(Symbol)
+    case isBound(Symbol)
 
     public var description: String {
         switch self {
-        case .All:
+        case .all:
             return "ALL"
 
-        case .TagSet(let tags):
+        case .tagSet(let tags):
             // We can ommit the SET
             return tags.joined(separator:", ")
 
-        case .CounterZero(let counter):
+        case .counterZero(let counter):
             return "ZERO \(counter)"
 
-        case .IsBound(let slot):
+        case .isBound(let slot):
             return "BOUND \(slot)"
         }
     }
@@ -54,12 +54,12 @@ public enum PredicateType: CustomStringConvertible, Equatable {
 
 public func ==(left: PredicateType, right: PredicateType) -> Bool {
     switch (left, right) {
-    case (.All, .All): return true
-    case (.TagSet(let ltags), .TagSet(let rtags)) where ltags == rtags:
+    case (.all, .all): return true
+    case (.tagSet(let ltags), .tagSet(let rtags)) where ltags == rtags:
             return true
-    case (.CounterZero(let lcount), .CounterZero(let rcount)) where lcount == rcount:
+    case (.counterZero(let lcount), .counterZero(let rcount)) where lcount == rcount:
             return true
-    case (.IsBound(let lslot), .IsBound(let rslot)) where lslot == rslot:
+    case (.isBound(let lslot), .isBound(let rslot)) where lslot == rslot:
             return true
     default:
         return false
@@ -90,8 +90,8 @@ extension Predicate: CustomStringConvertible {
         if self.isNegated {
             desc += "NOT "
         }
-        if self.inSlot != nil {
-            desc += "IN \(self.inSlot)"
+        if let slot = self.inSlot {
+            desc += "IN \(slot)"
         }
         return desc + self.type.description
     }

@@ -6,16 +6,25 @@
 //  Copyright © 2015 Stefan Urbanek. All rights reserved.
 //
 
+// TODO: Merge TrgetType and ModifierTarget into one as:
+/*
+enum TargetType {
+    case this
+    case other
+    case indirectThis(Symbol)
+    case indirectOther(Symbol)
+
+}
+*/
+
 public enum TargetType: Int, CustomStringConvertible {
-    case Root
-    case This
-    case Other
+    case this
+    case other
 
     public var description: String {
         switch self {
-        case.Root: return "ROOT"
-        case.This: return "THIS"
-        case.Other: return "OTHER"
+        case.this: return "THIS"
+        case.other: return "OTHER"
         }
     }
 }
@@ -34,14 +43,14 @@ public struct ModifierTarget: CustomStringConvertible, Equatable {
     }
 
     public var description: String {
-        if slot == nil {
-            return String(describing:type)
-        }
-        else {
+        if let slot = slot {
             switch self.type {
-            case .This: return String(slot!)
+            case .this: return String(slot)
             default: return "\(type).\(slot)"
             }
+        }
+        else {
+            return String(describing:type)
         }
     }
 }
@@ -72,7 +81,7 @@ public struct Modifier: CustomStringConvertible {
 	}
 
     public var description: String {
-        if self.target.type == TargetType.This && self.target.slot == nil {
+        if self.target.type == TargetType.this && self.target.slot == nil {
             return "\(self.action)"
         }
         else {
@@ -85,29 +94,29 @@ public struct Modifier: CustomStringConvertible {
   Object modifier.
 */
 public enum ModifierAction: CustomStringConvertible, Equatable {
-    case Nothing
-    case SetTags(TagList)
-    case UnsetTags(TagList)
-    case Inc(Symbol)
-    case Dec(Symbol)
-    case Clear(Symbol)
-    case Bind(Symbol, ModifierTarget)
-    case Unbind(Symbol)
+    case nothing
+    case setTags(TagList)
+    case unsetTags(TagList)
+    case inc(Symbol)
+    case dec(Symbol)
+    case clear(Symbol)
+    case bind(Symbol, ModifierTarget)
+    case unbind(Symbol)
 
     public var description: String {
         switch self {
-        case .Nothing: return "NOTHING"
-        case .SetTags(let symbols):
+        case .nothing: return "NOTHING"
+        case .setTags(let symbols):
                     let str = symbols.joined(separator:", ")
                     return "SET \(str)"
-        case .UnsetTags(let symbols):
+        case .unsetTags(let symbols):
                     let str = symbols.joined(separator:", ")
                     return "UNSET \(str)"
-        case .Inc(let symbol): return "INC \(symbol)"
-        case .Dec(let symbol): return "DEC \(symbol)"
-        case .Clear(let symbol): return "CLEAR \(symbol)"
-        case .Bind(let symbol, let target): return "BIND \(symbol) TO \(target)"
-        case .Unbind(let symbol): return "UNBIND \(symbol)"
+        case .inc(let symbol): return "INC \(symbol)"
+        case .dec(let symbol): return "DEC \(symbol)"
+        case .clear(let symbol): return "CLEAR \(symbol)"
+        case .bind(let symbol, let target): return "BIND \(symbol) TO \(target)"
+        case .unbind(let symbol): return "UNBIND \(symbol)"
         }
     }
 
@@ -115,22 +124,22 @@ public enum ModifierAction: CustomStringConvertible, Equatable {
 
 public func ==(left: ModifierAction, right: ModifierAction) -> Bool {
     switch(left, right) {
-    case (.Nothing, .Nothing):
+    case (.nothing, .nothing):
             return true
-    case (.SetTags(let ltags), .SetTags(let rtags)) where ltags == rtags:
+    case (.setTags(let ltags), .setTags(let rtags)) where ltags == rtags:
             return true
-    case (.UnsetTags(let ltags), .UnsetTags(let rtags)) where ltags == rtags:
+    case (.unsetTags(let ltags), .unsetTags(let rtags)) where ltags == rtags:
             return true
-    case (.Inc(let lsym), .Inc(let rsym)) where lsym == rsym:
+    case (.inc(let lsym), .inc(let rsym)) where lsym == rsym:
             return true
-    case (.Dec(let lsym), .Dec(let rsym)) where lsym == rsym:
+    case (.dec(let lsym), .dec(let rsym)) where lsym == rsym:
             return true
-    case (.Clear(let lsym), .Clear(let rsym)) where lsym == rsym:
+    case (.clear(let lsym), .clear(let rsym)) where lsym == rsym:
             return true
-    case (.Bind(let lref, let lsym), .Bind(let rref, let rsym))
+    case (.bind(let lref, let lsym), .bind(let rref, let rsym))
         where lref == rref && lsym == rsym:
             return true
-    case (.Unbind(let lsym), .Unbind(let rsym)) where lsym == rsym:
+    case (.unbind(let lsym), .unbind(let rsym)) where lsym == rsym:
             return true
     default:
             return false

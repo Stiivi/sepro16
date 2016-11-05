@@ -59,15 +59,14 @@ func main() {
 
     let path = "./out"
 
-    engine = SimpleEngine(model:model)
+    let container = SimpleContainer()
+    engine = SimpleEngine(model:model, container: container)
     engine.logger = CSVLogger(path: path)
     engine.delegate = CLIDelegate(path:path)
     
-    do {
-        try engine.initialize(worldName: "main")
-    }
-    catch {
-        print("Error: Can't initialize engine")
+    let result = engine.initialize(worldName: "main")
+    if case let .failure(error) = result {
+        print("Error: Can't initialize engine. Reason: \(error)")
 		exit(1)
     }
 

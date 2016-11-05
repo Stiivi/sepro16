@@ -11,12 +11,12 @@
 //
 
 import Model
-import Utility
+import Base
 
 enum ObjectMember {
-    case Tags(TagList)
-    case Slots([Symbol])
-    case Counter(Symbol, Int)
+    case tags(TagList)
+    case slots([Symbol])
+    case counter(Symbol, Int)
 }
 
 
@@ -24,21 +24,21 @@ enum ObjectMember {
 func makeConcept(_ name: String, _ members: [ObjectMember]) -> Concept {
     let allTags: [TagList] = members.flatMap {
         switch $0 {
-        case .Tags(let syms): return syms
+        case .tags(let syms): return syms
         default: return nil
         }
     }
 
     let allSlots: [[Symbol]] = members.flatMap {
         switch $0 {
-        case .Slots(let syms): return syms
+        case .slots(let syms): return syms
         default: return nil
         }
     }
 
     let allCounters: [(String, Int)] = members.flatMap {
         switch $0 {
-        case .Counter(let sym, let count): return (sym, count)
+        case .counter(let sym, let count): return (sym, count)
         default: return nil
         }
     }
@@ -92,9 +92,9 @@ func createGraph(_ members: [GraphMember]) -> InstanceGraph {
 }
 
 enum ASTInstanceType {
-    case Counted(Int)
-    case Named(Symbol)
-    case Default
+    case counted(Int)
+    case named(Symbol)
+    case `default`
 }
 
 func createInstance(_ symbol: Symbol, initializers:[Initializer]?, type:
@@ -103,9 +103,9 @@ func createInstance(_ symbol: Symbol, initializers:[Initializer]?, type:
 	let translatedType: InstanceType
 
 	switch type {
-	case .Counted(let count): translatedType = InstanceType.Counted(count)
-	case .Named(let name):    translatedType = InstanceType.Named(name)
-	case .Default:        translatedType = InstanceType.Named(symbol)
+	case .counted(let count): translatedType = InstanceType.counted(count)
+	case .named(let name):    translatedType = InstanceType.named(name)
+	case .default:        translatedType = InstanceType.named(symbol)
 	}
 
 	return Instance(concept: symbol, initializers: initializers ?? [],

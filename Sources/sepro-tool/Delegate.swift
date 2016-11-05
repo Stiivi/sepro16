@@ -34,15 +34,21 @@ public class CLIDelegate: EngineDelegate {
 	}
 
 	public func willRun(engine: Engine) {
-		writeDot(path: dotFileName(set: engine.stepCount), model: engine.model, selection: engine.container.select())
+		writeDot(path: dotFileName(set: engine.stepCount),
+                 engine: engine,
+                 selection: engine.container.selectAll())
 	}
 
 	public func didRun(engine: Engine) {
-		writeDot(path: dotFileName(set: engine.stepCount), model: engine.model, selection: engine.container.select())
+		writeDot(path: dotFileName(set: engine.stepCount),
+                 engine: engine,
+                 selection: engine.container.selectAll())
 	}
 
 	public func willStep(engine: Engine) {
-		writeDot(path: dotFileName(set: engine.stepCount), model: engine.model, selection: engine.container.select())
+		writeDot(path: dotFileName(set: engine.stepCount),
+                 engine: engine,
+                 selection: engine.container.selectAll())
 	}
 
 	public func didStep(engine: Engine) {

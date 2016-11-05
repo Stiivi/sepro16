@@ -6,28 +6,28 @@ public typealias Symbol = String
 public typealias SymbolList = [Symbol]
 
 public enum SymbolType: CustomStringConvertible {
-    case `Any`
-    case Tag
-    case Slot
-    case Counter
-    case Concept
-    case World
-    case Struct
-    case Notification
-    case Trap
+    case `any`
+    case tag
+    case slot
+    case counter
+    case concept
+    case world
+    case `struct`
+    case notification
+    case trap
 
     public var description: String {
         switch self {
-        case .Any: return "any"
-        case .Tag: return "tag"
-        case .Slot: return "slot"
-        case .Counter: return "counter"
-        case .Concept: return "concept"
+        case .any: return "any"
+        case .tag: return "tag"
+        case .slot: return "slot"
+        case .counter: return "counter"
+        case .concept: return "concept"
 
-        case .World: return "world"
-        case .Struct: return "struct"
-        case .Notification: return "notification"
-        case .Trap: return "trap"
+        case .world: return "world"
+        case .`struct`: return "struct"
+        case .notification: return "notification"
+        case .trap: return "trap"
         }
     }
 }

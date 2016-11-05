@@ -9,9 +9,9 @@
 /// Model container – holds all model entities needed for execution.
 ///
 
-import Utility
+import Base
 
-public struct Model {
+public class Model {
     // Core elements
     //
     /// List of available concepts

@@ -6,6 +6,7 @@
 //	Copyright © 2015 Stefan Urbanek. All rights reserved.
 //
 
+import Base
 import Model
 
 /**
@@ -29,12 +30,14 @@ public protocol Engine {
 
 	/// Initialize the container with `world`. If `world` is not specified then
 	/// `main` is used.
-	func initialize(worldName: Symbol) throws
+    // TODO: This should be simpler. We need to return multiple errors
+    // TODO: Flag for stopping after first error/max errors
+	func initialize(worldName: Symbol) -> ResultList<Bool, EngineError>
 
 	/// Instantiate concept `name`.
 	/// - Returns: reference to the newly created object
 	// TODO: move to engine, change this to add(object)
-	func instantiate(name: Symbol, initializers:[Initializer]) throws -> ObjectRef
+	func instantiate(name: Symbol, initializers:[Initializer]) -> Result<ObjectReference, EngineError>
 
 }
 
@@ -89,8 +92,8 @@ public final class SimpleEngine: Engine {
 
 
 	/// Create an object instance from concept
-	public init(model:Model, container: Container?=nil){
-		self.container = container ?? Container()
+	public init(model:Model, container: Container){
+		self.container = container
 		self.model = model
 
 		self.probes = [Probe]()
@@ -122,38 +125,36 @@ public final class SimpleEngine: Engine {
 		self.logger?.loggingDidEnd(steps: stepsRun)
 	}
 
-	/**
-		Compute one step of the simulation by evaluating all actuators.
-	*/
+	/// Compute one step of the simulation by evaluating all actuators.
+    ///
 	func step() {
-		self.traps.removeAll()
+		traps.removeAll()
 
 		stepCount += 1
 
-		self.delegate?.willStep(engine: self)
+		delegate?.willStep(engine: self)
 
 		// >>>
 		// The main step...
-		self.model.actuators.shuffle().forEach(self.perform)
+		model.actuators.shuffle().forEach(perform)
 		// <<<
 
-		self.delegate?.didStep(engine: self)
+		delegate?.didStep(engine: self)
 
-		if self.logger != nil {
-			self.probe()
+		if logger != nil {
+			probe()
 		}
 
-		if !self.traps.isEmpty {
-			self.delegate?.handleTrap(engine: self, traps: self.traps)
+		if !traps.isEmpty {
+			delegate?.handleTrap(engine: self, traps: traps)
 		}
 	}
 
-	/**
-	 Probe the simulation and pass the results to the logger. Probing
-	 is ignored when logger is not provided.
-
-	 - Complexity: O(n) – does full scan on all objects
-	 */
+    ///
+    /// Probe the simulation and pass the results to the logger. Probing
+	/// is ignored when logger is not provided.
+    ///
+	/// - Complexity: O(n) – does full scan on all objects
 	func probe() {
 		var record = ProbeRecord()
 
@@ -163,18 +164,18 @@ public final class SimpleEngine: Engine {
 		}
 
 		// Create the probes
-		let probeList = self.model.measures.map {
+		let probeList = model.measures.map {
 			measure in
 			(measure, createProbe(measure: measure))
 		}
 
 		// TODO: too complex
-		self.container.select().forEach {
-			object in
+		self.container.selectAll().forEach {
+			ref in
 			probeList.forEach {
 				measure, probe in
-				if self.container.predicatesMatch(predicates: measure.predicates, ref: object.id) {
-					probe.probe(object: object)
+				if container.match(ref, predicates: measure.predicates) {
+					probe.probe(object: container[ref]!)
 				}
 			}
 		}
@@ -191,6 +192,9 @@ public final class SimpleEngine: Engine {
 
 	/// Dispatch an `actuator` – unary vs. combined
 	///
+    // TODO: Rename to:
+    //          apply(modifier, with: Selector)
+    //          apply(modifier, with: Selector, on: Selector)
 	func perform(actuator:Actuator){
 		if actuator.isCombined {
 			self.perform(this: actuator.selector,
@@ -203,19 +207,17 @@ public final class SimpleEngine: Engine {
 
 		// Handle traps
 		//
-		if actuator.traps != nil {
-			actuator.traps!.forEach {
-				trap in
-				self.traps.add(trap)
+        if let traps = actuator.traps {
+			traps.forEach {
+				trap in self.traps.add(trap)
 			}
-		}
+        }
 
 		// TODO: handle 'ONCE'
 		// TODO: maybe handle similar way as traps
-		if actuator.notifications != nil {
-			actuator.notifications!.forEach {
-				notification in
-				self.notify(symbol:notification)
+        if let notifications = actuator.notifications {
+			notifications.forEach {
+				notification in self.notify(symbol:notification)
 			}
 		}
 
@@ -227,13 +229,11 @@ public final class SimpleEngine: Engine {
 	///
 	/// - Complexity: O(n) - performs full scan
 	///
-	// TODO: rename to perform(unary:)
+    // TODO: Pass modifier only, not whole actuator
 	func perform(unary selector: Selector, actuator: Actuator) {
-		let objects = self.container.select(selector)
-
-		for this in objects {
+		for this in container.select(selector) {
 			// Check for required slots
-			if !actuator.modifiers.all({ self.canApply(modifier: $0, this: this) }) {
+			if !actuator.modifiers.all({ canApply(modifier: $0, this: this) }) {
 				continue
 			}
 
@@ -260,33 +260,33 @@ public final class SimpleEngine: Engine {
 	func perform(this thisSelector: Selector, other otherSelector: Selector,
 		actuator: Actuator) {
 
-		let thisObjects = self.container.select(thisSelector)
-		let otherObjects = self.container.select(otherSelector)
+		let thisRefs = container.select(thisSelector)
+		let otherRefs = container.select(otherSelector)
 
 		var match: Bool
 
 		// Cartesian product: everything 'this' interacts with everything
 		// 'other'
 		// Note: We can't use forEach, as there is no way to break from the loop
-		for this in thisObjects {
+		for this in thisRefs {
 			// Check for required slots
-			for other in otherObjects {
+			for other in otherRefs {
 				// Check for required slots
-				if !actuator.modifiers.all({ self.canApply(modifier: $0, this: this, other: other) }) {
+				if !actuator.modifiers.all({ canApply(modifier: $0, this: this, other: other) }) {
 					continue
 				}
-				if this.id == other.id {
+				else if this == other {
 					continue
 				}
 
 				actuator.modifiers.forEach {
 					modifier in
-					self.apply(modifier: modifier, this: this, other: other)
+					apply(modifier: modifier, this: this, other: other)
 				}
 
 				// Check whether 'this' still matches the predicates
-				match = thisSelector == Selector.All ||
-						container.predicatesMatch(predicates: thisSelector.predicates, ref: this.id)
+				match = thisSelector == Selector.all
+                        || container.match(this, predicates: thisSelector.predicates)
 				// ... predicates don't match the object, therefore we
 				// skip to the next one
 				if !match {
@@ -297,50 +297,48 @@ public final class SimpleEngine: Engine {
 
 	}
 
-	/// Get "current" object – choose between ROOT, THIS and OTHER then
+	/// Get "current" object – choose between THIS and OTHER then
 	/// optionally apply dereference to a slot, if specified.
 	///
-	func getCurrent(_ ref: ModifierTarget, this: Object, other: Object?=nil) -> Object? {
-		let current: Object
+	func getCurrent(_ ref: ModifierTarget, this: ObjectReference,
+                    other: ObjectReference?=nil) -> Object? {
+		let current: ObjectReference
 
 		switch ref.type {
-		case .Root:
-			// Is guaranteed to exist by specification
-			current = self.container.getObject(self.container.root)!
-		case .This:
+		case .this:
 			// Is guaranteed to exist by argument
 			current = this
-		case .Other:
+		case .other:
 			// Exists only in combined selectors
 			assert(other != nil, "Required `other` for .Other target reference")
 			current = other!
 		}
 
-		if ref.slot == nil {
-			return current
-		}
-		else {
-			assert(current.slots.contains(ref.slot!), "Target sohuld contain slot '\(ref.slot!)'")
-			if let indirect = current.bindings[ref.slot!] {
-				return self.container[indirect]!
+        if let slot = ref.slot {
+            let obj = container[current]!
+			assert(obj.slots.contains(slot), "Target sohuld contain slot '\(ref.slot!)'")
+			if let indirect = obj.bindings[slot] {
+				return container[indirect]!
 			}
 			else {
 				// Nothing bound at the slot
 				return nil
 			}
-
-		}
+        }
+        else {
+            return container[current]!
+        }
 	}
 
 	/// - Returns: `true` if the `modifier` can be applied, otherwise `false`
-	func canApply(modifier:Modifier, this:Object, other:Object!=nil) -> Bool {
+	func canApply(modifier:Modifier, this:ObjectReference, other:ObjectReference!=nil) -> Bool {
 		let current = self.getCurrent(modifier.target, this: this, other: other)
 
 		switch modifier.action {
-		case .Inc(let counter):
+		case .inc(let counter):
 			return current?.counters.keys.contains(counter) ?? false
 
-		case .Dec(let counter):
+		case .dec(let counter):
 			if let value = current?.counters[counter] {
 				return value > 0
 			}
@@ -348,10 +346,10 @@ public final class SimpleEngine: Engine {
 				return false
 			}
 
-		case .Clear(let counter):
+		case .clear(let counter):
 			return current?.counters.keys.contains(counter) ?? false
 
-		case .Bind(let slot, let targetRef):
+		case .bind(let slot, let targetRef):
 			let target = self.getCurrent(targetRef, this: this, other: other)
 
 			if current == nil || target == nil {
@@ -362,7 +360,7 @@ public final class SimpleEngine: Engine {
 
 			return current?.slots.contains(slot) ?? false
 
-		case .Unbind(let slot):
+		case .unbind(let slot):
 			return current?.slots.contains(slot) ?? false
 		default:
 			return true
@@ -372,43 +370,55 @@ public final class SimpleEngine: Engine {
 	/// Applies `modifier` on either `this` or `other` depending on the modifier's
 	/// target
 	// TODO: apply(modifier:to:)
-	func apply(modifier:Modifier, this:Object, other:Object?=nil) {
+	func apply(modifier:Modifier, this:ObjectReference, other:ObjectReference?=nil) {
 		guard let current = self.getCurrent(modifier.target, this: this, other: other) else {
 			preconditionFailure("Current object for modifier should not be nil (apllication should be guarded)")
 		}
 
+        var newTags = current.tags
+        var newCounters = current.counters
+        var newBindings = current.bindings
+
 		switch modifier.action {
-		case .Nothing:
+		case .nothing:
 			// Do nothing
 			break
 
-		case .SetTags(let tags):
-			current.tags = current.tags.union(tags)
+		case .setTags(let tags):
+			newTags = tags.union(tags)
 
-		case .UnsetTags(let tags):
-			current.tags = current.tags.subtracting(tags)
+		case .unsetTags(let tags):
+			newTags = tags.subtracting(tags)
 
-		case .Inc(let counter):
+		case .inc(let counter):
 			let value = current.counters[counter]!
-			current.counters[counter] = value + 1
+			newCounters[counter] = value + 1
 
-		case .Dec(let counter):
+		case .dec(let counter):
 			let value = current.counters[counter]!
-			current.counters[counter] = value - 1
+			newCounters[counter] = value - 1
 
-		case .Clear(let counter):
-			current.counters[counter] = 0
+		case .clear(let counter):
+			newCounters[counter] = 0
 
-		case .Bind(let slot, let targetRef):
+		case .bind(let slot, let targetRef):
 			guard let target = self.getCurrent(targetRef, this: this, other: other) else {
 				preconditionFailure("Target sohuld not be nil (application should be guarded)")
 			}
 
-			current.bindings[slot] = target.id
+			newBindings[slot] = target.id
 
-		case .Unbind(let slot):
-			this.bindings[slot] = nil
+		case .unbind(let slot):
+			newBindings[slot] = nil
 		}
+
+
+        let newObject = current.copy(
+            tags:newTags,
+            counters:newCounters,
+            bindings:newBindings
+        )
+        container.update(object: newObject)
 	}
 
 	func notify(symbol: Symbol) {
@@ -419,42 +429,61 @@ public final class SimpleEngine: Engine {
 
 	/// Initialize the container according to the model. All existing objects will
 	/// be discarded.
-	public func initialize(worldName: Symbol="main") throws {
+	public func initialize(worldName: Symbol="main") -> ResultList<Bool, EngineError> {
 		// FIXME: handle non-existing world
 		let world = self.model.getWorld(name: worldName)!
 
 		// Clean-up the objects container
 		self.container.removeAll()
 
-		if let rootConcept = world.root {
-			self.container.root = try self.instantiate(name: rootConcept)
-		}
-		else {
-			self.container.root = self.container.createObject()
-		}
+        // TODO: gather errors
+		let result = self.instantiateGraph(graph: world.graph)
 
-		try self.instantiateGraph(graph: world.graph)
+        if case let .failure(errors) = result {
+            return .failure(errors)
+        }
+        else {
+            return .success(true)
+        }
 	}
 	/// Creates instances of objects in the GraphDescription and returns a
 	/// dictionary of created named objects.
 	@discardableResult
-	func instantiateGraph(graph: InstanceGraph) throws -> ObjectMap {
+	func instantiateGraph(graph: InstanceGraph) -> ResultList<ObjectMap, EngineError> {
+        // TODO: Return Object Reference Dictionary
+        // TODO: Gather all the errors
+        // TODO: Have instantiation of multiple elements through a function
+        // something like 'reduce':(proto, state) -> (object, state))
 		var map = ObjectMap()
+        var errors: [EngineError] = []
 
-		try graph.instances.forEach() { inst in
+        // TODO: Refactor this ugly loop
+		graph.instances.forEach() { inst in
 			switch inst.type {
-			case let .Named(name):
-				map[name] = try self.instantiate(name: inst.concept,
-												 initializers: inst.initializers)
-			case let .Counted(count):
+			case let .named(name):
+                let result = instantiate(name: inst.concept,
+                                         initializers: inst.initializers) 
+                if case let .failure(error) = result {
+                    errors.append(error)
+                }
+                else {
+                    map[name] = result.value!
+                }
+			case let .counted(count):
+                // TODO: Gather errors
 				for _ in 1...count {
-					try self.instantiate(name: inst.concept,
-										 initializers: inst.initializers)
+					instantiate(name: inst.concept,
+                                initializers: inst.initializers)
 				}
 			}
 		}
 
-		return map
+        if errors.isEmpty {
+            return .success(map)
+        }
+        else {
+            return .failure(errors)
+        }
 	}
 
 
@@ -464,38 +493,39 @@ public final class SimpleEngine: Engine {
 	/// 
 	/// - Returns: reference to the newly created object
 	@discardableResult
-	public func instantiate(name:Symbol, initializers: [Initializer]=[]) throws -> ObjectRef {
-		if let concept = self.model.getConcept(name: name) {
-			let implicitTags = TagList([name])
-			let tags = concept.tags.union(implicitTags)
-			var counters = concept.counters
-
-			let initTags = TagList(initializers.flatMap {
-   				initializer in
-				switch initializer {
-				case let .Tag(symbol): return symbol
-				default: return nil
-				}
-			})
-
-			let initCounters:[(Symbol,Int)] = initializers.flatMap {
-   				initializer in
-				switch initializer {
-				case let .Counter(symbol, value): return (symbol, value)
-				default: return nil
-				}
-			}
-
-			counters.update(from: Dictionary(items:initCounters))
-		
-			let ref = container.createObject(tags: tags.union(initTags),
-											 counters:counters,
-											 slots:concept.slots)
-			return ref
+	public func instantiate(name:Symbol, initializers: [Initializer]=[])
+            -> Result<ObjectReference, EngineError> {
+		guard let concept = self.model.getConcept(name: name) else {
+			return .failure(.unknownConcept(name))
 		}
-		else {
-			throw SeproError.ModelError("Can not instantiate '\(name)': no such concept")
-		}
+
+        let implicitTags = TagList([name])
+        let tags = concept.tags.union(implicitTags)
+        var counters = concept.counters
+
+        let initTags = TagList(initializers.flatMap {
+            initializer in
+            switch initializer {
+            case let .tag(symbol): return symbol
+            default: return nil
+            }
+        })
+
+        let initCounters:[(Symbol,Int)] = initializers.flatMap {
+            initializer in
+            switch initializer {
+            case let .counter(symbol, value): return (symbol, value)
+            default: return nil
+            }
+        }
+
+        counters.update(from: Dictionary(items:initCounters))
+    
+        let obj = Object(tags: tags.union(initTags),
+                         counters:counters,
+                         slots:concept.slots)
+        let ref = container.insert(object: obj)
+        return .success(ref)
 	}
 
 	/// Create a structure of conceptual objects
@@ -526,8 +556,9 @@ public final class SimpleEngine: Engine {
 	public func debugDump() {
 		print("ENGINE DUMP START\n")
 		print("STEP \(self.stepCount)")
-		self.container.select().forEach {
-			obj in
+		self.container.selectAll().forEach {
+			ref in
+            let obj = container[ref]!
 			print("\(obj.debugDescription)")
 		}
 		print("END OF DUMP\n")
@@ -544,10 +575,10 @@ extension Predicate {
         let result: Bool
 
         switch self.type {
-        case .All:
+        case .all:
             result = true
 
-        case .TagSet(let tags):
+        case .tagSet(let tags):
             if isNegated {
                 result = tags.isDisjoint(with:object.tags)
             }
@@ -555,7 +586,7 @@ extension Predicate {
                 result = tags.isSubset(of:object.tags)
             }
 
-        case .CounterZero(let counter):
+        case .counterZero(let counter):
             if let counterValue = object.counters[counter] {
                 result = (counterValue == 0) != self.isNegated
             }
@@ -564,7 +595,7 @@ extension Predicate {
                 result = false
             }
 
-        case .IsBound(let slot):
+        case .isBound(let slot):
             result = (object.bindings[slot] != nil) != self.isNegated
         }
 

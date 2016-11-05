@@ -38,17 +38,17 @@ func typeDesc(_ type: SymbolType) -> String {
 // =======================================================================
 
 let symbol_list = { type in separated(symbol(typeDesc(type)), op(",")) }
-let tag_list = symbol_list(.Tag) => { ast in TagList(ast) }
+let tag_list = symbol_list(.tag) => { ast in TagList(ast) }
 
 
 // Concept
 // =======================================================================
 
 let concept_member  =
-           §"TAG"     *> tag_list           => ObjectMember.Tags
-        || §"SLOT"    *> symbol_list(.Slot) => ObjectMember.Slots
+           §"TAG"     *> tag_list           => ObjectMember.tags
+        || §"SLOT"    *> symbol_list(.slot) => ObjectMember.slots
         || §"COUNTER" *> %"counter" + ((op("=") *> number("initial count")) || succeed(0))
-                             => { (sym, count) in return ObjectMember.Counter(sym, count)}
+                             => { (sym, count) in return ObjectMember.counter(sym, count)}
 
 
 let concept =
@@ -56,10 +56,10 @@ let concept =
 
 
 let predicate_type =
-           §"SET"   *> tag_list         => PredicateType.TagSet
-        || §"BOUND" *> %"slot"          => PredicateType.IsBound
-        || §"ZERO"  *> %"counter"       => PredicateType.CounterZero
-        ||             tag_list         => PredicateType.TagSet
+           §"SET"   *> tag_list         => PredicateType.tagSet
+        || §"BOUND" *> %"slot"          => PredicateType.isBound
+        || §"ZERO"  *> %"counter"       => PredicateType.counterZero
+        ||             tag_list         => PredicateType.tagSet
         || fail("Expected predicate type")
 
 
@@ -78,43 +78,41 @@ let predicate =
 let predicate_list = (predicate ... §"AND")
 
 let selector =
-               §"ALL"  *>                          succeed(Selector.All)
-            || §"ROOT" *> (predicate ... §"AND")   => Selector.Root
-            ||            (predicate ... §"AND")   => Selector.Filter
+               §"ALL"  *>                          succeed(Selector.all)
+            ||            (predicate ... §"AND")   => Selector.filter
 
 
 // Modifier
 // ------------------------------------------------------------------------
 
 let target_type: Parser<Token, TargetType> =
-           §"THIS"  *> succeed(TargetType.This)
-        || §"OTHER" *> succeed(TargetType.Other)
-        || §"ROOT"  *> succeed(TargetType.Root)
+           §"THIS"  *> succeed(TargetType.this)
+        || §"OTHER" *> succeed(TargetType.other)
 
 let modifier_target: Parser<Token, ModifierTarget> =
         target_type + option(op(".") *> %"slot") => { target in ModifierTarget(target.0, target.1) }
-		|| %"slot"                               => { symbol in ModifierTarget(TargetType.This, symbol)}
+		|| %"slot"                               => { symbol in ModifierTarget(TargetType.this, symbol)}
 
 let bind_target = modifier_target
 
 let modifier_action =
-           §"NOTHING" *>              succeed(ModifierAction.Nothing)
-        || §"SET"     *> tag_list     => ModifierAction.SetTags
-        || §"UNSET"   *> tag_list     => ModifierAction.UnsetTags
-        || §"INC"     *> %"counter"   => ModifierAction.Inc
-        || §"DEC"     *> %"counter"   => ModifierAction.Dec
-        || §"CLEAR"   *> %"counter"   => ModifierAction.Clear
-        || §"UNBIND"  *> %"slot"      => ModifierAction.Unbind
-        || §"BIND"    *> %"slot" + (§"TO" *> bind_target) => { ast in ModifierAction.Bind(ast.0, ast.1)}
+           §"NOTHING" *>              succeed(ModifierAction.nothing)
+        || §"SET"     *> tag_list     => ModifierAction.setTags
+        || §"UNSET"   *> tag_list     => ModifierAction.unsetTags
+        || §"INC"     *> %"counter"   => ModifierAction.inc
+        || §"DEC"     *> %"counter"   => ModifierAction.dec
+        || §"CLEAR"   *> %"counter"   => ModifierAction.clear
+        || §"UNBIND"  *> %"slot"      => ModifierAction.unbind
+        || §"BIND"    *> %"slot" + (§"TO" *> bind_target) => { ast in ModifierAction.bind(ast.0, ast.1)}
 //        || fail("Expected modifier action")
 
 let modifier: Parser<Token, Modifier> =
-        ((§"IN" *> nofail(modifier_target)) || succeed(ModifierTarget(.This) ))
+        ((§"IN" *> nofail(modifier_target)) || succeed(ModifierTarget(.this) ))
             + modifier_action => { mod in Modifier(target: mod.0, action: mod.1) }
 
 let control =
-          option(§"TRAP" *> symbol_list(.Any))
-        + option(§"NOTIFY" *> symbol_list(.Any))
+          option(§"TRAP" *> symbol_list(.any))
+        + option(§"NOTIFY" *> symbol_list(.any))
         + optionFlag(§"HALT")
         => { ast in (traps: ast.0.0, notifications: ast.0.1, doesHalt: ast.1) }
 
@@ -153,8 +151,8 @@ let measure = §"MEASURE" *> %"measure" + aggregate + (§"WHERE" *> (predicate .
 // ========================================================================
 
 let initializer =
-	   %"symbol" + (op(":") *> number("counter value")) => Initializer.Counter
-	|| %"symbol"                                        => Initializer.Tag 
+	   %"symbol" + (op(":") *> number("counter value")) => Initializer.counter
+	|| %"symbol"                                        => Initializer.tag 
 
 
 let initializers =
@@ -164,9 +162,9 @@ let initializers =
 let instance =
     ((%"symbol" + option(initializers)) +
     (
-           op("*")  *> number("instance count") => ASTInstanceType.Counted
-        || §"AS"    *> %"name"                  => ASTInstanceType.Named
-        ||                                         succeed(ASTInstanceType.Default)
+           op("*")  *> number("instance count") => ASTInstanceType.counted
+        || §"AS"    *> %"name"                  => ASTInstanceType.named
+        ||                                         succeed(ASTInstanceType.default)
     ))
     => { i in createInstance(i.0.0, initializers: i.0.1, type: i.1) }
 
@@ -182,8 +180,8 @@ let graph_member =
 
 
 let world =
-        (§"WORLD" *> %"name") + (option(§"ROOT" *> %"symbol") + (many(graph_member) => createGraph))
-            => { x in World(name: x.0, graph: x.1.1, root: x.1.0) }
+        (§"WORLD" *> %"name") + ((many(graph_member) => createGraph))
+            => { x in World(name: x.0, graph: x.1) }
 
 
 let data =

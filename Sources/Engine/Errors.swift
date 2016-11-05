@@ -8,8 +8,13 @@
 
 import Foundation
 
-enum SeproError: Error {
+public enum SeproError: Error {
     case InternalError(String)
     case NotImplementedError
     case ModelError(String)
+}
+
+public enum EngineError: Error {
+    case unknownWorld(String)
+    case unknownConcept(String)
 }

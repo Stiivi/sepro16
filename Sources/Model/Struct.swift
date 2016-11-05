@@ -4,22 +4,16 @@ public struct World {
     public var name: Symbol
     /// Contents
     public var graph: InstanceGraph
-    /// Root object – referenced to as `ROOT`.
-    public var root: Symbol? = nil
 
     public init(name: Symbol, graph: InstanceGraph, root: Symbol?=nil) {
         self.name = name
         self.graph = graph
-        self.root = root
     }
 
     public func asString() -> String {
         var out = ""
 
         out += "WORLD \(name)"
-        if self.root != nil {
-            out += " ROOT \(root)"
-        }
         out += "\n"
         out += graph.asString()
 

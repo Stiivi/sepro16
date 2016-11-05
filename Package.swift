@@ -3,9 +3,12 @@ import PackageDescription
 let package = Package(
     name: "Sepro",
     targets: [
-        Target(name: "Utility"),
+        Target(name: "Base"),
         Target(name: "Model",
-			dependencies: [.Target(name:"Utility")]
+			dependencies: [.Target(name:"Base")]
+		),
+        Target(name: "Constraints",
+			dependencies: [.Target(name:"Model")]
 		),
         Target(name: "Language",
 			dependencies: [.Target(name:"Model")]

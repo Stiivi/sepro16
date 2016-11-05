@@ -12,3 +12,4 @@ extension Array {
         return self.index { item in !predicate(item) } == nil
     }
 }
+

@@ -44,22 +44,22 @@ public struct InstanceInitialization: CustomStringConvertible {
 /// Specification of an object instance in instance graph.
 public enum InstanceType: CustomStringConvertible {
     /// Single instance that can be referred to by name
-    case Named(Symbol)
+    case named(Symbol)
     /// Multiple instances, but can't be referenced
-    case Counted(Int)
+    case counted(Int)
 
     public var description: String {
         switch self {
-        case let .Named(name):    return "AS \(name)"
-        case let .Counted(count): return "* \(count)"
+        case let .named(name):    return "AS \(name)"
+        case let .counted(count): return "* \(count)"
         }
     }
 }
 
 /// Initial value of an instance
 public enum Initializer {
-	case Tag(Symbol)
-	case Counter(Symbol, Int)
+	case tag(Symbol)
+	case counter(Symbol, Int)
 }
 
 
@@ -125,7 +125,7 @@ public struct InstanceGraph {
         let named:[(Symbol, Symbol)] = self.instances.flatMap {
             instance in
             switch instance.type {
-            case let .Named(name): return (name, instance.concept)
+            case let .named(name): return (name, instance.concept)
             default: return nil
             }
         }
@@ -136,9 +136,9 @@ public struct InstanceGraph {
     /// Adds a instance specification `obj` to the graph
     mutating public func addInstance(obj: Instance) {
         switch obj.type {
-        case let .Named(name):
+        case let .named(name):
             self.namedObjects[name] = obj.concept
-        case .Counted:
+        case .counted:
             break
         }
 

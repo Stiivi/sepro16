@@ -8,13 +8,10 @@
 
 import Model
 
-/** References an object in the store. */
-public typealias ObjectRef = Int
 /** List of object references */
-public typealias ObjectRefList = [Int]
-public typealias ObjectRefSequence = AnySequence<ObjectRef>
+public typealias ObjectReferenceSequence = AnySequence<ObjectReference>
 /** Named object references */
-public typealias ObjectMap = [Symbol:ObjectRef]
+public typealias ObjectMap = [Symbol:ObjectReference]
 
 /// Simulation object.
 ///
@@ -25,21 +22,40 @@ public typealias ObjectMap = [Symbol:ObjectRef]
 ///   of objects in custom engine implementation.
 
 public class Object: CustomStringConvertible, CustomDebugStringConvertible {
-    // TODO: Change this to Struct
     /// Object identifier
-    public var id: ObjectRef = 0
-    /// Measure values
-    public var counters = CounterDict()
+    public let id: ObjectReference?
     /// Tags that are set
-    public var tags = TagList()
+    public let tags: TagList
+    /// Counter values
+    public let counters: CounterDict
     /// References to other objects
-    public var bindings = ObjectMap()
-    public var slots = SlotList()
+    public let bindings: [Symbol:ObjectReference]
+    public let slots: SlotList
 
     // TODO: isDead
 
-    public init(_ id: ObjectRef = 0) {
+    public init(_ id: ObjectReference?=nil, tags: TagList=[], counters:
+        CounterDict=[:], bindings: [Symbol:ObjectReference]=[:], slots:
+            SlotList=[]) {
         self.id = id
+        self.tags = tags
+        self.counters = counters
+        self.bindings = bindings
+        self.slots = slots
+    }
+
+    /// Create a copy of the object and allow override of object's properties.
+    public func copy(id: ObjectReference?=nil, tags: TagList?=nil,
+            counters: CounterDict?=nil, bindings: [Symbol:ObjectReference]?=nil,
+            slots: SlotList?=nil) -> Object {
+
+        return Object(id ?? self.id,
+            tags: tags ?? self.tags,
+            counters: counters ?? self.counters,
+            bindings: bindings ?? self.bindings,
+            slots: slots ?? self.slots
+        )
+
     }
 
     public var description: String {
@@ -47,12 +63,12 @@ public class Object: CustomStringConvertible, CustomDebugStringConvertible {
             let links = self.bindings.map(){ (key, value) in "\(key)->\(value)" }
                             .joined(separator:", ")
             let tagsStr = self.tags.map { String($0)}.joined(separator:", ")
-            return "\(id)[\(tagsStr);\(links)]"
+            let idString = id.map { String(describing:$0) } ?? "NOID"
+            return "\(idString)[\(tagsStr);\(links)]"
         }
     }
 
     public var debugDescription: String {
         return self.description
     }
-
 }

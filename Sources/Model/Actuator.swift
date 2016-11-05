@@ -8,41 +8,32 @@
 
 public enum Selector: CustomStringConvertible {
     /// All objects
-    case All
+    case all
     /// Objects matching conjunction of predicates
-    case Filter(CompoundPredicate)
-    /// Root object if matches conjunction of predicates
-    case Root(CompoundPredicate)
+    case filter(CompoundPredicate)
 
     public var description: String {
         switch self {
-        case .All: return "ALL"
-        case .Filter(let p):
+        case .all: return "ALL"
+        case .filter(let p):
             return p.map({ String(describing:$0) }).joined(separator:" AND ")
-        case .Root(let p):
-            return "ROOT " + p.map({ String(describing:$0) }).joined(separator:" AND ")
         }
     }
 
     public var predicates: [Predicate] {
         switch self {
-        case .All: return []
-        case .Filter(let p):
+        case .all: return []
+        case .filter(let p):
             return p
-        case .Root(let p):
-            return p
-
         }
     }
 }
 
 public func ==(left: Selector, right: Selector) -> Bool {
     switch (left, right) {
-    case (.All, .All):
+    case (.all, .all):
         return true
-    case (.Filter(let lpred), .Filter(let rpred)) where lpred == rpred:
-        return true
-    case (.Root(let lpred), .Filter(let rpred)) where lpred == rpred:
+    case (.filter(let lpred), .filter(let rpred)) where lpred == rpred:
         return true
     default:
         return false

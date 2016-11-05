@@ -68,11 +68,13 @@ public class DotWriter{
 	let file: FileHandle
 	var line: String!
 	let model: Model
+    let engine: Engine
 
-	init(path: String, model: Model) {
+	init(path: String, engine: Engine) {
 		let manager = FileManager.default
 		self.path = path
-		self.model = model
+        self.engine = engine
+		self.model = engine.model
 
 		manager.createFile(atPath: path, contents:nil, attributes:nil)
 
@@ -103,7 +105,8 @@ public class DotWriter{
 			linkAttrs["fontname"] = self.fontName
 			linkAttrs["fontsize"] = 9
 
-			return "\(obj.id) -> \(ref) [\(linkAttrs.stringValue)]"
+            let idString = obj.id.map { String(describing: $0) } ?? "<noid>"
+			return "\(idString) -> \(ref) [\(linkAttrs.stringValue)]"
 		}
 
 		let tags = obj.tags.sorted().joined(separator:",")
@@ -117,7 +120,8 @@ public class DotWriter{
 			data = "," + data
 		}
 
-		let label = "\(obj.id):\(tags)"
+        let idString = obj.id.map { String(describing: $0) } ?? "<noid>"
+		let label = "\(idString):\(tags)"
 		var attrs = DotAttributes()
 
 		attrs["fontname"] = fontName
@@ -132,7 +136,7 @@ public class DotWriter{
 
 		attrs["fontsize"] = 11
 
-		line = "    \(obj.id) [\(attrs.stringValue)\(data)]; "
+		line = "    \(idString) [\(attrs.stringValue)\(data)]; "
 
 		if !links.isEmpty {
 			line += links.joined(separator:"; ") + ";"
@@ -142,15 +146,12 @@ public class DotWriter{
 	}
 }
 
-public func writeDot(path: String, model: Model, selection: ObjectSelection) {
-	let writer = DotWriter(path: path, model: model)
+public func writeDot(path: String, engine: Engine, selection: ObjectSelection) {
+	let writer = DotWriter(path: path, engine: engine)
 
-	// FIXME: Despite we might want some kind of sorting, this also
-	// serves as a hack. Without this sorting we would get a runtime error
-	let sorted = selection.sorted { left, right in left.id < right.id }
-
-	sorted.forEach {
-		obj in
+	selection.forEach {
+		ref in
+        let obj = engine.container[ref]!
 		writer.writeObject(obj)
 	}
 

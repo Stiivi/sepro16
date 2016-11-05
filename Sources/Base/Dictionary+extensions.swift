@@ -10,14 +10,16 @@ extension Dictionary {
     public init(items:[(Key, Value)]) {
         self.init()
 
-        for (key, value) in items {
+        items.forEach {
+            key, value in 
             self[key] = value
         }
     }
 
 	/// Update elements of the receiver with elements
 	public mutating func update(from: Dictionary) {
-		for (key, value) in from { 
+		from.forEach {
+            key, value in
 			self.updateValue(value, forKey: key) 
 		} 
 	}
