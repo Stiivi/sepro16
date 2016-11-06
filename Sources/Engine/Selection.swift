@@ -8,13 +8,6 @@
 
 import Model
 
-public enum Ordering {
-    /// As containerd in the container, might differ between requests
-    case natural
-    /// Randomized ordering, differs between requests
-    case randomized
-}
-
 /*
     Note on selections: Selection yields references that are present in the
     simulation at the query time. Therefore if selection contains references
@@ -22,78 +15,61 @@ public enum Ordering {
     be skipped.
 */
 
-public typealias ReferenceIterator = AnyIterator<ObjectReference>
+public enum SelectionType {
+    case concrete([ObjectReference])
+    case filter([Predicate])
+}
+
 public class ObjectSelection: Sequence
 {
-    let references: [ObjectReference]?
+    /// Container that owns the selection
     let container: Container
-    let predicates: CompoundPredicate?
 
-    init(container: Container, predicates: CompoundPredicate?=nil,
-         references: [ObjectReference]?=nil)
+    let type: SelectionType
+
+    /// Creates a new object selection.
+    ///
+    /// - Parameter container: container owning the selection
+    /// - Parameter predicates: list of predicates that the objects in the
+    /// selection satisfy. If not provided, then all objects are considered.
+    /// - Parameter: references: iterator of object references from the owning
+    /// container. If not provided, then all objects within the container are
+    /// assumed.
+    public init(container: Container, type: SelectionType)
     {
-
         self.container = container
-        self.predicates = predicates
-        self.references = references
+        self.type = type
+    }
+    public convenience init(container: Container, predicates: [Predicate] = []) {
+        self.init(container: container, type: .filter(predicates))
     }
 
     public func makeIterator() -> ReferenceIterator {
-        // FIXME: THIS IS JUST TO MAKE COMPILER HAPPY, IT DOES NOT WORK!!!
-        if predicates != nil {
-            return AnyIterator(FilteringSelectionIterator(self))
-        }
-        else {
-            return AnyIterator(ConcreteSelectionIterator(self))
-        }
-    }
+        switch type {
+        case let .concrete(references):
+            let existing = references.lazy.filter {
+                self.container.exists($0)
+            }
+            return AnyIterator(existing.makeIterator())
 
-}
-
-public class ConcreteSelectionIterator: IteratorProtocol {
-    public typealias Element = ObjectReference
-
-    private let selection: ObjectSelection
-    private var iterator: Array<ObjectReference>.Iterator
-
-    public init(_ selection: ObjectSelection){
-        precondition(selection.references != nil)
-        self.selection = selection
-        self.iterator = selection.references!.makeIterator()
-    }
-    
-    public func next() -> Element? {
-        while let ref = iterator.next() {
-            if selection.container.exists(ref) {
-                return ref
+        case let .filter(predicates):
+            let references = self.container.allReferences.lazy
+            // 
+            if predicates.isEmpty {
+                let existing = references.lazy.filter {
+                    self.container.exists($0)
+                }
+                return AnyIterator(existing.makeIterator())
+            }
+            else {
+                let filtered = references.filter {
+                    self.container.exists($0)
+                        && self.container.match($0, predicates:predicates)
+                }
+                return AnyIterator(filtered.makeIterator())
             }
         }
-        return nil
     }
+
 }
 
-
-public class FilteringSelectionIterator: IteratorProtocol {
-    public typealias Element = ObjectReference
-
-    private let selection: ObjectSelection
-    private var iterator: Array<ObjectReference>.Iterator
-
-    public init(_ selection: ObjectSelection){
-        precondition(selection.references != nil)
-        precondition(selection.predicates != nil)
-        self.selection = selection
-        self.iterator = selection.references!.makeIterator()
-    }
-    
-    public func next() -> Element? {
-        // TODO: we resolve ref but then we pass ref to resolve it again
-        while let ref = self.iterator.next() {
-            if selection.container.exists(ref)
-                    && selection.container.match(ref, predicates:selection.predicates!){
-                return ref
-            }
-        }
-        return nil
-    }
-}
