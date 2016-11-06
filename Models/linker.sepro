@@ -1,0 +1,65 @@
+# Concepts
+# --------
+
+CONCEPT linker
+    TAG ready
+    SLOT left, right
+
+CONCEPT link
+    TAG free
+    SLOT next
+
+CONCEPT fault
+    # We pretend to be a link, but there is no 'next' slot
+    TAG link, free
+
+WHERE linker AND NOT BOUND left ON link, free DO
+    BIND left TO other
+    IN other UNSET free
+    SET one
+
+
+# Actuators
+# ---------
+
+WHERE one ON link AND free DO
+    BIND right TO other
+    IN other UNSET free
+    UNSET one
+    SET two
+
+WHERE two DO
+    IN this.left BIND next TO this.right
+    UNSET two
+    SET advance
+
+# Should be binding on occupied site allowed?
+WHERE advance DO
+    BIND left TO this.right
+    UNSET advance
+    SET cleanup
+
+WHERE cleanup DO
+    UNBIND right
+    UNSET cleanup
+    SET one
+
+# World
+# -----
+
+# Example how structure affects function – one faulty element in the
+# environment will break construction of a chain.
+
+WORLD main
+    OBJECT link * 500
+    OBJECT fault
+    OBJECT linker * 10
+
+
+# Data for visualization
+# ----------------------
+
+DATA dot_attributes, linker """fillcolor=gold,style="filled,rounded" """
+DATA dot_attributes, fault """fillcolor=coral,style="filled,rounded" """
+DATA dot_attributes, free """fillcolor=gray90,style="filled,rounded" """
+

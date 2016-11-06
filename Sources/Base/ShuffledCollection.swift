@@ -82,7 +82,7 @@ public struct ShuffledCollection <Base:Collection>: Collection
 }
 
 extension Array {
-    public func shuffle() -> ShuffledCollection<Array> {
+    public func shuffled() -> ShuffledCollection<Array> {
         return ShuffledCollection(self)
     }
 }

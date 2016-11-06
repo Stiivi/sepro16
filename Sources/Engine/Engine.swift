@@ -90,7 +90,6 @@ public final class SimpleEngine: Engine {
 	/// Delegate for handling traps, halt and other events
 	public var delegate: EngineDelegate? = nil
 
-
 	/// Create an object instance from concept
 	public init(model:Model, container: Container){
 		self.container = container
@@ -101,28 +100,29 @@ public final class SimpleEngine: Engine {
 
 	/// Runs the simulation for `steps`.
 	public func run(steps:Int) {
-		if self.logger != nil {
-			self.logger!.loggingWillStart(measures: self.model.measures, steps: steps)
+        precondition(steps > 0, "Number of steps to run must be greater than 0")
+		if logger != nil {
+			logger!.loggingWillStart(measures: model.measures, steps: steps)
 			// TODO: this should be called only on first run
-			self.probe()
+			probe()
 		}
 		
-		self.delegate?.willRun(engine:self)
+		delegate?.willRun(engine:self)
 		var stepsRun = 0
 
 		for _ in 1...steps {
 
-			self.step()
+			step()
 
-			if self.isHalted {
-				self.delegate?.handleHalt(engine:self)
+			if isHalted {
+				delegate?.handleHalt(engine:self)
 				break
 			}
 
 			stepsRun += 1
 		}
 
-		self.logger?.loggingDidEnd(steps: stepsRun)
+		logger?.loggingDidEnd(steps: stepsRun)
 	}
 
 	/// Compute one step of the simulation by evaluating all actuators.
@@ -136,7 +136,7 @@ public final class SimpleEngine: Engine {
 
 		// >>>
 		// The main step...
-		model.actuators.shuffle().forEach(perform)
+		model.actuators.shuffled().forEach(perform)
 		// <<<
 
 		delegate?.didStep(engine: self)
@@ -159,9 +159,9 @@ public final class SimpleEngine: Engine {
 		var record = ProbeRecord()
 
 		// Nothing to probe if we have no logger
-		if self.logger == nil {
-			return
-		}
+        guard let logger = self.logger else {
+            return
+        }
 
 		// Create the probes
 		let probeList = model.measures.map {
@@ -169,15 +169,16 @@ public final class SimpleEngine: Engine {
 			(measure, createProbe(measure: measure))
 		}
 
-		// TODO: too complex
-		self.container.selectAll().forEach {
+		container.selectAll().forEach {
 			ref in
-			probeList.forEach {
+			probeList.filter {
+				measure, _ in
+				container.match(ref, predicates: measure.predicates)
+            }
+            .forEach {
 				measure, probe in
-				if container.match(ref, predicates: measure.predicates) {
-					probe.probe(object: container[ref]!)
-				}
-			}
+                probe.probe(object: container[ref]!)
+            }
 		}
 
 		// Gather the probe results
@@ -187,7 +188,7 @@ public final class SimpleEngine: Engine {
 			record[measure.name] = probe.value
 		}
 
-		self.logger!.logRecord(step: self.stepCount, record: record)
+		logger.logRecord(step: self.stepCount, record: record)
 	}
 
 	/// Dispatch an `actuator` – unary vs. combined
@@ -239,7 +240,7 @@ public final class SimpleEngine: Engine {
 
 			actuator.modifiers.forEach {
 				modifier in
-				self.apply(modifier: modifier, this: this)
+				apply(modifier: modifier, this: this)
 			}
 		}
 
@@ -375,7 +376,7 @@ public final class SimpleEngine: Engine {
 			preconditionFailure("Current object for modifier should not be nil (apllication should be guarded)")
 		}
 
-        var newTags = current.tags
+        var newTags: TagList? = nil
         var newCounters = current.counters
         var newBindings = current.bindings
 
@@ -385,10 +386,10 @@ public final class SimpleEngine: Engine {
 			break
 
 		case .setTags(let tags):
-			newTags = tags.union(tags)
+			newTags = current.tags.union(tags)
 
 		case .unsetTags(let tags):
-			newTags = tags.subtracting(tags)
+			newTags = current.tags.subtracting(tags)
 
 		case .inc(let counter):
 			let value = current.counters[counter]!
