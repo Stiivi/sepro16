@@ -1,5 +1,3 @@
-//: Playground - noun: a place where people can play
-
 // Note: we are using underscode instead of camelCase for gramar rules
 // to maintain consistency with common practice in BNF
 
@@ -7,8 +5,8 @@ import ParserCombinator
 import Model
 
 extension Token: EmptyCheckable {
-    public static let EmptyValue = Token(.Empty, "")
-    public var isEmpty: Bool { return self.kind == TokenKind.Empty }
+    public static let EmptyValue = Token(.empty, "")
+    public var isEmpty: Bool { return self.kind == TokenKind.empty }
 }
 
 // Terminals
@@ -22,11 +20,11 @@ func tokenValue(_ kind: TokenKind, _ value: String) -> Parser<Token, Token> {
     return satisfy(value) { token in token == Token(kind, value) }
 }
 
-let symbol  = { name  in token(.Identifier, name)  => { t in Symbol(describing:t.text) } }
-let number  = { label in token(.IntLiteral, label) => { t in Int(t.text)! } }
-let text    = { label in token(.StringLiteral, label) => { t in t.text } }
-let keyword = { kw    in tokenValue(.Keyword, kw)  => { t in t.text } }
-let op      = { o     in tokenValue(.Operator, o) }
+let symbol  = { name  in token(.identifier, name)  => { t in Symbol(describing:t.text) } }
+let number  = { label in token(.intLiteral, label) => { t in Int(t.text)! } }
+let text    = { label in token(.stringLiteral, label) => { t in t.text } }
+let keyword = { kw    in tokenValue(.keyword, kw)  => { t in t.text } }
+let op      = { o     in tokenValue(.operator, o) }
 
 // TODO: This is just to type-hint the following rule. Otherwise Swift does not
 // know that the `type` is of `SymbolType`
@@ -135,12 +133,12 @@ let actuator =
 // PROBE foo
 
 let counter_agg_function =
-           §"SUM"      *> succeed(AggregateFunction.Sum)
-        || §"MIN"      *> succeed(AggregateFunction.Min)
-        || §"MAX"      *> succeed(AggregateFunction.Max)
+           §"SUM"      *> succeed(AggregateFunction.sum)
+        || §"MIN"      *> succeed(AggregateFunction.min)
+        || §"MAX"      *> succeed(AggregateFunction.max)
 
 let aggregate =
-           §"COUNT" *> op("(") *> option(tag_list) <* op(")")        => { tags in AggregateFunction.Count(tags ?? []) }
+           §"COUNT" *> op("(") *> option(tag_list) <* op(")")        => { tags in AggregateFunction.count(tags ?? []) }
         || counter_agg_function + (op("(") *> %"counter" <* op(")")) => { $0($1) }
 
 let measure = §"MEASURE" *> %"measure" + aggregate + (§"WHERE" *> (predicate ... §"AND"))
@@ -175,8 +173,8 @@ let binding =
 
 
 let graph_member =
-           §"OBJECT" *> (instance ... op(",")) => GraphMember.InstanceMember
-        || §"BIND"   *> (binding ... op(","))  => GraphMember.BindingMember
+           §"OBJECT" *> (instance ... op(",")) => GraphMember.instanceMember
+        || §"BIND"   *> (binding ... op(","))  => GraphMember.bindingMember
 
 
 let world =
@@ -192,15 +190,15 @@ let data =
 // ========================================================================
 
 let model_object =
-           concept  => ModelObject.ConceptModel
-        || actuator => ModelObject.ActuatorModel
-        || world    => ModelObject.WorldModel
-        || data     => ModelObject.DataModel
+           concept  => ModelObject.conceptModel
+        || actuator => ModelObject.actuatorModel
+        || world    => ModelObject.worldModel
+        || data     => ModelObject.dataModel
         || fail("Expected model object")
 
 let _model =
-		   token(.Empty, "end (no model)") => { _ in createModel([]) }
-		|| many(model_object) <* token(.Empty, "end") => createModel
+		   token(.empty, "end (no model)") => { _ in createModel([]) }
+		|| many(model_object) <* token(.empty, "end") => createModel
 
 let model =
 		many(model_object) => createModel

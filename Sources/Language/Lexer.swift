@@ -17,47 +17,47 @@
 import Foundation
 
 public enum TokenKind: Equatable, CustomStringConvertible {
-    case Empty
+    case empty
 
-    case Error(String)
+    case error(String)
 
     /// Identifier: first character + rest of identifier characters
-    case Identifier
+    case identifier
 
     /// Reserved word - same as identifier
-    case Keyword
+    case keyword
 
     /// Integer
-    case IntLiteral
+    case intLiteral
 
     /// Multi-line string containing a piece of documentation
-    case StringLiteral
+    case stringLiteral
 
     /// From a list of operators
-    case Operator
+    case `operator`
 
     public var description: String {
         switch self {
-        case .Error: return "unknown"
-        case .Empty: return "empty"
-        case .Identifier: return "identifier"
-        case .Keyword: return "keyword"
-        case .IntLiteral: return "int"
-        case .StringLiteral: return "string"
-		case .Operator: return "operator"
+        case .error: return "unknown"
+        case .empty: return "empty"
+        case .identifier: return "identifier"
+        case .keyword: return "keyword"
+        case .intLiteral: return "int"
+        case .stringLiteral: return "string"
+		case .operator: return "operator"
         }
     }
 }
 
 public func ==(left:TokenKind, right:TokenKind) -> Bool {
     switch(left, right){
-    case (.Empty, .Empty): return true
-    case (.Error(let l), .Error(let r)) where l == r: return true
-    case (.Keyword, .Keyword): return true
-    case (.Identifier, .Identifier): return true
-    case (.IntLiteral, .IntLiteral): return true
-    case (.StringLiteral, .StringLiteral): return true
-    case (.Operator, .Operator): return true
+    case (.empty, .empty): return true
+    case (.error(let l), .error(let r)) where l == r: return true
+    case (.keyword, .keyword): return true
+    case (.identifier, .identifier): return true
+    case (.intLiteral, .intLiteral): return true
+    case (.stringLiteral, .stringLiteral): return true
+    case (.operator, .operator): return true
     default:
         return false
     }
@@ -77,9 +77,9 @@ public struct Token: CustomStringConvertible, CustomDebugStringConvertible, Equa
     public var description: String {
         let str: String
         switch self.kind {
-        case .Empty: str = "(empty)"
-        case .StringLiteral: str = "'\(self.text)'"
-        case .Error(let message): str = "\(message) around '\(self.text)'"
+        case .empty: str = "(empty)"
+        case .stringLiteral: str = "'\(self.text)'"
+        case .error(let message): str = "\(message) around '\(self.text)'"
         default:
             str = self.text
         }
@@ -108,19 +108,19 @@ extension Token: ExpressibleByStringLiteral {
     public typealias UnicodeScalarLiteralType = String
 
     public init(stringLiteral value: StringLiteralType){
-        self.kind = .Keyword
+        self.kind = .keyword
         self.text = value
         self.pos = TextPosition()
     }
 
     public init(extendedGraphemeClusterLiteral value: ExtendedGraphemeClusterLiteralType){
-        self.kind = .Keyword
+        self.kind = .keyword
         self.text = value
         self.pos = TextPosition()
     }
 
     public init(unicodeScalarLiteral value: UnicodeScalarLiteralType){
-        self.kind = .Keyword
+        self.kind = .keyword
         self.text = value
         self.pos = TextPosition()
     }
@@ -128,7 +128,7 @@ extension Token: ExpressibleByStringLiteral {
 
 extension Token: ExpressibleByNilLiteral {
     public init(nilLiteral: ()) {
-        self.kind = .Empty
+        self.kind = .empty
         self.text = ""
         self.pos = TextPosition()
     }
@@ -138,7 +138,7 @@ extension Token: ExpressibleByIntegerLiteral {
     public typealias IntegerLiteralType = Int
 
     public init(integerLiteral value: IntegerLiteralType) {
-        self.kind = .IntLiteral
+        self.kind = .intLiteral
         self.text = String(value)
         self.pos = TextPosition()
     }
@@ -239,7 +239,7 @@ public class Lexer {
             tokens.append(token)
 
             switch token.kind {
-            case .Empty, .Error:
+            case .empty, .error:
                 break loop
             default:
                 break
@@ -371,10 +371,10 @@ public class Lexer {
             if IdentifierStart ~= self {
                 let invalid = self.currentChar == nil ? "(nil)" : String(self.currentChar!)
                 self.error = "Invalid character \(invalid) in number"
-                tokenKind = .Error(self.error!)
+                tokenKind = .error(self.error!)
             }
             else {
-                tokenKind = .IntLiteral
+                tokenKind = .intLiteral
             }
         }
         else if IdentifierStart ~= self {
@@ -385,11 +385,11 @@ public class Lexer {
 
             // Case insensitive compare
             if self.keywords.contains(upvalue) {
-                tokenKind = .Keyword
+                tokenKind = .keyword
                 value = upvalue
             }
             else {
-                tokenKind = .Identifier
+                tokenKind = .identifier
             }
         }
         else if "\"" ~= self {
@@ -398,7 +398,7 @@ public class Lexer {
             value = stringToken.1
         }
         else if OperatorCharacters ~= self {
-            tokenKind = .Operator
+            tokenKind = .operator
         }
         else{
             var message: String
@@ -412,7 +412,7 @@ public class Lexer {
             }
             
             self.error = message + " around \(value)'"
-            tokenKind = .Error(self.error!)
+            tokenKind = .error(self.error!)
         }
 
         self.currentToken = Token(tokenKind, value ?? self.tokenFrom(start), pos)
@@ -439,13 +439,13 @@ public class Lexer {
 					assert(end >= start)
                     self.advance()
                     if self.accept("\"") && self.accept("\"") {
-                        return (.StringLiteral, self.tokenFrom(start, to: end))
+                        return (.stringLiteral, self.tokenFrom(start, to: end))
                     }
                 }
             }
             else {
 				// If not third quote, then we have empty string
-                return (.StringLiteral, "")
+                return (.stringLiteral, "")
             }
         }
         else {
@@ -457,13 +457,13 @@ public class Lexer {
                     self.advance()
                 }
                 else if self.accept("\""){
-                    return (.StringLiteral, self.tokenFrom(start, to: end))
+                    return (.stringLiteral, self.tokenFrom(start, to: end))
                 }
                 self.advance()
             }
         }
         self.error = "Unexpected end of input in a string"
-        return (.Error(self.error!), "")
+        return (.error(self.error!), "")
 
     }
 }

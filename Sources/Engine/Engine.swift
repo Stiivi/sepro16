@@ -83,9 +83,9 @@ public final class SimpleEngine: Engine {
 	/// List of probes
 	public var probes: [Probe]
 
-	/// Logging delegate – an object that implements the `Logger`
-	/// protocol
-	public var logger: Logger? = nil
+	/// Collector delegate – an object that collects probed data by
+    /// implementing the `collector` protocol
+	public var collector: Collector? = nil
 
 	/// Delegate for handling traps, halt and other events
 	public var delegate: EngineDelegate? = nil
@@ -101,8 +101,8 @@ public final class SimpleEngine: Engine {
 	/// Runs the simulation for `steps`.
 	public func run(steps:Int) {
         precondition(steps > 0, "Number of steps to run must be greater than 0")
-		if logger != nil {
-			logger!.loggingWillStart(measures: model.measures, steps: steps)
+		if collector != nil {
+			collector!.collectingWillStart(measures: model.measures, steps: steps)
 			// TODO: this should be called only on first run
 			probe()
 		}
@@ -122,7 +122,7 @@ public final class SimpleEngine: Engine {
 			stepsRun += 1
 		}
 
-		logger?.loggingDidEnd(steps: stepsRun)
+		collector?.collectingDidEnd(steps: stepsRun)
 	}
 
 	/// Compute one step of the simulation by evaluating all actuators.
@@ -141,7 +141,7 @@ public final class SimpleEngine: Engine {
 
 		delegate?.didStep(engine: self)
 
-		if logger != nil {
+		if collector != nil {
 			probe()
 		}
 
@@ -151,15 +151,15 @@ public final class SimpleEngine: Engine {
 	}
 
     ///
-    /// Probe the simulation and pass the results to the logger. Probing
-	/// is ignored when logger is not provided.
+    /// Probe the simulation and pass the results to the collector. Probing
+	/// is ignored when collector is not provided.
     ///
 	/// - Complexity: O(n) – does full scan on all objects
 	func probe() {
 		var record = ProbeRecord()
 
-		// Nothing to probe if we have no logger
-        guard let logger = self.logger else {
+		// Nothing to probe if we have no collector
+        guard let collector = self.collector else {
             return
         }
 
@@ -188,7 +188,7 @@ public final class SimpleEngine: Engine {
 			record[measure.name] = probe.value
 		}
 
-		logger.logRecord(step: self.stepCount, record: record)
+		collector.logRecord(step: self.stepCount, record: record)
 	}
 
 	/// Dispatch an `actuator` – unary vs. combined
@@ -423,7 +423,7 @@ public final class SimpleEngine: Engine {
 	}
 
 	func notify(symbol: Symbol) {
-		self.logger?.logNotification(step: self.stepCount, notification: symbol)
+		self.collector?.logNotification(step: self.stepCount, notification: symbol)
 	}
 
 	// MARK: Instantiation

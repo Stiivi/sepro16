@@ -42,7 +42,7 @@ public class CSVWriter {
  Simple observer that prints to the standard output.
  */
 
-public class CSVLogger: Logger {
+public class CSVCollector: Collector {
 	var measures: [Measure]
 	let root: String
 	var measureWriter: CSVWriter! = nil
@@ -69,7 +69,7 @@ public class CSVLogger: Logger {
 		self.notificationWriter = CSVWriter(path: npath)
 	}
 
-	public func loggingWillStart(measures: [Measure], steps: Int) {
+	public func collectingWillStart(measures: [Measure], steps: Int) {
 		self.measures = measures
 
 		var names = self.measures.map { measure in measure.name }
@@ -78,7 +78,7 @@ public class CSVLogger: Logger {
 		self.measureWriter.writeRow(values:names)
 	}
 
-	public func loggingDidEnd(steps: Int) {
+	public func collectingDidEnd(steps: Int) {
 		self.measureWriter.close()
 		self.notificationWriter.close()
 	}

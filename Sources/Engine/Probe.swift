@@ -18,14 +18,14 @@ public func createProbe(measure: Measure) -> Probe {
     let probe: Probe
 
     switch measure.type {
-    case .CounterByName(_, _):
+    case .counterByName(_, _):
         return NullProbe()
-    case let .Aggregate(function, _):
+    case let .aggregate(function, _):
         switch function {
-        case .Count: probe = CountProbe()
-        case .Sum(let counter): probe = SumProbe(counter)
-        case .Min(let counter): probe = MinProbe(counter)
-        case .Max(let counter): probe = MaxProbe(counter)
+        case .count: probe = CountProbe()
+        case .sum(let counter): probe = SumProbe(counter)
+        case .min(let counter): probe = MinProbe(counter)
+        case .max(let counter): probe = MaxProbe(counter)
         }
     }
     return probe

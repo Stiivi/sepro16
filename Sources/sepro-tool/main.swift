@@ -61,7 +61,7 @@ func main() {
 
     let container = SimpleContainer()
     engine = SimpleEngine(model:model, container: container)
-    engine.logger = CSVLogger(path: path)
+    engine.collector = CSVCollector(path: path)
     engine.delegate = CLIDelegate(path:path)
     
     let result = engine.initialize(worldName: "main")

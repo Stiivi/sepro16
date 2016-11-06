@@ -21,15 +21,15 @@ PROBE unlinked SUM counter WHERE
 */
 
 public enum AggregateFunction {
-    case Count(TagList)
-    case Sum(Symbol)
-    case Min(Symbol)
-    case Max(Symbol)
+    case count(TagList)
+    case sum(Symbol)
+    case min(Symbol)
+    case max(Symbol)
 }
 
 public enum MeasureType {
-    case CounterByName(Symbol, Symbol)
-    case Aggregate(AggregateFunction, [Predicate])
+    case counterByName(Symbol, Symbol)
+    case aggregate(AggregateFunction, [Predicate])
 }
 
 public struct Measure {
@@ -38,7 +38,7 @@ public struct Measure {
 
     public var predicates: [Predicate] {
         switch type {
-        case let .Aggregate(_, predicates):
+        case let .aggregate(_, predicates):
             return predicates
         default:
             return []

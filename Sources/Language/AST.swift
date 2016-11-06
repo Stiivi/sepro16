@@ -51,32 +51,32 @@ func makeConcept(_ name: String, _ members: [ObjectMember]) -> Concept {
 }
 
 enum ModelObject {
-    case ConceptModel(Concept)
-    case ActuatorModel(Actuator)
-    case WorldModel(World)
+    case conceptModel(Concept)
+    case actuatorModel(Actuator)
+    case worldModel(World)
 
-    case StructModel(Struct)
-    case MeasureModel(Measure)
+    case structModel(Struct)
+    case measureModel(Measure)
 
-    case DataModel(TagList, String)
+    case dataModel(TagList, String)
 }
 
 
 
 enum GraphMember {
-    case InstanceMember([Instance])
-    case BindingMember([Binding])
+    case instanceMember([Instance])
+    case bindingMember([Binding])
 
     func instances() -> [Instance]? {
         switch(self) {
-        case .InstanceMember(let val): return val
+        case .instanceMember(let val): return val
         default: return nil
         }
     }
 
     func bindings() -> [Binding]? {
         switch(self) {
-        case .BindingMember(let val): return val
+        case .bindingMember(let val): return val
         default: return nil
         }
     }
@@ -117,42 +117,42 @@ func createInstance(_ symbol: Symbol, initializers:[Initializer]?, type:
 func createModel(_ objects: [ModelObject]) -> Model {
     let concepts: [Concept] = objects.flatMap {
         switch $0 {
-        case .ConceptModel(let obj): return obj
+        case .conceptModel(let obj): return obj
         default: return nil
         }
     }
 
     let actuators: [Actuator] = objects.flatMap {
         switch $0 {
-        case .ActuatorModel(let obj): return obj
+        case .actuatorModel(let obj): return obj
         default: return nil
         }
     }
 
     let worlds: [World] = objects.flatMap {
         switch $0 {
-        case .WorldModel(let obj): return obj
+        case .worldModel(let obj): return obj
         default: return nil
         }
     }
 
     let structs: [Struct] = objects.flatMap {
         switch $0 {
-        case .StructModel(let obj): return obj
+        case .structModel(let obj): return obj
         default: return nil
         }
     }
 
     let measures: [Measure] = objects.flatMap {
         switch $0 {
-        case .MeasureModel(let obj): return obj
+        case .measureModel(let obj): return obj
         default: return nil
         }
     }
 
     let data: [(TagList, String)] = objects.flatMap {
         switch $0 {
-        case .DataModel(let obj): return obj
+        case .dataModel(let obj): return obj
         default: return nil
         }
     }
